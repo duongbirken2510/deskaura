@@ -24,6 +24,7 @@ interface SettingsPanelProps {
   startMinimized: boolean;
   isTestingVoice: boolean;
   lastDuckedCount: number;
+  lang?: 'vi' | 'en';
   onUpdateStandup: (partial: Partial<StandupSettings>) => void;
   onUpdateHydration: (partial: Partial<HydrationSettings>) => void;
   onUpdateVoice: (partial: Partial<VoiceReminderSettings>) => void;
@@ -39,24 +40,30 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   startMinimized,
   isTestingVoice,
   lastDuckedCount,
+  lang = 'vi',
   onUpdateStandup,
   onUpdateHydration,
   onUpdateVoice,
   onToggleAutostart,
   onTestVietnameseVoice,
 }) => {
+  const isEn = lang === 'en';
   return (
     <div className="space-y-6">
-      {/* Section 1: Vietnamese Voice Reminder & Windows WASAPI Audio Ducking */}
+      {/* Section 1: Voice Reminder & Windows WASAPI Audio Ducking */}
       <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
           <div>
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
               <Mic className="w-5 h-5 text-emerald-500" />
-              Nhắc Nhở Giọng Nói Tiếng Việt & Tự Động Giảm Âm Lượng (WASAPI Audio Ducking)
+              {isEn
+                ? 'Voice Reminders & Windows WASAPI Audio Ducking'
+                : 'Nhắc Nhở Giọng Nói & Tự Động Giảm Âm Lượng (WASAPI Audio Ducking)'}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Tự động làm nhỏ tiếng của YouTube, Spotify, Trình duyệt... trên Windows khi phát lời nhắc sức khỏe Tiếng Việt
+              {isEn
+                ? 'Automatically lowers volume of YouTube, Spotify, Browser... on Windows while speaking reminders'
+                : 'Tự động làm nhỏ tiếng của YouTube, Spotify, Trình duyệt... trên Windows khi phát lời nhắc sức khỏe'}
             </p>
           </div>
 
@@ -67,8 +74,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           >
             <Volume2 className="w-4 h-4" />
             {isTestingVoice
-              ? 'Đang phát giọng Tiếng Việt...'
-              : 'Nghe thử giọng Tiếng Việt & Test giảm âm lượng'}
+              ? isEn
+                ? 'Playing voice reminder...'
+                : 'Đang phát giọng nhắc...'
+              : isEn
+              ? 'Test Voice & Audio Ducking'
+              : 'Nghe thử giọng nhắc & Test giảm âm lượng'}
           </button>
         </div>
 
@@ -78,10 +89,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <label className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 cursor-pointer">
               <div>
                 <p className="text-sm font-bold text-slate-800">
-                  Bật nhắc nhở bằng giọng nói Tiếng Việt
+                  {isEn
+                    ? 'Enable Voice Reminders (VI / EN)'
+                    : 'Bật nhắc nhở bằng giọng nói (VI / EN)'}
                 </p>
                 <p className="text-xs text-slate-500">
-                  Phát lời nhắc ấm áp khi đến giờ đứng dậy hoặc uống nước
+                  {isEn
+                    ? 'Speak gentle voice prompts when it is time to stand up or drink water'
+                    : 'Phát lời nhắc ấm áp khi đến giờ đứng dậy hoặc uống nước'}
                 </p>
               </div>
               <input
@@ -94,23 +109,30 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-2">
-                Chọn giọng đọc Tiếng Việt:
+                {isEn
+                  ? 'Select Voice Pack (Vietnamese / English):'
+                  : 'Chọn giọng đọc Nhắc nhở (Tiếng Việt / English):'}
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {[
                   {
                     id: 'female_neural',
-                    title: 'Nữ Dịu Dàng',
-                    desc: 'Giọng chuẩn tự nhiên (Offline MP3)',
+                    title: '🇻🇳 Nữ Dịu Dàng (VI)',
+                    desc: 'Giọng chuẩn Tiếng Việt (Offline MP3)',
                   },
                   {
                     id: 'male_neural',
-                    title: 'Nam Trầm Ấm',
+                    title: '🇻🇳 Nam Trầm Ấm (VI)',
                     desc: 'Giọng Nam Minh Neural (Offline MP3)',
                   },
                   {
+                    id: 'english_neural',
+                    title: '🇬🇧 English Voice (EN)',
+                    desc: 'Natural English AI Voice (Offline MP3)',
+                  },
+                  {
                     id: 'custom_tts',
-                    title: 'Tự Nhập Câu Nhắc',
+                    title: '✍️ Tự Nhập Câu Nhắc',
                     desc: 'Đọc câu tùy chỉnh qua Windows TTS',
                   },
                 ].map((opt) => (
@@ -177,10 +199,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <label className="flex items-center justify-between p-3.5 rounded-2xl bg-sky-50/70 border border-sky-200/80 cursor-pointer">
               <div>
                 <p className="text-sm font-bold text-slate-800">
-                  Tự động giảm âm lượng ứng dụng khác trên Windows
+                  {isEn
+                    ? 'Auto-duck other Windows applications'
+                    : 'Tự động giảm âm lượng ứng dụng khác trên Windows'}
                 </p>
                 <p className="text-xs text-slate-500">
-                  Hạ nhỏ âm lượng các ứng dụng đang phát nhạc/video khi phát giọng nhắc và khôi phục ngay sau đó
+                  {isEn
+                    ? 'Lowers music/video apps while speaking voice reminders and restores volume right after'
+                    : 'Hạ nhỏ âm lượng các ứng dụng đang phát nhạc/video khi phát giọng nhắc và khôi phục ngay sau đó'}
                 </p>
               </div>
               <input
@@ -196,10 +222,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-700">
-                  Mức âm lượng ứng dụng khác khi đang nhắc:
+                  {isEn
+                    ? 'Other apps volume during voice prompt:'
+                    : 'Mức âm lượng ứng dụng khác khi đang nhắc:'}
                 </span>
                 <span className="text-xs font-extrabold text-sky-600">
-                  Còn {Math.round(voiceSettings.duckRatio * 100)}% âm lượng gốc
+                  {isEn
+                    ? `${Math.round(voiceSettings.duckRatio * 100)}% of original volume`
+                    : `Còn ${Math.round(voiceSettings.duckRatio * 100)}% âm lượng gốc`}
                 </span>
               </div>
               <input
@@ -214,19 +244,23 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 className="w-full accent-sky-500 cursor-pointer"
               />
               <div className="flex items-center justify-between text-[11px] text-slate-400">
-                <span>Nhỏ hẳn (5%)</span>
-                <span>Vừa phải (20% - Khuyên dùng)</span>
-                <span>Nhẹ (60%)</span>
+                <span>{isEn ? 'Very quiet (5%)' : 'Nhỏ hẳn (5%)'}</span>
+                <span>{isEn ? 'Balanced (20% - Recommended)' : 'Vừa phải (20% - Khuyên dùng)'}</span>
+                <span>{isEn ? 'Gentle (60%)' : 'Nhẹ (60%)'}</span>
               </div>
             </div>
 
             <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70">
               <div>
                 <p className="text-xs font-bold text-slate-700">
-                  Phát tiếng chuông chữa lành 528Hz trước giọng nói
+                  {isEn
+                    ? 'Play 528Hz healing chime before voice prompt'
+                    : 'Phát tiếng chuông chữa lành 528Hz trước giọng nói'}
                 </p>
                 <p className="text-[11px] text-slate-500">
-                  Giúp não bộ chuyển trạng thái nhẹ nhàng, không giật mình
+                  {isEn
+                    ? 'Helps your mind transition smoothly without being startled'
+                    : 'Giúp não bộ chuyển trạng thái nhẹ nhàng, không giật mình'}
                 </p>
               </div>
               <input
@@ -241,7 +275,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
             {lastDuckedCount > 0 && (
               <p className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
-                ✓ Lần kiểm tra gần nhất: Đã điều chỉnh tự động {lastDuckedCount} ứng dụng âm thanh trên Windows.
+                {isEn
+                  ? `✓ Last check: Automatically adjusted ${lastDuckedCount} active Windows audio sessions.`
+                  : `✓ Lần kiểm tra gần nhất: Đã điều chỉnh tự động ${lastDuckedCount} ứng dụng âm thanh trên Windows.`}
               </p>
             )}
           </div>
@@ -252,7 +288,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
         <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
           <Power className="w-5 h-5 text-sky-500" />
-          Chạy Nền & Tự Khởi Động Cùng Windows
+          {isEn
+            ? 'Background System Tray & Windows Startup'
+            : 'Chạy Nền & Tự Khởi Động Cùng Windows'}
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -261,10 +299,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <Laptop className="w-5 h-5 text-emerald-600 mt-0.5" />
               <div>
                 <p className="text-sm font-bold text-slate-800">
-                  Tự khởi động cùng Windows (Auto-start on Boot)
+                  {isEn
+                    ? 'Start automatically with Windows (Auto-start on Boot)'
+                    : 'Tự khởi động cùng Windows (Auto-start on Boot)'}
                 </p>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Tự động mở ứng dụng mỗi khi bật máy tính làm việc
+                  {isEn
+                    ? 'Automatically launch DeskAura when you sign in to Windows'
+                    : 'Tự động mở ứng dụng mỗi khi bật máy tính làm việc'}
                 </p>
               </div>
             </div>
@@ -283,10 +325,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <MonitorCheck className="w-5 h-5 text-sky-600 mt-0.5" />
               <div>
                 <p className="text-sm font-bold text-slate-800">
-                  Khởi động ẩn dưới Khay hệ thống (System Tray)
+                  {isEn
+                    ? 'Start minimized in System Tray'
+                    : 'Khởi động ẩn dưới Khay hệ thống (System Tray)'}
                 </p>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Khi bật máy hoặc bấm nút đóng (X), ứng dụng thu gọn xuống góc phải Taskbar để chạy ngầm siêu nhẹ
+                  {isEn
+                    ? 'When booting or clicking Close (X), minimize quietly to the Windows taskbar tray'
+                    : 'Khi bật máy hoặc bấm nút đóng (X), ứng dụng thu gọn xuống góc phải Taskbar để chạy ngầm siêu nhẹ'}
                 </p>
               </div>
             </div>
@@ -306,20 +352,22 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
         <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
           <Sliders className="w-5 h-5 text-emerald-500" />
-          Cấu Hình Chu Kỳ Đứng Dậy, Uống Nước & Nhận Diện Thông Minh
+          {isEn
+            ? 'Stand-up, Hydration & Smart Context Schedule'
+            : 'Cấu Hình Chu Kỳ Đứng Dậy, Uống Nước & Nhận Diện Thông Minh'}
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Standup Interval */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-3">
             <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-              🌱 Nhịp Đứng Dậy Vận Động
+              {isEn ? '🌱 Stand-up & Stretch Cycle' : '🌱 Nhịp Đứng Dậy Vận Động'}
             </p>
             <div>
               <label className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                <span>Thời gian ngồi tối đa:</span>
+                <span>{isEn ? 'Max sitting interval:' : 'Thời gian ngồi tối đa:'}</span>
                 <span className="font-bold text-emerald-600">
-                  {standupSettings.standupIntervalMinutes} phút
+                  {standupSettings.standupIntervalMinutes} {isEn ? 'mins' : 'phút'}
                 </span>
               </label>
               <input
@@ -339,9 +387,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
             <div>
               <label className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                <span>Thời lượng đứng dậy nghỉ:</span>
+                <span>{isEn ? 'Stand-up break duration:' : 'Thời lượng đứng dậy nghỉ:'}</span>
                 <span className="font-bold text-emerald-600">
-                  {Math.round(standupSettings.standupDurationSeconds / 60)} phút
+                  {Math.round(standupSettings.standupDurationSeconds / 60)} {isEn ? 'mins' : 'phút'}
                 </span>
               </label>
               <input
@@ -363,11 +411,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           {/* Hydration Goal */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-3">
             <p className="text-xs font-bold uppercase tracking-wider text-sky-700">
-              💧 Nhịp Uống Nước Văn Phòng
+              {isEn ? '💧 Daily Hydration Schedule' : '💧 Nhịp Uống Nước Văn Phòng'}
             </p>
             <div>
               <label className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                <span>Mục tiêu nước mỗi ngày:</span>
+                <span>{isEn ? 'Daily water goal:' : 'Mục tiêu nước mỗi ngày:'}</span>
                 <span className="font-bold text-sky-600">
                   {hydrationSettings.dailyGoalMl} ml
                 </span>
@@ -389,9 +437,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
             <div>
               <label className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                <span>Chu kỳ nhắc uống nước:</span>
+                <span>{isEn ? 'Hydration reminder interval:' : 'Chu kỳ nhắc uống nước:'}</span>
                 <span className="font-bold text-sky-600">
-                  Mỗi {hydrationSettings.intervalMinutes} phút
+                  {isEn
+                    ? `Every ${hydrationSettings.intervalMinutes} mins`
+                    : `Mỗi ${hydrationSettings.intervalMinutes} phút`}
                 </span>
               </label>
               <input
@@ -414,11 +464,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-3">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              Nhận Diện Ngữ Cảnh Thông Minh
+              {isEn ? 'Smart Context Detection' : 'Nhận Diện Ngữ Cảnh Thông Minh'}
             </p>
 
             <label className="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
-              <span>Tạm hoãn màn hình khóa khi đang họp / Fullscreen</span>
+              <span>
+                {isEn
+                  ? 'Postpone breaks during fullscreen meetings/presentations'
+                  : 'Tạm hoãn màn hình khóa khi đang họp / Fullscreen'}
+              </span>
               <input
                 type="checkbox"
                 checked={standupSettings.pauseOnFullscreen}
@@ -430,7 +484,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </label>
 
             <label className="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
-              <span>Nhắc nghỉ mắt 20-20-20 (Mỗi 20 phút)</span>
+              <span>
+                {isEn
+                  ? '20-20-20 Eye Care Reminders (Every 20 mins)'
+                  : 'Nhắc nghỉ mắt 20-20-20 (Mỗi 20 phút)'}
+              </span>
               <input
                 type="checkbox"
                 checked={standupSettings.eyeBreakEnabled}
@@ -442,7 +500,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </label>
 
             <label className="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
-              <span>Yêu cầu nhấn giữ để bỏ qua giờ nghỉ</span>
+              <span>
+                {isEn
+                  ? 'Require press-and-hold to skip breaks'
+                  : 'Yêu cầu nhấn giữ để bỏ qua giờ nghỉ'}
+              </span>
               <input
                 type="checkbox"
                 checked={standupSettings.holdToSkip}

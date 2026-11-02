@@ -25,7 +25,7 @@ export interface HydrationSettings {
   quickAmounts: [number, number, number]; // Mặc định: [100, 200, 300]
 }
 
-export type VoicePackId = 'female_neural' | 'male_neural' | 'custom_tts';
+export type VoicePackId = 'female_neural' | 'male_neural' | 'english_neural' | 'custom_tts';
 
 export interface VoiceReminderSettings {
   enabled: boolean;

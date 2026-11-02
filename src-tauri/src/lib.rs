@@ -25,7 +25,6 @@ fn get_system_context() -> SystemContextInfo {
 
 #[tauri::command]
 fn duck_other_apps(app: AppHandle, target_ratio: f32) -> Result<usize, String> {
-    // Also duck built-in Zing MP3 / Web music player window if open
     if let Some(music_win) = app.get_webview_window("music-player") {
         let ratio = target_ratio.clamp(0.05, 1.0);
         let js = format!(
@@ -47,7 +46,6 @@ fn duck_other_apps(app: AppHandle, target_ratio: f32) -> Result<usize, String> {
 
 #[tauri::command]
 fn restore_other_apps(app: AppHandle) -> Result<usize, String> {
-    // Restore built-in Zing MP3 / Web music player window if open
     if let Some(music_win) = app.get_webview_window("music-player") {
         let js = r#"
             (function() {
@@ -61,6 +59,95 @@ fn restore_other_apps(app: AppHandle) -> Result<usize, String> {
         let _ = music_win.eval(js);
     }
     audio_ducker::restore_other_applications()
+}
+
+pub fn execute_zing_action(app: &AppHandle, action: &str, value: Option<f32>) -> bool {
+    let Some(music_win) = app.get_webview_window("music-player") else {
+        return false;
+    };
+
+    let js = match action {
+        "play_pause" => r#"
+            (function() {
+                const audios = Array.from(document.querySelectorAll('audio, video'));
+                const playingAudio = audios.find(a => !a.paused && a.duration > 0);
+                if (playingAudio) {
+                    playingAudio.pause();
+                    window.__deskauraLastPausedAudio = playingAudio;
+                    return;
+                }
+                if (window.__deskauraLastPausedAudio) {
+                    window.__deskauraLastPausedAudio.play().catch(() => {});
+                    window.__deskauraLastPausedAudio = null;
+                    return;
+                }
+                if (audios.length > 0) {
+                    const a = audios[0];
+                    if (a.paused) a.play().catch(() => {});
+                    else a.pause();
+                    return;
+                }
+                const playBtn = document.querySelector('.player-controls .btn-play, .player-controls [title*="Tạm dừng"], .player-controls [title*="Phát"], button.zm-btn.ic-play-circle-outline, button.zm-btn.ic-pause-circle-outline');
+                if (playBtn) playBtn.click();
+            })();
+        "#.to_string(),
+        "pause_only" => r#"
+            (function() {
+                document.querySelectorAll('audio, video').forEach(a => {
+                    if (!a.paused) {
+                        window.__deskauraLastPausedAudio = a;
+                        a.pause();
+                    }
+                });
+            })();
+        "#.to_string(),
+        "next" => r#"
+            (function() {
+                const nextBtn = document.querySelector('.btn-next, [title*="Bài tiếp theo"], .ic-next');
+                if (nextBtn) {
+                    const btn = nextBtn.closest('button') || nextBtn;
+                    btn.click();
+                }
+            })();
+        "#.to_string(),
+        "prev" => r#"
+            (function() {
+                const prevBtn = document.querySelector('.btn-pre, .btn-prev, [title*="Bài trước"], .ic-pre');
+                if (prevBtn) {
+                    const btn = prevBtn.closest('button') || prevBtn;
+                    btn.click();
+                }
+            })();
+        "#.to_string(),
+        "volume" => {
+            let vol = value.unwrap_or(0.8).clamp(0.0, 1.0);
+            format!(
+                r#"
+                (function() {{
+                    window.__mamxanhUserVolume = {vol};
+                    document.querySelectorAll('audio, video').forEach(el => {{
+                        el.volume = {vol};
+                    }});
+                }})();
+                "#
+            )
+        }
+        "play_first" => r#"
+            (function() {
+                const firstPlay = document.querySelector('button[title*="Phát tất cả"], .zm-card-image .ic-play, .media-item .ic-play, .song-thumb .ic-play');
+                if (firstPlay) {
+                    const btn = firstPlay.closest('button') || firstPlay;
+                    btn.click();
+                }
+            })();
+        "#.to_string(),
+        _ => String::new(),
+    };
+
+    if !js.is_empty() {
+        let _ = music_win.eval(&js);
+    }
+    true
 }
 
 #[tauri::command]
@@ -99,7 +186,6 @@ async fn open_web_music_player(
             window.__mamxanhUserVolume = 0.8;
             window.__mamxanhAdSkippedCount = 0;
 
-            // LAYER 1: Block Ad-Network Requests (IMA SDK, DoubleClick, Adtima, VAST/Preroll)
             const AD_KEYWORDS = [
                 'imasdk.googleapis.com',
                 'doubleclick.net',
@@ -143,7 +229,6 @@ async fn open_web_music_player(
                 return origOpen.apply(this, arguments);
             };
 
-            // Layer 3 CSS: Hide intrusive ad banners & overlay popups
             const injectAdBlockStyle = () => {
                 if (document.getElementById('__mamxanh_adguard_css')) return;
                 const style = document.createElement('style');
@@ -167,18 +252,15 @@ async fn open_web_music_player(
                 (document.head || document.documentElement).appendChild(style);
             };
 
-            // LAYER 2: Smart Audio/Video Ad Detector -> Instant Mute + Fast-Forward Skip
             const isCurrentlyPlayingAd = (mediaEl) => {
                 const src = (mediaEl.currentSrc || mediaEl.src || '').toLowerCase();
                 if (isAdUrl(src)) return true;
 
-                // Check if short audio ad clip (5s - 38s) injected between full songs
                 const dur = mediaEl.duration;
                 if (Number.isFinite(dur) && dur > 3 && dur <= 38) {
                     return true;
                 }
 
-                // Check UI text indicators for Advertisement
                 const playerBar = document.querySelector('.player-controls, .now-playing-bar, .zm-player-bar');
                 if (playerBar) {
                     const txt = (playerBar.innerText || '').toLowerCase();
@@ -192,7 +274,6 @@ async fn open_web_music_player(
             const guardMediaElement = (el) => {
                 if (!el) return;
                 if (isCurrentlyPlayingAd(el)) {
-                    // Mute immediately so user never hears the ad
                     el.muted = true;
                     el.volume = 0;
                     try {
@@ -213,7 +294,6 @@ async fn open_web_music_player(
                 }
             };
 
-            // Auto-click any "Skip Ad / Bỏ qua quảng cáo" buttons if present
             const clickSkipAdButtons = () => {
                 const buttons = document.querySelectorAll('button, a, div[role="button"], .ytp-ad-skip-button');
                 for (const btn of buttons) {
@@ -294,71 +374,7 @@ fn close_web_music_player(app: AppHandle) {
 
 #[tauri::command]
 fn control_web_music_player(app: AppHandle, action: String, value: Option<f32>) -> Result<bool, String> {
-    let Some(music_win) = app.get_webview_window("music-player") else {
-        return Ok(false);
-    };
-
-    let js = match action.as_str() {
-        "play_pause" => r#"
-            (function() {
-                const audios = Array.from(document.querySelectorAll('audio, video'));
-                const activeAudio = audios.find(a => !a.paused) || audios[0];
-                if (activeAudio) {
-                    if (activeAudio.paused) activeAudio.play();
-                    else activeAudio.pause();
-                    return;
-                }
-                const playBtn = document.querySelector('.player-controls .btn-play, .player-controls [title*="Tạm dừng"], .player-controls [title*="Phát"], button.zm-btn.ic-play-circle-outline, button.zm-btn.ic-pause-circle-outline');
-                if (playBtn) playBtn.click();
-            })();
-        "#.to_string(),
-        "next" => r#"
-            (function() {
-                const nextBtn = document.querySelector('.btn-next, [title*="Bài tiếp theo"], .ic-next');
-                if (nextBtn) {
-                    const btn = nextBtn.closest('button') || nextBtn;
-                    btn.click();
-                }
-            })();
-        "#.to_string(),
-        "prev" => r#"
-            (function() {
-                const prevBtn = document.querySelector('.btn-pre, .btn-prev, [title*="Bài trước"], .ic-pre');
-                if (prevBtn) {
-                    const btn = prevBtn.closest('button') || prevBtn;
-                    btn.click();
-                }
-            })();
-        "#.to_string(),
-        "volume" => {
-            let vol = value.unwrap_or(0.8).clamp(0.0, 1.0);
-            format!(
-                r#"
-                (function() {{
-                    window.__mamxanhUserVolume = {vol};
-                    document.querySelectorAll('audio, video').forEach(el => {{
-                        el.volume = {vol};
-                    }});
-                }})();
-                "#
-            )
-        }
-        "play_first" => r#"
-            (function() {
-                const firstPlay = document.querySelector('button[title*="Phát tất cả"], .zm-card-image .ic-play, .media-item .ic-play, .song-thumb .ic-play');
-                if (firstPlay) {
-                    const btn = firstPlay.closest('button') || firstPlay;
-                    btn.click();
-                }
-            })();
-        "#.to_string(),
-        _ => String::new(),
-    };
-
-    if !js.is_empty() {
-        let _ = music_win.eval(&js);
-    }
-    Ok(true)
+    Ok(execute_zing_action(&app, &action, value))
 }
 
 #[tauri::command]
@@ -393,6 +409,135 @@ fn hide_to_tray(app: AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.hide();
     }
+}
+
+fn build_tray_menu(app: &AppHandle, lang: &str) -> tauri::Result<Menu<tauri::Wry>> {
+    let is_en = lang == "en";
+
+    let item_open = MenuItem::with_id(
+        app,
+        "open",
+        if is_en {
+            "🌱 Open DeskAura Dashboard"
+        } else {
+            "🌱 Mở bảng điều khiển DeskAura"
+        },
+        true,
+        None::<&str>,
+    )?;
+    let sep1 = PredefinedMenuItem::separator(app)?;
+    let item_water = MenuItem::with_id(
+        app,
+        "water_200",
+        if is_en {
+            "💧 Log 1 Cup of Water (+200ml)"
+        } else {
+            "💧 Đã uống 1 cốc nước (+200ml)"
+        },
+        true,
+        None::<&str>,
+    )?;
+    let item_break = MenuItem::with_id(
+        app,
+        "stand_now",
+        if is_en {
+            "🧘 Take a Stand-up Break Now"
+        } else {
+            "🧘 Nghỉ đứng dậy vươn vai ngay"
+        },
+        true,
+        None::<&str>,
+    )?;
+    let sep2 = PredefinedMenuItem::separator(app)?;
+    let item_music = MenuItem::with_id(
+        app,
+        "toggle_music",
+        if is_en {
+            "⏯️ Play / Pause Music (Zing MP3 & Ambient)"
+        } else {
+            "⏯️ Phát / Tạm dừng nhạc (Zing MP3 & Nhạc nền)"
+        },
+        true,
+        None::<&str>,
+    )?;
+    let item_zing_next = MenuItem::with_id(
+        app,
+        "zing_next",
+        if is_en {
+            "⏭️ Next Track on Zing MP3"
+        } else {
+            "⏭️ Chuyển bài tiếp theo (Zing MP3)"
+        },
+        true,
+        None::<&str>,
+    )?;
+    let item_zing_window = MenuItem::with_id(
+        app,
+        "zing_toggle_win",
+        if is_en {
+            "🎶 Show / Hide Zing MP3 Window"
+        } else {
+            "🎶 Hiện / Ẩn cửa sổ Zing MP3"
+        },
+        true,
+        None::<&str>,
+    )?;
+    let item_stop_all = MenuItem::with_id(
+        app,
+        "stop_all_music",
+        if is_en {
+            "🔇 Stop All Music Completely"
+        } else {
+            "🔇 Tắt hẳn toàn bộ nhạc (Zing & Nhạc nền)"
+        },
+        true,
+        None::<&str>,
+    )?;
+    let sep3 = PredefinedMenuItem::separator(app)?;
+    let item_quit = MenuItem::with_id(
+        app,
+        "quit",
+        if is_en {
+            "❌ Quit DeskAura"
+        } else {
+            "❌ Thoát hoàn toàn ứng dụng"
+        },
+        true,
+        None::<&str>,
+    )?;
+
+    Menu::with_items(
+        app,
+        &[
+            &item_open,
+            &sep1,
+            &item_water,
+            &item_break,
+            &sep2,
+            &item_music,
+            &item_zing_next,
+            &item_zing_window,
+            &item_stop_all,
+            &sep3,
+            &item_quit,
+        ],
+    )
+}
+
+#[tauri::command]
+fn set_tray_language(app: AppHandle, lang: String) -> Result<(), String> {
+    if let Some(tray) = app.tray_by_id("main-tray") {
+        if let Ok(new_menu) = build_tray_menu(&app, &lang) {
+            let _ = tray.set_menu(Some(new_menu));
+        }
+        let tooltip = if lang == "en" {
+            "DeskAura — Smart Office Wellness & Ambient Focus Companion"
+        } else {
+            "DeskAura — Chăm sóc sức khỏe & Nhạc nền văn phòng"
+        };
+        let _ = tray.set_tooltip(Some(tooltip));
+    }
+    Ok(())
 }
 
 #[cfg(target_os = "windows")]
@@ -431,7 +576,6 @@ pub fn run() {
 
     tauri::Builder::default()
         .setup(|app| {
-            // Check if launched with --minimized flag (e.g., on Windows boot)
             let args: Vec<String> = std::env::args().collect();
             let start_minimized = args.iter().any(|arg| arg == "--minimized" || arg == "-m");
 
@@ -441,57 +585,7 @@ pub fn run() {
                 }
             }
 
-            // Build Vietnamese System Tray Menu
-            let item_open = MenuItem::with_id(
-                app,
-                "open",
-                "🌱 Mở bảng điều khiển DeskAura",
-                true,
-                None::<&str>,
-            )?;
-            let sep1 = PredefinedMenuItem::separator(app)?;
-            let item_water = MenuItem::with_id(
-                app,
-                "water_200",
-                "💧 Đã uống 1 cốc nước (+200ml)",
-                true,
-                None::<&str>,
-            )?;
-            let item_break = MenuItem::with_id(
-                app,
-                "stand_now",
-                "🧘 Nghỉ đứng dậy vươn vai ngay",
-                true,
-                None::<&str>,
-            )?;
-            let item_music = MenuItem::with_id(
-                app,
-                "toggle_music",
-                "🎵 Bật / Tắt nhạc nền thư giãn",
-                true,
-                None::<&str>,
-            )?;
-            let sep2 = PredefinedMenuItem::separator(app)?;
-            let item_quit = MenuItem::with_id(
-                app,
-                "quit",
-                "❌ Thoát hoàn toàn ứng dụng",
-                true,
-                None::<&str>,
-            )?;
-
-            let tray_menu = Menu::with_items(
-                app,
-                &[
-                    &item_open,
-                    &sep1,
-                    &item_water,
-                    &item_break,
-                    &item_music,
-                    &sep2,
-                    &item_quit,
-                ],
-            )?;
+            let tray_menu = build_tray_menu(app.handle(), "vi")?;
 
             let mut tray_builder = TrayIconBuilder::with_id("main-tray")
                 .tooltip("DeskAura — Chăm sóc sức khỏe & Nhạc nền văn phòng")
@@ -517,7 +611,36 @@ pub fn run() {
                         let _ = app.emit("tray-trigger-break", "standup");
                     }
                     "toggle_music" => {
-                        let _ = app.emit("tray-toggle-music", ());
+                        // 1. If Zing MP3 window exists, toggle its Play/Pause directly!
+                        let has_zing = execute_zing_action(app, "play_pause", None);
+                        // 2. Also notify main window to toggle ambient/radio sounds
+                        let _ = app.emit("tray-toggle-music", has_zing);
+                    }
+                    "zing_next" => {
+                        execute_zing_action(app, "next", None);
+                    }
+                    "zing_toggle_win" => {
+                        if let Some(music_win) = app.get_webview_window("music-player") {
+                            if music_win.is_visible().unwrap_or(false) {
+                                let _ = music_win.hide();
+                                let _ = app.emit("zing-window-state", "hidden_playing");
+                            } else {
+                                let _ = music_win.show();
+                                let _ = music_win.unminimize();
+                                let _ = music_win.set_focus();
+                                let _ = app.emit("zing-window-state", "visible");
+                            }
+                        } else {
+                            let _ = app.emit("tray-open-zing", ());
+                        }
+                    }
+                    "stop_all_music" => {
+                        // Destroy Zing MP3 player and stop all internal ambient/radio sounds
+                        if let Some(music_win) = app.get_webview_window("music-player") {
+                            let _ = music_win.destroy();
+                        }
+                        let _ = app.emit("zing-window-state", "closed");
+                        let _ = app.emit("tray-stop-all-music", ());
                     }
                     "quit" => {
                         let _ = audio_ducker::restore_other_applications();
@@ -550,7 +673,6 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            // Intercept close request on BOTH main and music-player windows so they hide to background and keep playing audio!
             if let WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "main" {
                     api.prevent_close();
@@ -576,9 +698,9 @@ pub fn run() {
             set_autostart_status,
             show_and_focus_window,
             set_window_always_on_top,
-            hide_to_tray
+            hide_to_tray,
+            set_tray_language
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-

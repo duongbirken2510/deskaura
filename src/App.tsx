@@ -30,15 +30,18 @@ import {
 } from './data/wellnessCatalog';
 import { soundEngine } from './services/soundEngine';
 import {
+  closeWebMusicPlayer,
   getAutostartStatus,
   getSystemContext,
   hideWindowToTray,
   onTauriEvent,
   openWebMusicPlayer,
   setAutostartStatus,
+  setTrayLanguage,
   setWindowAlwaysOnTop,
   showAndFocusWindow,
 } from './services/tauriBridge';
+import { AppLanguage, TRANSLATIONS } from './i18n/translations';
 import {
   BreakType,
   DailyWellnessStats,
@@ -53,6 +56,7 @@ const STORAGE_KEYS = {
   HYDRATION: 'mamxanh_hydration_v1',
   VOICE: 'mamxanh_voice_v1',
   DAILY_STATS: 'mamxanh_daily_stats_v1',
+  LANGUAGE: 'deskaura_lang_v1',
 };
 
 const getTodayString = (): string => {
@@ -64,6 +68,11 @@ const getTodayString = (): string => {
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'sounds' | 'settings'>('dashboard');
+  const [lang, setLang] = useState<AppLanguage>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
+    return saved === 'en' ? 'en' : 'vi';
+  });
+  const t = TRANSLATIONS[lang];
 
   // 1. Settings States
   const [standupSettings, setStandupSettings] = useState<StandupSettings>(() => {
@@ -230,14 +239,27 @@ export const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEYS.DAILY_STATS, JSON.stringify(dailyStats));
   }, [dailyStats]);
 
-  // Initialize Autostart Status & Radio Callback
+  // Initialize Autostart Status, Tray Language & Radio Callback
   useEffect(() => {
     getAutostartStatus().then((status) => setAutostartEnabled(status));
+    setTrayLanguage(lang);
     soundEngine.setRadioCallback((playing, error) => {
       setIsRadioPlaying(playing);
       if (error) setRadioError(error);
     });
   }, []);
+
+  const handleSwitchLanguage = (nextLang: AppLanguage) => {
+    setLang(nextLang);
+    localStorage.setItem(STORAGE_KEYS.LANGUAGE, nextLang);
+    setTrayLanguage(nextLang);
+    // Also auto-switch default voice pack if user hasn't customized it
+    if (nextLang === 'en' && voiceSettings.voicePack !== 'custom_tts') {
+      setVoiceSettings((prev) => ({ ...prev, voicePack: 'english_neural' }));
+    } else if (nextLang === 'vi' && voiceSettings.voicePack === 'english_neural') {
+      setVoiceSettings((prev) => ({ ...prev, voicePack: 'female_neural' }));
+    }
+  };
 
   // Helper to trigger Vietnamese Voice with WASAPI Audio Ducking
   const triggerVoiceReminder = useCallback(
@@ -388,12 +410,12 @@ export const App: React.FC = () => {
       startBreakSession('standup');
     }).then((unlisten) => unlisteners.push(unlisten));
 
-    onTauriEvent<void>('tray-toggle-music', () => {
+    onTauriEvent<boolean>('tray-toggle-music', (hasZingWindow) => {
       if (soundEngine.isAnySoundPlaying()) {
         const muted = soundEngine.toggleMasterMute();
         setIsMasterMuted(muted);
-      } else {
-        // Apply default rain + alpha preset
+      } else if (!hasZingWindow) {
+        // Only start default rain preset if Zing MP3 is NOT open
         const defaultMix = SOUND_PRESETS[0].mix;
         soundEngine.applyPreset(defaultMix);
         setActiveSounds((prev) => ({
@@ -403,6 +425,32 @@ export const App: React.FC = () => {
           alpha_waves: true,
         }));
       }
+    }).then((unlisten) => unlisteners.push(unlisten));
+
+    onTauriEvent<void>('tray-stop-all-music', () => {
+      soundEngine.stopAllSounds();
+      setActiveSounds({
+        rain: false,
+        stream: false,
+        ocean: false,
+        wind: false,
+        campfire: false,
+        singing_bowl: false,
+        alpha_waves: false,
+        theta_waves: false,
+        brown_noise: false,
+        pink_noise: false,
+      });
+      setIsRadioPlaying(false);
+      setActiveStationUrl(null);
+      setActiveStationName(null);
+    }).then((unlisten) => unlisteners.push(unlisten));
+
+    onTauriEvent<void>('tray-open-zing', () => {
+      openWebMusicPlayer(
+        'https://zingmp3.vn/moi-phat-hanh',
+        '🎶 DeskAura — Zing MP3 Mới Phát Hành'
+      );
     }).then((unlisten) => unlisteners.push(unlisten));
 
     return () => {
@@ -562,6 +610,7 @@ export const App: React.FC = () => {
 
   const handleStopAllSounds = () => {
     soundEngine.stopAllSounds();
+    closeWebMusicPlayer();
     setActiveSounds({
       rain: false,
       stream: false,
@@ -642,7 +691,7 @@ export const App: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Đứng dậy đúng giờ • Uống đủ nước • Nhạc nền chữa lành
+                {t.brandSubtitle}
               </p>
             </div>
           </div>
@@ -658,7 +707,7 @@ export const App: React.FC = () => {
               }`}
             >
               <LayoutDashboard className="w-4 h-4" />
-              Tổng Quan Sức Khỏe
+              {t.navDashboard}
             </button>
             <button
               onClick={() => setActiveTab('sounds')}
@@ -669,7 +718,7 @@ export const App: React.FC = () => {
               }`}
             >
               <Headphones className="w-4 h-4" />
-              Nhạc Nền Thư Giãn
+              {t.navSounds}
               {anySoundActive && (
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
               )}
@@ -683,16 +732,42 @@ export const App: React.FC = () => {
               }`}
             >
               <Settings className="w-4 h-4" />
-              Cài Đặt & Giọng Việt
+              {t.navSettings}
             </button>
           </nav>
 
-          {/* Right Quick Status & Tray Action */}
-          <div className="flex items-center gap-2.5">
+          {/* Right Quick Status, Language Toggle & Tray Action */}
+          <div className="flex items-center gap-2">
+            {/* Language Switcher Pill (VI / EN) */}
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/80">
+              <button
+                onClick={() => handleSwitchLanguage('vi')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                  lang === 'vi'
+                    ? 'bg-white text-emerald-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Chuyển sang Tiếng Việt"
+              >
+                🇻🇳 VI
+              </button>
+              <button
+                onClick={() => handleSwitchLanguage('en')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                  lang === 'en'
+                    ? 'bg-white text-emerald-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Switch to English"
+              >
+                🇬🇧 EN
+              </button>
+            </div>
+
             {isDuckedActive && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-100 text-sky-800 border border-sky-200 animate-pulse">
                 <Volume2 className="w-3.5 h-3.5" />
-                Đang giảm âm ứng dụng khác
+                {t.duckingBadge}
               </span>
             )}
 
@@ -703,15 +778,14 @@ export const App: React.FC = () => {
                   ? 'bg-amber-50 text-amber-700 border-amber-200'
                   : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80'
               }`}
-              title="Tạm dừng hoặc tiếp tục bộ đếm nhắc nhở"
             >
               {isPaused ? (
                 <>
-                  <Play className="w-3.5 h-3.5" /> Tiếp tục đếm
+                  <Play className="w-3.5 h-3.5" /> {t.resumeTimer}
                 </>
               ) : (
                 <>
-                  <Pause className="w-3.5 h-3.5" /> Tạm dừng
+                  <Pause className="w-3.5 h-3.5" /> {t.pauseTimer}
                 </>
               )}
             </button>
@@ -719,10 +793,9 @@ export const App: React.FC = () => {
             <button
               onClick={() => hideWindowToTray()}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition"
-              title="Thu gọn xuống khay hệ thống (System Tray) và tiếp tục chạy nền"
             >
               <Minimize2 className="w-3.5 h-3.5" />
-              Chạy ẩn dưới Tray
+              {t.hideToTray}
             </button>
           </div>
         </div>
@@ -738,10 +811,10 @@ export const App: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm font-extrabold">
-                  💧 Đến giờ uống nước rồi bạn ơi!
+                  {t.waterToastTitle}
                 </p>
                 <p className="text-xs text-sky-50">
-                  Hãy uống một ngụm nước mát để duy trì sự tỉnh táo và bảo vệ sức khỏe nhé.
+                  {t.waterToastDesc}
                 </p>
               </div>
             </div>
@@ -752,14 +825,14 @@ export const App: React.FC = () => {
                   onClick={() => handleAddWater(amt)}
                   className="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-white text-sky-700 hover:bg-sky-50 transition shadow-sm"
                 >
-                  + Đã uống {amt}ml
+                  {t.drankBtn} {amt}ml
                 </button>
               ))}
               <button
                 onClick={() => setWaterToastVisible(false)}
                 className="px-3 py-2 rounded-xl text-xs font-semibold bg-white/15 hover:bg-white/25 text-white transition"
               >
-                Để sau
+                {t.laterBtn}
               </button>
             </div>
           </div>
@@ -778,10 +851,10 @@ export const App: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
                       <Activity className="w-3.5 h-3.5" />
-                      Nhắc Đứng Dậy & Vận Động
+                      {t.standupBadge}
                     </span>
                     <span className="text-xs font-semibold text-slate-400">
-                      Đã đứng dậy: {dailyStats.standupCompletedCount} lần
+                      {t.standupCountLabel} {dailyStats.standupCompletedCount} {t.timesUnit}
                     </span>
                   </div>
 
@@ -826,13 +899,13 @@ export const App: React.FC = () => {
 
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                       <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        Đứng dậy sau
+                        {t.standupInLabel}
                       </span>
                       <span className="text-4xl font-extrabold text-slate-800 font-mono mt-0.5">
                         {formatMMSS(standupSecondsLeft)}
                       </span>
                       <span className="text-[11px] font-medium text-emerald-600 mt-1">
-                        Chu kỳ {standupSettings.standupIntervalMinutes} phút
+                        {t.cycleMinutes} {standupSettings.standupIntervalMinutes} {t.minutesUnit}
                       </span>
                     </div>
                   </div>
@@ -845,12 +918,12 @@ export const App: React.FC = () => {
                       </div>
                       <div>
                         <p className="text-[11px] text-slate-500 font-medium">
-                          Nghỉ mắt 20-20-20
+                          {t.eyeBreak202020}
                         </p>
                         <p className="text-xs font-bold text-slate-800 font-mono">
                           {standupSettings.eyeBreakEnabled
                             ? formatMMSS(eyeSecondsLeft)
-                            : 'Đang tắt'}
+                            : t.disabledLabel}
                         </p>
                       </div>
                     </div>
@@ -861,12 +934,12 @@ export const App: React.FC = () => {
                       </div>
                       <div>
                         <p className="text-[11px] text-slate-500 font-medium">
-                          Trạng thái chuột/phím
+                          {t.mouseKeyStatus}
                         </p>
                         <p className="text-xs font-bold text-slate-800">
                           {systemIdleSec > 5
-                            ? `Nghỉ ${systemIdleSec}s`
-                            : 'Đang làm việc'}
+                            ? `${t.idleSecPrefix} ${systemIdleSec}s`
+                            : t.workingNow}
                         </p>
                       </div>
                     </div>
@@ -879,14 +952,13 @@ export const App: React.FC = () => {
                     onClick={() => startBreakSession('standup')}
                     className="flex-1 py-2.5 px-4 rounded-2xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm shadow-emerald-500/20 transition"
                   >
-                    🧘 Đứng dậy nghỉ ngay
+                    {t.standNowBtn}
                   </button>
                   <button
                     onClick={() => startBreakSession('eye')}
                     className="py-2.5 px-3.5 rounded-2xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition"
-                    title="Tập nhìn xa 20 giây bảo vệ mắt"
                   >
-                    👀 Nghỉ mắt 20s
+                    {t.eye20sBtn}
                   </button>
                   <button
                     onClick={() => {
@@ -898,7 +970,6 @@ export const App: React.FC = () => {
                       );
                     }}
                     className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
-                    title="Đặt lại đồng hồ đếm ngược"
                   >
                     <RotateCcw className="w-4 h-4" />
                   </button>
@@ -911,15 +982,14 @@ export const App: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200/70">
                       <Droplets className="w-3.5 h-3.5" />
-                      Uống Nước Trong Ngày
+                      {t.hydrationBadge}
                     </span>
                     <button
                       onClick={() => triggerVoiceReminder('water')}
                       className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 hover:text-sky-700"
-                      title="Nghe lời nhắc uống nước Tiếng Việt"
                     >
                       <Bell className="w-3.5 h-3.5" />
-                      Nhắc sau {formatMMSS(waterSecondsLeft)}
+                      {t.remindAfter} {formatMMSS(waterSecondsLeft)}
                     </button>
                   </div>
 
@@ -950,25 +1020,24 @@ export const App: React.FC = () => {
                       </div>
                       <p className="text-xs text-slate-500 mt-1">
                         {dailyStats.waterIntakeMl >= hydrationSettings.dailyGoalMl
-                          ? '🎉 Tuyệt vời! Bạn đã hoàn thành mục tiêu nước hôm nay.'
-                          : `Cần bổ sung thêm ${
+                          ? t.goalCompletedMsg
+                          : `${t.needMoreWaterPrefix} ${
                               hydrationSettings.dailyGoalMl -
                               dailyStats.waterIntakeMl
-                            } ml nữa.`}
+                            } ${t.needMoreWaterSuffix}`}
                       </p>
                       <button
                         onClick={() => handleAddWater(50)}
                         className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-200/70 transition"
-                        title="Cộng nhanh 1 ngụm nhỏ"
                       >
-                        <Coffee className="w-3 h-3" /> +50ml ngụm nhỏ
+                        <Coffee className="w-3 h-3" /> {t.smallSip50}
                       </button>
                     </div>
                   </div>
 
                   {/* 1-Click Quick Drink Buttons */}
                   <p className="text-xs font-bold text-slate-600 mb-2">
-                    Ghi nhận uống nước 1-chạm:
+                    {t.quickDrinkTitle}
                   </p>
                   <div className="grid grid-cols-3 gap-2.5 mb-4">
                     {hydrationSettings.quickAmounts.map((amt, i) => (
@@ -979,7 +1048,7 @@ export const App: React.FC = () => {
                       >
                         <span>+{amt}ml</span>
                         <span className="text-[10px] font-normal text-sky-100">
-                          {i === 0 ? 'Ngụm mát' : i === 1 ? 'Cốc vừa' : 'Ly lớn'}
+                          {i === 0 ? t.sipLabel : i === 1 ? t.cupLabel : t.largeGlassLabel}
                         </span>
                       </button>
                     ))}
@@ -990,7 +1059,7 @@ export const App: React.FC = () => {
                 <div className="pt-3 border-t border-slate-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      Nhật ký hôm nay ({dailyStats.waterLogs.length})
+                      {t.todayLogsLabel} ({dailyStats.waterLogs.length})
                     </span>
                     {dailyStats.waterLogs.length > 0 && (
                       <button
@@ -1003,14 +1072,14 @@ export const App: React.FC = () => {
                         }
                         className="text-[11px] text-slate-400 hover:text-rose-500 inline-flex items-center gap-1"
                       >
-                        <Trash2 className="w-3 h-3" /> Đặt lại
+                        <Trash2 className="w-3 h-3" /> {t.resetBtn}
                       </button>
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
                     {dailyStats.waterLogs.length === 0 ? (
                       <span className="text-xs text-slate-400 italic">
-                        Chưa có lần uống nước nào được ghi nhận hôm nay
+                        {t.noWaterLogsYet}
                       </span>
                     ) : (
                       dailyStats.waterLogs.slice(0, 5).map((log) => (
@@ -1032,7 +1101,7 @@ export const App: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/70">
                       <Sun className="w-3.5 h-3.5" />
-                      Chậu Cây Bàn Làm Việc
+                      {t.deskPlantBadge}
                     </span>
                     <span className="text-xs font-bold text-emerald-600">
                       {plantGrowthPct}%
@@ -1043,10 +1112,10 @@ export const App: React.FC = () => {
                     <VirtualDeskPlant growthPercent={plantGrowthPct} />
                     <p className="text-xs font-bold text-slate-700 mt-1">
                       {plantGrowthPct >= 85
-                        ? '🌸 Cây đang nở hoa rực rỡ!'
+                        ? t.plantBlooming
                         : plantGrowthPct >= 50
-                        ? '🌿 Cây đang vươn lá xanh tươi'
-                        : '🌱 Hãy uống nước & đứng dậy để cây lớn nhé'}
+                        ? t.plantGrowing
+                        : t.plantSeedling}
                     </p>
                   </div>
 
@@ -1054,16 +1123,14 @@ export const App: React.FC = () => {
                   <div className="mt-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-bold text-slate-700">
-                        🎵 Bật nhanh nhạc nền:
+                        {t.quickPlaySound}
                       </span>
-                      {anySoundActive && (
-                        <button
-                          onClick={handleStopAllSounds}
-                          className="text-[11px] font-bold text-rose-500 hover:underline"
-                        >
-                          Dừng nhạc
-                        </button>
-                      )}
+                      <button
+                        onClick={handleStopAllSounds}
+                        className="text-[11px] font-bold text-rose-500 hover:underline"
+                      >
+                        {t.stopAllMusicBtn}
+                      </button>
                     </div>
                     <div className="space-y-2">
                       {SOUND_PRESETS.slice(0, 3).map((preset) => (
@@ -1086,7 +1153,7 @@ export const App: React.FC = () => {
                   onClick={() => setActiveTab('sounds')}
                   className="mt-4 w-full py-2.5 rounded-2xl text-xs font-bold bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 transition"
                 >
-                  Mở bộ trộn nhạc đầy đủ →
+                  {t.openFullMixerBtn}
                 </button>
               </div>
             </div>
@@ -1100,13 +1167,13 @@ export const App: React.FC = () => {
                 <div>
                   <p className="text-sm font-bold text-slate-800">
                     {anySoundActive
-                      ? `Đang phát nhạc nền thư giãn ${
+                      ? `${t.playingAmbientStatus} ${
                           activeStationName ? `(${activeStationName})` : ''
                         }`
-                      : 'Chưa bật nhạc nền thư giãn'}
+                      : t.noAmbientStatus}
                   </p>
                   <p className="text-xs text-slate-500">
-                    Khi đến giờ nhắc nhở, ứng dụng sẽ tự động giảm nhỏ âm lượng các ứng dụng khác trên Windows và đọc lời nhắc Tiếng Việt.
+                    {t.voiceDuckExplain}
                   </p>
                 </div>
               </div>
@@ -1121,7 +1188,7 @@ export const App: React.FC = () => {
                   }
                   className="px-3.5 py-2 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition"
                 >
-                  🎶 Mở Zing MP3 (Mới phát hành)
+                  {t.openZingBtn}
                 </button>
                 <button
                   onClick={() =>
@@ -1132,7 +1199,7 @@ export const App: React.FC = () => {
                   }
                   className="px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 transition"
                 >
-                  📻 Bật đài SomaFM Chill
+                  {t.playSomaFmBtn}
                 </button>
                 <button
                   disabled={isTestingVoice}
@@ -1143,7 +1210,7 @@ export const App: React.FC = () => {
                   }}
                   className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition disabled:opacity-60"
                 >
-                  🔊 Nghe thử Giọng nhắc Tiếng Việt
+                  {t.testVoiceBtn}
                 </button>
               </div>
             </div>
@@ -1160,6 +1227,7 @@ export const App: React.FC = () => {
             isRadioPlaying={isRadioPlaying}
             radioVolume={radioVolume}
             radioError={radioError}
+            lang={lang}
             onToggleSound={handleToggleSound}
             onChangeSoundVolume={handleChangeSoundVolume}
             onApplyPreset={handleApplyPreset}
@@ -1190,6 +1258,7 @@ export const App: React.FC = () => {
             startMinimized={startMinimized}
             isTestingVoice={isTestingVoice}
             lastDuckedCount={duckedAppsCount}
+            lang={lang}
             onUpdateStandup={(partial) => {
               setStandupSettings((prev) => {
                 const updated = { ...prev, ...partial };
@@ -1236,6 +1305,7 @@ export const App: React.FC = () => {
         totalSeconds={breakTotalSec}
         holdToSkip={standupSettings.holdToSkip}
         duckedAppsCount={duckedAppsCount}
+        lang={lang}
         onCompleteBreak={completeBreakSession}
         onSnoozeBreak={snoozeBreakSession}
         onSkipBreak={skipBreakSession}

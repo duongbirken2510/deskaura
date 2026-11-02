@@ -92,6 +92,7 @@ interface SoundMixerPanelProps {
   isRadioPlaying: boolean;
   radioVolume: number;
   radioError: string | null;
+  lang?: 'vi' | 'en';
   onToggleSound: (id: SoundId) => void;
   onChangeSoundVolume: (id: SoundId, vol: number) => void;
   onApplyPreset: (mix: Partial<Record<SoundId, number>>) => void;
@@ -112,6 +113,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
   isRadioPlaying,
   radioVolume,
   radioError,
+  lang = 'vi',
   onToggleSound,
   onChangeSoundVolume,
   onApplyPreset,
@@ -122,6 +124,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
   onStopRadio,
   onChangeRadioVolume,
 }) => {
+  const isEn = lang === 'en';
   const [customStreamUrl, setCustomStreamUrl] = useState('');
   const [zingCustomUrl, setZingCustomUrl] = useState('https://zingmp3.vn/moi-phat-hanh');
   const [zingCustomTitle, setZingCustomTitle] = useState('');
@@ -206,7 +209,9 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
   };
 
   const activeCount =
-    Object.values(activeSounds).filter(Boolean).length + (isRadioPlaying ? 1 : 0);
+    Object.values(activeSounds).filter(Boolean).length +
+    (isRadioPlaying ? 1 : 0) +
+    (zingWindowState !== 'closed' ? 1 : 0);
 
   const handleLocalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -224,10 +229,14 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
           <div>
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
               <Music className="w-5 h-5 text-emerald-500" />
-              Phòng Thu Âm Thanh Chữa Lành & Tập Trung (Offline + Online + Zing MP3)
+              {isEn
+                ? 'Ambient Sound Studio & Focus Music (Offline + Online + Zing MP3)'
+                : 'Phòng Thu Âm Thanh Chữa Lành & Tập Trung (Offline + Online + Zing MP3)'}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Bật nhiều lớp âm thanh thiên nhiên Offline cùng lúc và hòa trộn với Zing MP3 hoặc đài Radio Lofi
+              {isEn
+                ? 'Layer multiple offline nature soundscapes and mix with Zing MP3 or Lofi Radio streams'
+                : 'Bật nhiều lớp âm thanh thiên nhiên Offline cùng lúc và hòa trộn với Zing MP3 hoặc đài Radio Lofi'}
             </p>
           </div>
 
@@ -236,7 +245,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
               <button
                 onClick={onToggleMasterMute}
                 className="text-slate-600 hover:text-emerald-600 transition"
-                title={isMasterMuted ? 'Bật tiếng' : 'Tắt tiếng tạm thời'}
+                title={isMasterMuted ? (isEn ? 'Unmute' : 'Bật tiếng') : isEn ? 'Mute' : 'Tắt tiếng tạm thời'}
               >
                 {isMasterMuted ? (
                   <VolumeX className="w-4 h-4 text-rose-500" />
@@ -245,7 +254,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
                 )}
               </button>
               <span className="text-xs font-semibold text-slate-600">
-                Âm lượng tổng
+                {isEn ? 'Master Vol' : 'Âm lượng tổng'}
               </span>
               <input
                 type="range"
@@ -263,10 +272,13 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
 
             {activeCount > 0 && (
               <button
-                onClick={onStopAllSounds}
+                onClick={() => {
+                  setZingWindowState('closed');
+                  onStopAllSounds();
+                }}
                 className="px-3.5 py-2 rounded-2xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition"
               >
-                Tắt tất cả ({activeCount})
+                {isEn ? `Stop All (${activeCount})` : `Tắt tất cả (${activeCount})`}
               </button>
             )}
           </div>
@@ -275,7 +287,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
         {/* 1-Click Mood Presets */}
         <div className="mt-4">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-            Tổ hợp âm thanh gợi ý 1-chạm (Offline Presets)
+            {isEn ? '1-Click Mood Soundscapes (Offline Presets)' : 'Tổ hợp âm thanh gợi ý 1-chạm (Offline Presets)'}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {SOUND_PRESETS.map((preset) => (

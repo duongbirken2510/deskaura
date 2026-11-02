@@ -18,6 +18,7 @@ interface BreakOverlayModalProps {
   totalSeconds: number;
   holdToSkip: boolean;
   duckedAppsCount: number;
+  lang?: 'vi' | 'en';
   onCompleteBreak: () => void;
   onSnoozeBreak: (minutes: number) => void;
   onSkipBreak: () => void;
@@ -32,12 +33,14 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
   totalSeconds,
   holdToSkip,
   duckedAppsCount,
+  lang = 'vi',
   onCompleteBreak,
   onSnoozeBreak,
   onSkipBreak,
   onQuickDrinkWater,
   onReplayVoice,
 }) => {
+  const isEn = lang === 'en';
   const [exerciseIdx, setExerciseIdx] = useState(0);
   const [holdProgress, setHoldProgress] = useState(0);
   const [drankDuringBreak, setDrankDuringBreak] = useState(false);
@@ -110,9 +113,15 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
             <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
             {breakType === 'eye'
-              ? 'Nghỉ Mắt Quy Tắc 20-20-20'
+              ? isEn
+                ? '20-20-20 Eye Care Break'
+                : 'Nghỉ Mắt Quy Tắc 20-20-20'
               : breakType === 'combo'
-              ? 'Đứng Dậy Vươn Vai & Bổ Sung Nước'
+              ? isEn
+                ? 'Stand Up, Stretch & Hydrate'
+                : 'Đứng Dậy Vươn Vai & Bổ Sung Nước'
+              : isEn
+              ? 'Time to Stand Up & Stretch'
               : 'Giờ Đứng Dậy Thư Giãn Cơ Thể'}
           </span>
 
@@ -120,16 +129,18 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
             {duckedAppsCount > 0 && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-sky-50 text-sky-700 border border-sky-200">
                 <Volume2 className="w-3.5 h-3.5 text-sky-500 animate-pulse" />
-                Đã giảm âm lượng {duckedAppsCount} ứng dụng khác
+                {isEn
+                  ? `Lowered volume of ${duckedAppsCount} other apps`
+                  : `Đã giảm âm lượng ${duckedAppsCount} ứng dụng khác`}
               </span>
             )}
             <button
               onClick={onReplayVoice}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-              title="Phát lại giọng nhắc Tiếng Việt"
+              title={isEn ? 'Replay voice reminder' : 'Phát lại giọng nhắc'}
             >
               <Volume2 className="w-3.5 h-3.5 text-emerald-600" />
-              Nghe lại lời nhắc
+              {isEn ? 'Replay Voice' : 'Nghe lại lời nhắc'}
             </button>
           </div>
         </div>
@@ -143,7 +154,7 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
               {formatTime(remainingSeconds)}
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Thời gian thư giãn còn lại
+              {isEn ? 'Remaining break time' : 'Thời gian thư giãn còn lại'}
             </p>
           </div>
 
@@ -152,7 +163,7 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
             <div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
-                  Bài tập gợi ý tại bàn
+                  {isEn ? 'Guided Desk Stretch' : 'Bài tập gợi ý tại bàn'}
                 </span>
                 <button
                   onClick={() =>
@@ -161,7 +172,7 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
                   className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-emerald-600 transition"
                 >
                   <RefreshCw className="w-3 h-3" />
-                  Đổi động tác khác
+                  {isEn ? 'Next Stretch' : 'Đổi động tác khác'}
                 </button>
               </div>
               <h3 className="text-xl font-bold text-slate-800 mt-1">
@@ -171,7 +182,7 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
                 {exercise.instruction}
               </p>
               <p className="text-xs font-medium text-emerald-700 mt-2">
-                ✨ Lợi ích: {exercise.benefit}
+                ✨ {isEn ? 'Benefit:' : 'Lợi ích:'} {exercise.benefit}
               </p>
             </div>
 
@@ -183,11 +194,15 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-800">
-                    Kết hợp uống nước khi đứng dậy
+                    {isEn ? 'Hydrate while standing up' : 'Kết hợp uống nước khi đứng dậy'}
                   </p>
                   <p className="text-xs text-slate-500">
                     {drankDuringBreak
-                      ? 'Tuyệt vời! Bạn đã bổ sung thêm 200ml nước mát.'
+                      ? isEn
+                        ? 'Awesome! Logged +200ml of refreshing water.'
+                        : 'Tuyệt vời! Bạn đã bổ sung thêm 200ml nước mát.'
+                      : isEn
+                      ? 'Drink a glass of water to refresh your body'
                       : 'Hãy uống 1 cốc nước để cơ thể sảng khoái hơn'}
                   </p>
                 </div>
@@ -204,7 +219,13 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
                     : 'bg-sky-500 hover:bg-sky-600 text-white shadow-sm shadow-sky-500/20'
                 }`}
               >
-                {drankDuringBreak ? '✓ Đã +200ml' : '+ Uống 200ml'}
+                {drankDuringBreak
+                  ? isEn
+                    ? '✓ +200ml Logged'
+                    : '✓ Đã +200ml'
+                  : isEn
+                  ? '+ Drink 200ml'
+                  : '+ Uống 200ml'}
               </button>
             </div>
           </div>
@@ -218,13 +239,13 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
             >
               <Clock className="w-3.5 h-3.5" />
-              Hoãn 5 phút
+              {isEn ? 'Snooze 5m' : 'Hoãn 5 phút'}
             </button>
             <button
               onClick={() => onSnoozeBreak(15)}
               className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
             >
-              Đang họp (Hoãn 15p)
+              {isEn ? 'In Meeting (15m)' : 'Đang họp (Hoãn 15p)'}
             </button>
           </div>
 
@@ -243,7 +264,13 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
                 style={{ width: `${holdProgress}%` }}
               />
               <span className="relative z-10">
-                {holdToSkip ? 'Nhấn giữ để bỏ qua' : 'Bỏ qua'}
+                {holdToSkip
+                  ? isEn
+                    ? 'Hold to Skip'
+                    : 'Nhấn giữ để bỏ qua'
+                  : isEn
+                  ? 'Skip'
+                  : 'Bỏ qua'}
               </span>
             </button>
 
@@ -252,7 +279,7 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-md shadow-emerald-500/20 transition"
             >
               <CheckCircle2 className="w-4 h-4" />
-              Hoàn thành nghỉ ngơi
+              {isEn ? 'Complete Break' : 'Hoàn thành nghỉ ngơi'}
             </button>
           </div>
         </div>

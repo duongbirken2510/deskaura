@@ -524,7 +524,7 @@ class SoundEngine {
         await this.playHealingChime(settings.volume);
       }
 
-      // 4. Play Vietnamese neural voice file or custom TTS
+      // 4. Play Vietnamese or English neural voice file or custom TTS
       if (settings.voicePack === 'custom_tts') {
         const text =
           kind === 'water'
@@ -533,6 +533,17 @@ class SoundEngine {
             ? 'Thời gian nghỉ ngơi đã hoàn tất. Chúc bạn làm việc hiệu quả!'
             : settings.customStandupText;
         await this.speakViaBrowserTTS(text, settings.volume);
+      } else if (settings.voicePack === 'english_neural') {
+        const enMap: Record<string, string> = {
+          standup: '/voices/standup_en.mp3',
+          eye: '/voices/eye_en.mp3',
+          combo: '/voices/combo_en.mp3',
+          water: '/voices/water_en.mp3',
+          break_done: '/voices/break_done_en.mp3',
+          test: '/voices/test_en.mp3',
+        };
+        const audioPath = enMap[kind] || '/voices/standup_en.mp3';
+        await this.playMp3VoiceFile(audioPath, settings.volume);
       } else {
         const isMale = settings.voicePack === 'male_neural';
         const fileMap: Record<string, string> = {

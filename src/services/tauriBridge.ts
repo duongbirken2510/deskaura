@@ -149,6 +149,15 @@ export async function openInSystemBrowser(url: string): Promise<void> {
   }
 }
 
+export async function setTrayLanguage(lang: 'vi' | 'en'): Promise<void> {
+  if (!isTauriEnv()) return;
+  try {
+    await invoke('set_tray_language', { lang });
+  } catch {
+    // ignore
+  }
+}
+
 export async function onTauriEvent<T>(
   eventName: string,
   handler: (payload: T) => void
