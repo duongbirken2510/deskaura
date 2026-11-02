@@ -1,8 +1,8 @@
 {
-  "name": "freshdesk-remind",
+  "name": "deskaura",
   "private": true,
   "version": "1.0.0",
-  "description": "Ứng dụng chăm sóc sức khỏe dân văn phòng: Nhắc đứng dậy, Uống nước & Nhạc nền thư giãn",
+  "description": "DeskAura — Ứng dụng chăm sóc sức khỏe dân văn phòng: Nhắc đứng dậy, Uống nước & Nhạc nền thư giãn",
   "type": "module",
   "scripts": {
     "dev": "vite",

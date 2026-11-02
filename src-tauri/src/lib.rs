@@ -91,7 +91,7 @@ async fn open_web_music_player(
     }
 
     let win_title = title.unwrap_or_else(|| {
-        "🎶 Mầm Xanh — Trình Phát Nhạc Zing MP3 (Bấm X để ẩn chạy ngầm, nhạc vẫn phát)".to_string()
+        "🎶 DeskAura — Trình Phát Nhạc Zing MP3 (Bấm X để ẩn chạy ngầm, nhạc vẫn phát)".to_string()
     });
 
     let init_script = r#"
@@ -405,7 +405,7 @@ fn ensure_single_instance_or_focus_existing() -> bool {
     unsafe {
         if let Ok(hwnd) = FindWindowW(
             None,
-            w!("Mầm Xanh — Trợ Lý Sức Khỏe & Nhạc Nền Văn Phòng"),
+            w!("DeskAura — Trợ Lý Sức Khỏe & Nhạc Nền Văn Phòng"),
         ) {
             if !hwnd.0.is_null() {
                 let _ = ShowWindow(hwnd, SW_SHOW);
@@ -445,7 +445,7 @@ pub fn run() {
             let item_open = MenuItem::with_id(
                 app,
                 "open",
-                "🌱 Mở bảng điều khiển Mầm Xanh",
+                "🌱 Mở bảng điều khiển DeskAura",
                 true,
                 None::<&str>,
             )?;
@@ -494,7 +494,7 @@ pub fn run() {
             )?;
 
             let mut tray_builder = TrayIconBuilder::with_id("main-tray")
-                .tooltip("Mầm Xanh — Chăm sóc sức khỏe & Nhạc nền văn phòng")
+                .tooltip("DeskAura — Chăm sóc sức khỏe & Nhạc nền văn phòng")
                 .menu(&tray_menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {

@@ -163,7 +163,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
   const handleOpenZingUrl = async (url: string, title?: string) => {
     setZingCustomUrl(url);
     setZingWindowState('visible');
-    await openWebMusicPlayer(url, title || '🎶 Mầm Xanh — Trình Phát Nhạc Zing MP3');
+    await openWebMusicPlayer(url, title || '🎶 DeskAura — Trình Phát Nhạc Zing MP3');
   };
 
   const handleAddBookmark = () => {
@@ -326,7 +326,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
               )}
             </div>
             <h3 className="text-base font-bold text-slate-800">
-              Phát Nhạc Zing MP3 Chạy Ngầm & Điều Khiển Từ Xa Ngay Trên Mầm Xanh
+              Phát Nhạc Zing MP3 Chạy Ngầm & Điều Khiển Từ Xa Ngay Trên DeskAura
             </h3>
             <p className="text-xs text-slate-600 mt-0.5">
               💡 <strong>Mẹo hay:</strong> Khi bấm nút <strong>X (Đóng)</strong> trên cửa sổ Zing MP3, cửa sổ sẽ <strong>tự động ẩn xuống chạy ngầm và nhạc vẫn tiếp tục phát</strong>! Bạn chỉ cần dùng bảng điều khiển bên dưới để chuyển bài hoặc chỉnh âm lượng.
@@ -347,7 +347,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
                 onClick={() =>
                   handleOpenZingUrl(
                     'https://zingmp3.vn/moi-phat-hanh',
-                    '🎶 Mầm Xanh — Zing MP3 Mới Phát Hành'
+                    '🎶 DeskAura — Zing MP3 Mới Phát Hành'
                   )
                 }
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 text-white shadow-md shadow-purple-500/20 transition"
@@ -458,7 +458,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
               <button
                 key={item.id}
                 onClick={() =>
-                  handleOpenZingUrl(item.url, `🎶 Mầm Xanh — ${item.title}`)
+                  handleOpenZingUrl(item.url, `🎶 DeskAura — ${item.title}`)
                 }
                 className="p-3 rounded-2xl bg-white/90 hover:bg-white border border-purple-100 hover:border-purple-300 text-left transition flex items-center justify-between group shadow-sm"
               >
@@ -533,7 +533,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
                 if (zingCustomUrl.trim()) {
                   handleOpenZingUrl(
                     zingCustomUrl.trim(),
-                    zingCustomTitle.trim() || '🎶 Mầm Xanh — Zing MP3'
+                    zingCustomTitle.trim() || '🎶 DeskAura — Zing MP3'
                   );
                 }
               }}

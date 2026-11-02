@@ -2,7 +2,7 @@ use winreg::enums::*;
 use winreg::RegKey;
 
 const RUN_KEY_PATH: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
-const APP_REG_NAME: &str = "MamXanhOfficeWellness";
+const APP_REG_NAME: &str = "DeskAuraOfficeWellness";
 
 pub fn is_autostart_enabled() -> bool {
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);

@@ -629,16 +629,16 @@ export const App: React.FC = () => {
           <div className="flex items-center gap-3">
             <img
               src="/app-icon.svg"
-              alt="Mầm Xanh Logo"
+              alt="DeskAura Logo"
               className="w-10 h-10 rounded-2xl shadow-sm"
             />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base font-extrabold tracking-tight text-slate-800">
-                  Mầm Xanh
+                  DeskAura
                 </h1>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                  Windows Wellness
+                  Office Wellness
                 </span>
               </div>
               <p className="text-xs text-slate-500">
@@ -1116,7 +1116,7 @@ export const App: React.FC = () => {
                   onClick={() =>
                     openWebMusicPlayer(
                       'https://zingmp3.vn/moi-phat-hanh',
-                      '🎶 Mầm Xanh — Zing MP3 Mới Phát Hành'
+                      '🎶 DeskAura — Zing MP3 Mới Phát Hành'
                     )
                   }
                   className="px-3.5 py-2 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition"

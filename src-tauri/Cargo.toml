@@ -1,12 +1,12 @@
 [package]
-name = "freshdesk-remind"
+name = "deskaura"
 version = "1.0.0"
-description = "Mầm Xanh - Ứng dụng chăm sóc sức khỏe dân văn phòng trên Windows"
-authors = ["Antigravity"]
+description = "DeskAura - Ứng dụng chăm sóc sức khỏe dân văn phòng trên Windows"
+authors = ["duongbirken2510"]
 edition = "2021"
 
 [lib]
-name = "freshdesk_remind_lib"
+name = "deskaura_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

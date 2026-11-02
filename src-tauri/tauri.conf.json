@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "MamXanh",
+  "productName": "DeskAura",
   "version": "1.0.0",
-  "identifier": "com.mamxanh.officewellness",
+  "identifier": "com.deskaura.officewellness",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Mầm Xanh — Trợ Lý Sức Khỏe & Nhạc Nền Văn Phòng",
+        "title": "DeskAura — Trợ Lý Sức Khỏe & Nhạc Nền Văn Phòng",
         "width": 1060,
         "height": 720,
         "minWidth": 880,
