@@ -1,0 +1,18 @@
+# Node & Frontend build
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Rust / Tauri build artifacts (rất nặng, không đẩy lên Git)
+src-tauri/target/
+src-tauri/WixTools/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+*.pdb
+
