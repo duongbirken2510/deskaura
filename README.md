@@ -10,6 +10,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11%20(x64)-0078D6?style=for-the-badge&logo=windows)](https://github.com/duongbirken2510/deskaura/releases/tag/v1.0.0)
 [![Built with Tauri v2](https://img.shields.io/badge/Tauri%20v2-Rust%20%2B%20React-24C8DB?style=for-the-badge&logo=tauri)](https://tauri.app/)
 [![Languages](https://img.shields.io/badge/Language-Ti%E1%BA%BFng%20Vi%E1%BB%87t%20%7C%20English-10B981?style=for-the-badge)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge)](./LICENSE)
 [![Download Release](https://img.shields.io/badge/Download-v1.0.0%20(.exe)-059669?style=for-the-badge&logo=github)](https://github.com/duongbirken2510/deskaura/releases/tag/v1.0.0)
 
 [**📥 Tải Bộ Cài Đặt Windows (`v1.0.0`)**](https://github.com/duongbirken2510/deskaura/releases/tag/v1.0.0) • [**✨ Tính Năng Nổi Bật**](#-tính-năng-nổi-bật--key-features) • [**📸 Ảnh Chụp Giao Diện**](#-ảnh-chụp-giao-diện--screenshots) • [**🚀 Hướng Dẫn Cài Đặt**](#-tải--cài-đặt-nhanh-trên-windows)
@@ -67,6 +68,10 @@ Bạn có thể tải trực tiếp tại mục [**Releases v1.0.0**](https://gi
 1. **[`DeskAura_1.0.0_x64-setup.exe`](https://github.com/duongbirken2510/deskaura/releases/download/v1.0.0/DeskAura_1.0.0_x64-setup.exe)** *(~2.9 MB)* — Bộ cài đặt chuẩn cho Windows 10/11 (Tự động tạo biểu tượng Desktop & Start Menu).
 2. **[`DeskAura_Portable.exe`](https://github.com/duongbirken2510/deskaura/releases/download/v1.0.0/DeskAura_Portable.exe)** *(~10.8 MB)* — Bản chạy ngay lập tức (Portable), không cần cài đặt.
 
+> 💡 **Lưu ý khi mở lần đầu trên Windows (Windows SmartScreen):**
+> Do ứng dụng là dự án mã nguồn mở phát hành độc lập (chưa đăng ký chứng chỉ thương mại EV Code Signing của Microsoft), trong lần chạy đầu tiên Windows Defender có thể hiển thị hộp thoại màu xanh **"Windows protected your PC"**.
+> 👉 Bạn chỉ cần bấm vào **`More info`** *(Thông tin thêm)* $\rightarrow$ chọn **`Run anyway`** *(Vẫn chạy)* để mở ứng dụng bình thường. Toàn bộ mã nguồn đều công khai và minh bạch 100% tại repository này.
+
 ---
 
 ## 🛠️ Phát Triển Từ Mã Nguồn / Build From Source
@@ -81,3 +86,10 @@ npm run tauri dev
 # 3. Đóng gói bộ cài đặt .exe chuẩn cho Windows
 npm run tauri build -- --bundles nsis
 ```
+
+---
+
+## 📄 Giấy Phép / License
+
+Dự án được phân phối dưới giấy phép mã nguồn mở [**MIT License**](./LICENSE).
+
