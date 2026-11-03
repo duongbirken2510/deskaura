@@ -149,7 +149,7 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
           {/* Left: Illustration & Countdown */}
           <div className="md:col-span-5 flex flex-col items-center text-center bg-gradient-to-b from-emerald-50/60 to-sky-50/40 rounded-2xl p-5 border border-emerald-100/80">
-            <ExerciseIllustration type={exercise.svgType} />
+            <ExerciseIllustration type={exercise.svgType} lang={lang} />
             <div className="mt-3 text-4xl font-extrabold tracking-tight text-slate-800 font-mono">
               {formatTime(remainingSeconds)}
             </div>

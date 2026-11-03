@@ -21,6 +21,11 @@ import {
 } from 'lucide-react';
 import { BreakOverlayModal } from './components/BreakOverlayModal';
 import { VirtualDeskPlant } from './components/ExerciseIllustration';
+import {
+  MebiusAnalyticsRow,
+  MebiusDualActivityRings,
+  MebiusHourlyHydrationChart,
+} from './components/MebiusAnalyticsRow';
 import { SettingsPanel } from './components/SettingsPanel';
 import { SoundMixerPanel } from './components/SoundMixerPanel';
 import {
@@ -56,6 +61,7 @@ const STORAGE_KEYS = {
   HYDRATION: 'mamxanh_hydration_v1',
   VOICE: 'mamxanh_voice_v1',
   DAILY_STATS: 'mamxanh_daily_stats_v1',
+  WEEKLY_HISTORY: 'deskaura_weekly_history_v1',
   LANGUAGE: 'deskaura_lang_v1',
 };
 
@@ -137,7 +143,19 @@ export const App: React.FC = () => {
     };
   });
 
-  // 2. Daily Wellness Stats
+  // 2. Daily Wellness Stats & 7-Day History
+  const [weeklyHistory, setWeeklyHistory] = useState<DailyWellnessStats[]>(() => {
+    const raw = localStorage.getItem(STORAGE_KEYS.WEEKLY_HISTORY);
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        // fallback
+      }
+    }
+    return [];
+  });
+
   const [dailyStats, setDailyStats] = useState<DailyWellnessStats>(() => {
     const today = getTodayString();
     const saved = localStorage.getItem(STORAGE_KEYS.DAILY_STATS);
@@ -237,6 +255,12 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.DAILY_STATS, JSON.stringify(dailyStats));
+    setWeeklyHistory((prev) => {
+      const filtered = prev.filter((item) => item.date !== dailyStats.date);
+      const updated = [...filtered, dailyStats].slice(-14);
+      localStorage.setItem(STORAGE_KEYS.WEEKLY_HISTORY, JSON.stringify(updated));
+      return updated;
+    });
   }, [dailyStats]);
 
   // Initialize Autostart Status, Tray Language & Radio Callback
@@ -858,57 +882,17 @@ export const App: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Circular Countdown Ring */}
-                  <div className="my-6 flex flex-col items-center justify-center relative">
-                    <svg className="w-48 h-48 -rotate-90" viewBox="0 0 160 160">
-                      <circle
-                        cx="80"
-                        cy="80"
-                        r="68"
-                        fill="none"
-                        stroke="#ECFDF5"
-                        strokeWidth="12"
-                      />
-                      <circle
-                        cx="80"
-                        cy="80"
-                        r="68"
-                        fill="none"
-                        stroke="url(#standupGrad)"
-                        strokeWidth="12"
-                        strokeLinecap="round"
-                        strokeDasharray={2 * Math.PI * 68}
-                        strokeDashoffset={
-                          2 * Math.PI * 68 * (1 - standupProgressPct / 100)
-                        }
-                        className="transition-all duration-700"
-                      />
-                      <defs>
-                        <linearGradient
-                          id="standupGrad"
-                          x1="0"
-                          y1="0"
-                          x2="1"
-                          y2="1"
-                        >
-                          <stop offset="0%" stopColor="#10B981" />
-                          <stop offset="100%" stopColor="#0EA5E9" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        {t.standupInLabel}
-                      </span>
-                      <span className="text-4xl font-extrabold text-slate-800 font-mono mt-0.5">
-                        {formatMMSS(standupSecondsLeft)}
-                      </span>
-                      <span className="text-[11px] font-medium text-emerald-600 mt-1">
-                        {t.cycleMinutes} {standupSettings.standupIntervalMinutes} {t.minutesUnit}
-                      </span>
-                    </div>
-                  </div>
+                  {/* Mebius Dual Concentric Activity Rings */}
+                  <MebiusDualActivityRings
+                    standupSecondsLeft={standupSecondsLeft}
+                    standupIntervalMinutes={standupSettings.standupIntervalMinutes}
+                    eyeSecondsLeft={eyeSecondsLeft}
+                    eyeBreakIntervalMinutes={standupSettings.eyeBreakIntervalMinutes}
+                    eyeBreakEnabled={standupSettings.eyeBreakEnabled}
+                    standupCompletedCount={dailyStats.standupCompletedCount}
+                    eyeBreakCompletedCount={dailyStats.eyeBreakCompletedCount}
+                    lang={lang}
+                  />
 
                   {/* Secondary Sub-timers: 20-20-20 Eye Break & Idle Detector */}
                   <div className="grid grid-cols-2 gap-3 mb-5">
@@ -1053,10 +1037,15 @@ export const App: React.FC = () => {
                       </button>
                     ))}
                   </div>
+                  {/* Mebius Hourly Hydration Pill Bar Chart */}
+                  <MebiusHourlyHydrationChart
+                    waterLogs={dailyStats.waterLogs}
+                    lang={lang}
+                  />
                 </div>
 
                 {/* Recent Drink Logs */}
-                <div className="pt-3 border-t border-slate-100">
+                <div className="pt-3 mt-3 border-t border-slate-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                       {t.todayLogsLabel} ({dailyStats.waterLogs.length})
@@ -1157,6 +1146,14 @@ export const App: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* Row 2: Mebius 7-Day Wellness, Deep Focus Sparkline & Aura Score Charts */}
+            <MebiusAnalyticsRow
+              dailyStats={dailyStats}
+              weeklyHistory={weeklyHistory}
+              dailyWaterGoalMl={hydrationSettings.dailyGoalMl}
+              lang={lang}
+            />
 
             {/* Bottom Quick Bar: Active Audio & Voice Test */}
             <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-wrap items-center justify-between gap-4">

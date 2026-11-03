@@ -353,6 +353,13 @@ fn open_in_system_browser(url: String) -> Result<(), String> {
             .spawn()
             .map_err(|e| format!("Không thể mở trình duyệt: {e}"))?;
     }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(url.trim())
+            .spawn()
+            .map_err(|e| format!("Không thể mở trình duyệt trên macOS: {e}"))?;
+    }
     Ok(())
 }
 

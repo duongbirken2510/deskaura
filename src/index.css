@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --in-oklab: ;
+  --in-oklch: ;
+}
+
+@supports (background: linear-gradient(in oklab, white, black)) {
+  :root {
+    --in-oklab: in oklab;
+    --in-oklch: in oklch;
+  }
+}
+
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
@@ -9,19 +21,317 @@
   }
 }
 
+/* Visually hidden utility keeping semantic tables/labels in accessibility tree */
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Mebius chart non-rectangular SVG soft glow using filter: drop-shadow() */
+.mebius-svg-glow-emerald {
+  filter: drop-shadow(0 4px 10px rgba(16, 185, 129, 0.28));
+}
+
+.mebius-svg-glow-sky {
+  filter: drop-shadow(0 4px 10px rgba(14, 165, 233, 0.26));
+}
+
+.mebius-svg-glow-violet {
+  filter: drop-shadow(0 4px 12px rgba(139, 92, 246, 0.25));
+}
+
+/* Mebius subtle dot-matrix card canvas pattern */
+.mebius-dot-grid {
+  --distance: 16px;
+  --radius: 1px;
+  --polka: radial-gradient(circle, rgba(148, 163, 184, 0.22) var(--radius), transparent calc(var(--radius) + 0.5px));
+  background: var(--polka) 0 0 / var(--distance) var(--distance);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.98);
+    scale: 0.98;
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    scale: 1;
   }
 }
 
 .animate-fadeIn {
+  scale: 1;
   animation: fadeIn 0.25s ease-out forwards;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Lottie-Style Articulated Exercise Keyframe Animations
+   Using individual transform properties (translate, rotate, scale) with
+   base identity transforms and @media (prefers-reduced-motion: reduce)
+   ========================================================================== */
+
+/* 1. Neck tilt left <-> right */
+@keyframes neckTiltLottie {
+  0%, 100% {
+    rotate: 0deg;
+    translate: 0px 0px;
+  }
+  20%, 35% {
+    rotate: -18deg;
+    translate: -3px 1px;
+  }
+  50% {
+    rotate: 0deg;
+    translate: 0px 0px;
+  }
+  70%, 85% {
+    rotate: 18deg;
+    translate: 3px 1px;
+  }
+}
+
+.anim-neck-tilt {
+  translate: 0px;
+  rotate: 0deg;
+  scale: 1;
+  transform-origin: 90px 102px;
+  animation: neckTiltLottie 5.2s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 16s;
+  }
+}
+
+/* 2. Shoulder circular roll + chest breathe */
+@keyframes shoulderRollLeft {
+  0%, 100% {
+    translate: 0px 0px;
+    scale: 1;
+  }
+  25% {
+    translate: -3px -7px;
+    scale: 1.04;
+  }
+  50% {
+    translate: 3px -4px;
+    scale: 1.06;
+  }
+  75% {
+    translate: 2px 3px;
+    scale: 1;
+  }
+}
+
+@keyframes shoulderRollRight {
+  0%, 100% {
+    translate: 0px 0px;
+    scale: 1;
+  }
+  25% {
+    translate: 3px -7px;
+    scale: 1.04;
+  }
+  50% {
+    translate: -3px -4px;
+    scale: 1.06;
+  }
+  75% {
+    translate: -2px 3px;
+    scale: 1;
+  }
+}
+
+.anim-shoulder-left {
+  translate: 0px;
+  rotate: 0deg;
+  scale: 1;
+  transform-origin: 58px 112px;
+  animation: shoulderRollLeft 3.2s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 12s;
+  }
+}
+
+.anim-shoulder-right {
+  translate: 0px;
+  rotate: 0deg;
+  scale: 1;
+  transform-origin: 122px 112px;
+  animation: shoulderRollRight 3.2s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 12s;
+  }
+}
+
+/* 3. Wrist extension & flexion (RSI stretch) */
+@keyframes wristFlexLottie {
+  0%, 100% {
+    rotate: -32deg;
+  }
+  15%, 40% {
+    rotate: -38deg;
+  }
+  50% {
+    rotate: 0deg;
+  }
+  65%, 90% {
+    rotate: 34deg;
+  }
+}
+
+@keyframes helperHandGuide {
+  0%, 100% {
+    translate: -4px -8px;
+    rotate: -8deg;
+  }
+  15%, 40% {
+    translate: -7px -10px;
+    rotate: -12deg;
+  }
+  50% {
+    translate: 0px 0px;
+    rotate: 0deg;
+  }
+  65%, 90% {
+    translate: -5px 12px;
+    rotate: 12deg;
+  }
+}
+
+.anim-wrist-hand {
+  translate: 0px;
+  rotate: 0deg;
+  scale: 1;
+  transform-origin: 96px 96px;
+  animation: wristFlexLottie 4.8s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 16s;
+  }
+}
+
+.anim-wrist-helper {
+  translate: 0px;
+  rotate: 0deg;
+  scale: 1;
+  transform-origin: 122px 76px;
+  animation: helperHandGuide 4.8s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 16s;
+  }
+}
+
+/* 4. Overhead spine side-bend sway */
+@keyframes spineSwayLottie {
+  0%, 100% {
+    rotate: 0deg;
+    translate: 0px 0px;
+  }
+  25%, 35% {
+    rotate: -14deg;
+    translate: -4px -2px;
+  }
+  50% {
+    rotate: 0deg;
+    translate: 0px -3px;
+  }
+  75%, 85% {
+    rotate: 14deg;
+    translate: 4px -2px;
+  }
+}
+
+.anim-spine-sway {
+  translate: 0px;
+  rotate: 0deg;
+  scale: 1;
+  transform-origin: 90px 142px;
+  animation: spineSwayLottie 5s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 16s;
+  }
+}
+
+/* 5. Eye 20-20-20 gaze shift & natural blink */
+@keyframes eyeIrisGaze {
+  0%, 100% {
+    translate: 0px 0px;
+    scale: 1;
+  }
+  20%, 35% {
+    translate: -10px -4px;
+    scale: 0.95;
+  }
+  55%, 70% {
+    translate: 10px -4px;
+    scale: 0.95;
+  }
+  80%, 92% {
+    translate: 0px -6px;
+    scale: 0.88;
+  }
+}
+
+@keyframes eyeBlinkLottie {
+  0%, 44%, 48%, 94%, 98%, 100% {
+    scale: 1 0;
+  }
+  46%, 96% {
+    scale: 1 1;
+  }
+}
+
+.anim-eye-gaze {
+  translate: 0px;
+  rotate: 0deg;
+  scale: 1;
+  transform-origin: 90px 94px;
+  animation: eyeIrisGaze 6s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+.anim-eye-blink {
+  translate: 0px;
+  rotate: 0deg;
+  scale: 1 0;
+  transform-origin: 90px 58px;
+  animation: eyeBlinkLottie 4.5s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* Pulse rings around active joints */
+@keyframes jointPulseRing {
+  0%, 100% {
+    scale: 0.92;
+    opacity: 0.75;
+  }
+  50% {
+    scale: 1.12;
+    opacity: 0.25;
+  }
+}
+
+.anim-joint-ring {
+  translate: 0px;
+  rotate: 0deg;
+  scale: 1;
+  transform-origin: center;
+  animation: jointPulseRing 2.4s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 }
 
 /* Custom sleek scrollbar */
