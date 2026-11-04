@@ -284,67 +284,157 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </div>
       </div>
 
-      {/* Section 2: Windows System Integration (Auto-start & Background Tray) */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-        <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
-          <Power className="w-5 h-5 text-sky-500" />
-          {isEn
-            ? 'Background System Tray & Windows Startup'
-            : 'Chạy Nền & Tự Khởi Động Cùng Windows'}
-        </h3>
+      {/* Section 2: Windows System Integration (Auto-start, Reminder Mode & Background Tray) */}
+      <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-5">
+        <div>
+          <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-1">
+            <BellRing className="w-5 h-5 text-emerald-500" />
+            {isEn
+              ? 'Reminder Display Mode (Popup Screen vs. Taskbar / Tray Alert)'
+              : 'Kiểu Hiển Thị Khi Đến Giờ Nhắc Nhở (Màn Hình Nhắc vs. Icon Taskbar)'}
+          </h3>
+          <p className="text-xs text-slate-500 mb-3">
+            {isEn
+              ? 'Choose whether DeskAura pops up the guided exercise window or notifies quietly from the Taskbar/Tray icon'
+              : 'Lựa chọn cách ứng dụng thông báo khi đồng hồ đếm ngược về 00:00'}
+          </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200/70 cursor-pointer">
-            <div className="flex items-start gap-3">
-              <Laptop className="w-5 h-5 text-emerald-600 mt-0.5" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => onUpdateStandup({ reminderMode: 'overlay' })}
+              className={`p-4 rounded-2xl border text-left transition flex items-start justify-between gap-3 ${
+                standupSettings.reminderMode === 'overlay'
+                  ? 'bg-emerald-50/90 border-emerald-400 text-emerald-950 shadow-sm'
+                  : 'bg-slate-50 border-slate-200/70 text-slate-700 hover:bg-slate-100'
+              }`}
+            >
               <div>
-                <p className="text-sm font-bold text-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold">
+                    {isEn
+                      ? '🖥️ Pop-up Exercise Screen (Overlay)'
+                      : '🖥️ Hiển thị Màn hình Nhắc nhở (Bung cửa sổ)'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                   {isEn
-                    ? 'Start automatically with Windows (Auto-start on Boot)'
-                    : 'Tự khởi động cùng Windows (Auto-start on Boot)'}
-                </p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {isEn
-                    ? 'Automatically launch DeskAura when you sign in to Windows'
-                    : 'Tự động mở ứng dụng mỗi khi bật máy tính làm việc'}
+                    ? 'Automatically brings the guided stretch window to the front of your screen when it is time for a break.'
+                    : 'Tự động bung cửa sổ hướng dẫn bài tập giãn cơ lên màn hình kết hợp giọng nói nhắc nhở khi đến giờ nghỉ.'}
                 </p>
               </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={autostartEnabled}
-              onChange={(e) =>
-                onToggleAutostart(e.target.checked, startMinimized)
-              }
-              className="w-5 h-5 accent-emerald-500 rounded cursor-pointer"
-            />
-          </label>
+              <div
+                className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                  standupSettings.reminderMode === 'overlay'
+                    ? 'bg-emerald-500 text-white'
+                    : 'border border-slate-300 bg-white'
+                }`}
+              >
+                {standupSettings.reminderMode === 'overlay' && (
+                  <Check className="w-3.5 h-3.5" />
+                )}
+              </div>
+            </button>
 
-          <label className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200/70 cursor-pointer">
-            <div className="flex items-start gap-3">
-              <MonitorCheck className="w-5 h-5 text-sky-600 mt-0.5" />
+            <button
+              type="button"
+              onClick={() => onUpdateStandup({ reminderMode: 'gentle' })}
+              className={`p-4 rounded-2xl border text-left transition flex items-start justify-between gap-3 ${
+                standupSettings.reminderMode === 'gentle'
+                  ? 'bg-sky-50/90 border-sky-400 text-sky-950 shadow-sm'
+                  : 'bg-slate-50 border-slate-200/70 text-slate-700 hover:bg-slate-100'
+              }`}
+            >
               <div>
-                <p className="text-sm font-bold text-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold">
+                    {isEn
+                      ? '🔔 Taskbar / System Tray Notification Only'
+                      : '🔔 Chỉ nhắc ở Icon Taskbar / Khay hệ thống'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                   {isEn
-                    ? 'Start minimized in System Tray'
-                    : 'Khởi động ẩn dưới Khay hệ thống (System Tray)'}
-                </p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {isEn
-                    ? 'When booting or clicking Close (X), minimize quietly to the Windows taskbar tray'
-                    : 'Khi bật máy hoặc bấm nút đóng (X), ứng dụng thu gọn xuống góc phải Taskbar để chạy ngầm siêu nhẹ'}
+                    ? 'Never interrupts your typing: flashes the Taskbar/Tray icon, shows a corner notification, and plays the voice prompt.'
+                    : 'Không bung cửa sổ làm gián đoạn việc đang gõ: chỉ phát thông báo ở Icon Taskbar / góc màn hình kèm giọng nhắc nhẹ nhàng.'}
                 </p>
               </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={startMinimized}
-              onChange={(e) =>
-                onToggleAutostart(autostartEnabled, e.target.checked)
-              }
-              className="w-5 h-5 accent-sky-500 rounded cursor-pointer"
-            />
-          </label>
+              <div
+                className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                  standupSettings.reminderMode === 'gentle'
+                    ? 'bg-sky-500 text-white'
+                    : 'border border-slate-300 bg-white'
+                }`}
+              >
+                {standupSettings.reminderMode === 'gentle' && (
+                  <Check className="w-3.5 h-3.5" />
+                )}
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
+            <Power className="w-5 h-5 text-sky-500" />
+            {isEn
+              ? 'Background System Tray & System Startup'
+              : 'Chạy Nền & Tự Khởi Động Cùng Máy Tính'}
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200/70 cursor-pointer">
+              <div className="flex items-start gap-3">
+                <Laptop className="w-5 h-5 text-emerald-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-bold text-slate-800">
+                    {isEn
+                      ? 'Start automatically on system boot'
+                      : 'Tự khởi động cùng máy tính (Auto-start on Boot)'}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {isEn
+                      ? 'Automatically launch DeskAura when you sign in'
+                      : 'Tự động mở ứng dụng mỗi khi bật máy tính làm việc'}
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={autostartEnabled}
+                onChange={(e) =>
+                  onToggleAutostart(e.target.checked, startMinimized)
+                }
+                className="w-5 h-5 accent-emerald-500 rounded cursor-pointer"
+              />
+            </label>
+
+            <label className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200/70 cursor-pointer">
+              <div className="flex items-start gap-3">
+                <MonitorCheck className="w-5 h-5 text-sky-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-bold text-slate-800">
+                    {isEn
+                      ? 'Start minimized in System Tray'
+                      : 'Khởi động ẩn dưới Khay hệ thống (System Tray)'}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {isEn
+                      ? 'When booting or clicking Close (X), minimize quietly to the taskbar tray'
+                      : 'Khi bật máy hoặc bấm nút đóng (X), ứng dụng thu gọn xuống góc phải Taskbar để chạy ngầm siêu nhẹ'}
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={startMinimized}
+                onChange={(e) =>
+                  onToggleAutostart(autostartEnabled, e.target.checked)
+                }
+                className="w-5 h-5 accent-sky-500 rounded cursor-pointer"
+              />
+            </label>
+          </div>
         </div>
       </div>
 

@@ -14,7 +14,6 @@ import {
   Pause,
   Play,
   PowerOff,
-  Radio,
   SkipBack,
   SkipForward,
   Sliders,
@@ -28,8 +27,6 @@ import {
 } from 'lucide-react';
 import {
   AMBIENT_SOUNDS,
-  FREE_MUSIC_RESOURCES,
-  ONLINE_STATIONS,
   SOUND_PRESETS,
 } from '../data/wellnessCatalog';
 import {
@@ -109,10 +106,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
   soundVolumes,
   masterVolume,
   isMasterMuted,
-  activeStationUrl,
   isRadioPlaying,
-  radioVolume,
-  radioError,
   lang = 'vi',
   onToggleSound,
   onChangeSoundVolume,
@@ -122,10 +116,8 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
   onToggleMasterMute,
   onPlayRadioStream,
   onStopRadio,
-  onChangeRadioVolume,
 }) => {
   const isEn = lang === 'en';
-  const [customStreamUrl, setCustomStreamUrl] = useState('');
   const [zingCustomUrl, setZingCustomUrl] = useState('https://zingmp3.vn/moi-phat-hanh');
   const [zingCustomTitle, setZingCustomTitle] = useState('');
   const [zingWindowState, setZingWindowState] = useState<'closed' | 'visible' | 'hidden_playing'>('closed');
@@ -223,98 +215,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Bar: Master Volume & Presets */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
-          <div>
-            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <Music className="w-5 h-5 text-emerald-500" />
-              {isEn
-                ? 'Ambient Sound Studio & Focus Music (Offline + Online + Zing MP3)'
-                : 'Phòng Thu Âm Thanh Chữa Lành & Tập Trung (Offline + Online + Zing MP3)'}
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {isEn
-                ? 'Layer multiple offline nature soundscapes and mix with Zing MP3 or Lofi Radio streams'
-                : 'Bật nhiều lớp âm thanh thiên nhiên Offline cùng lúc và hòa trộn với Zing MP3 hoặc đài Radio Lofi'}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-slate-50 px-3.5 py-2 rounded-2xl border border-slate-200/70">
-              <button
-                onClick={onToggleMasterMute}
-                className="text-slate-600 hover:text-emerald-600 transition"
-                title={isMasterMuted ? (isEn ? 'Unmute' : 'Bật tiếng') : isEn ? 'Mute' : 'Tắt tiếng tạm thời'}
-              >
-                {isMasterMuted ? (
-                  <VolumeX className="w-4 h-4 text-rose-500" />
-                ) : (
-                  <Volume2 className="w-4 h-4 text-emerald-600" />
-                )}
-              </button>
-              <span className="text-xs font-semibold text-slate-600">
-                {isEn ? 'Master Vol' : 'Âm lượng tổng'}
-              </span>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.02}
-                value={isMasterMuted ? 0 : masterVolume}
-                onChange={(e) => onChangeMasterVolume(parseFloat(e.target.value))}
-                className="w-24 accent-emerald-500 cursor-pointer"
-              />
-              <span className="text-xs font-bold text-slate-700 w-9 text-right">
-                {Math.round((isMasterMuted ? 0 : masterVolume) * 100)}%
-              </span>
-            </div>
-
-            {activeCount > 0 && (
-              <button
-                onClick={() => {
-                  setZingWindowState('closed');
-                  onStopAllSounds();
-                }}
-                className="px-3.5 py-2 rounded-2xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition"
-              >
-                {isEn ? `Stop All (${activeCount})` : `Tắt tất cả (${activeCount})`}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* 1-Click Mood Presets */}
-        <div className="mt-4">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-            {isEn ? '1-Click Mood Soundscapes (Offline Presets)' : 'Tổ hợp âm thanh gợi ý 1-chạm (Offline Presets)'}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {SOUND_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                onClick={() => onApplyPreset(preset.mix)}
-                className="text-left p-3.5 rounded-2xl border border-slate-100 bg-gradient-to-br from-emerald-50/50 via-white to-sky-50/40 hover:border-emerald-300 hover:shadow-sm transition group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-full">
-                    {preset.badge}
-                  </span>
-                  <Play className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition" />
-                </div>
-                <p className="text-sm font-bold text-slate-800 mt-2">
-                  {preset.name}
-                </p>
-                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                  {preset.description}
-                </p>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Section: Advanced Zing MP3 Hub & Background Remote Controller */}
+      {/* Section: Advanced Zing MP3 Hub & Background Remote Controller (Moved to Top) */}
       <div className="bg-gradient-to-br from-purple-50/90 via-white to-fuchsia-50/70 rounded-3xl p-6 border border-purple-200/80 shadow-sm space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -575,6 +476,97 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
         </div>
       </div>
 
+      {/* Top Bar: Master Volume & Presets */}
+      <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <Music className="w-5 h-5 text-emerald-500" />
+              {isEn
+                ? 'Ambient Sound Studio & Focus Music (Offline + Zing MP3)'
+                : 'Phòng Thu Âm Thanh Chữa Lành & Tập Trung (Offline + Zing MP3)'}
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {isEn
+                ? 'Layer multiple offline nature soundscapes and mix with Zing MP3'
+                : 'Bật nhiều lớp âm thanh thiên nhiên Offline cùng lúc và hòa trộn với nhạc Zing MP3'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-slate-50 px-3.5 py-2 rounded-2xl border border-slate-200/70">
+              <button
+                onClick={onToggleMasterMute}
+                className="text-slate-600 hover:text-emerald-600 transition"
+                title={isMasterMuted ? (isEn ? 'Unmute' : 'Bật tiếng') : isEn ? 'Mute' : 'Tắt tiếng tạm thời'}
+              >
+                {isMasterMuted ? (
+                  <VolumeX className="w-4 h-4 text-rose-500" />
+                ) : (
+                  <Volume2 className="w-4 h-4 text-emerald-600" />
+                )}
+              </button>
+              <span className="text-xs font-semibold text-slate-600">
+                {isEn ? 'Master Vol' : 'Âm lượng tổng'}
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.02}
+                value={isMasterMuted ? 0 : masterVolume}
+                onChange={(e) => onChangeMasterVolume(parseFloat(e.target.value))}
+                className="w-24 accent-emerald-500 cursor-pointer"
+              />
+              <span className="text-xs font-bold text-slate-700 w-9 text-right">
+                {Math.round((isMasterMuted ? 0 : masterVolume) * 100)}%
+              </span>
+            </div>
+
+            {activeCount > 0 && (
+              <button
+                onClick={() => {
+                  setZingWindowState('closed');
+                  onStopAllSounds();
+                }}
+                className="px-3.5 py-2 rounded-2xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition"
+              >
+                {isEn ? `Stop All (${activeCount})` : `Tắt tất cả (${activeCount})`}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 1-Click Mood Presets */}
+        <div className="mt-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+            {isEn ? '1-Click Mood Soundscapes (Offline Presets)' : 'Tổ hợp âm thanh gợi ý 1-chạm (Offline Presets)'}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {SOUND_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                onClick={() => onApplyPreset(preset.mix)}
+                className="text-left p-3.5 rounded-2xl border border-slate-100 bg-gradient-to-br from-emerald-50/50 via-white to-sky-50/40 hover:border-emerald-300 hover:shadow-sm transition group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-full">
+                    {preset.badge}
+                  </span>
+                  <Play className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition" />
+                </div>
+                <p className="text-sm font-bold text-slate-800 mt-2">
+                  {preset.name}
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                  {preset.description}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Section 1: Offline Nature, Healing & Brainwave Soundscape Mixer */}
       <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
         <div className="flex items-center justify-between mb-4">
@@ -663,124 +655,20 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
             );
           })}
         </div>
-      </div>
 
-      {/* Section 2: Online Healing / Lofi Radio Streams + Local File Player */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div>
-            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-              <Radio className="w-5 h-5 text-sky-500" />
-              2. Đài Radio Nhạc Chữa Lành & Lofi Quốc Tế (Không Quảng Cáo) + Nhạc Trong Máy
-            </h3>
-            <p className="text-xs text-slate-500">
-              Các kênh phát trực tiếp chuẩn Icecast MP3 không lời hoặc chọn file nhạc từ ổ cứng máy tính
+        {/* Local Audio File Player kept neatly inside Offline Mixer */}
+        <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-700">
+              📂 Phát file nhạc chữa lành từ máy tính (.mp3, .wav, .ogg)
+            </p>
+            <p className="text-[11px] text-slate-500 truncate mt-0.5">
+              {localFileName
+                ? `Đang chọn: ${localFileName}`
+                : 'Chọn bản nhạc yêu thích lưu sẵn trong máy của bạn'}
             </p>
           </div>
-
-          <div className="flex items-center gap-2 bg-sky-50 px-3.5 py-1.5 rounded-2xl border border-sky-100">
-            <span className="text-xs font-semibold text-sky-800">
-              Âm lượng đài/nhạc:
-            </span>
-            <input
-              type="range"
-              min={0.05}
-              max={1}
-              step={0.02}
-              value={radioVolume}
-              onChange={(e) => onChangeRadioVolume(parseFloat(e.target.value))}
-              className="w-24 accent-sky-500 cursor-pointer"
-            />
-            <span className="text-xs font-bold text-sky-700">
-              {Math.round(radioVolume * 100)}%
-            </span>
-          </div>
-        </div>
-
-        {radioError && (
-          <div className="mb-4 p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
-            ⚠️ {radioError}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {ONLINE_STATIONS.map((station) => {
-            const isSelected =
-              isRadioPlaying && activeStationUrl === station.streamUrl;
-            return (
-              <div
-                key={station.id}
-                className={`p-4 rounded-2xl border transition flex flex-col justify-between ${
-                  isSelected
-                    ? 'bg-gradient-to-br from-sky-50 to-emerald-50/60 border-sky-300 shadow-sm'
-                    : 'bg-slate-50/70 hover:bg-slate-50 border-slate-100'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-700">
-                      {station.badge}
-                    </span>
-                    <span className="text-[11px] font-medium text-slate-400">
-                      {station.genre}
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-800 mt-2">
-                    {station.name}
-                  </h4>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    {station.description}
-                  </p>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
-                  <button
-                    onClick={() =>
-                      isSelected
-                        ? onStopRadio()
-                        : onPlayRadioStream(station.streamUrl, station.name)
-                    }
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-                      isSelected
-                        ? 'bg-rose-500 hover:bg-rose-600 text-white'
-                        : 'bg-sky-500 hover:bg-sky-600 text-white'
-                    }`}
-                  >
-                    {isSelected ? (
-                      <>
-                        <Pause className="w-3.5 h-3.5" /> Dừng phát
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-3.5 h-3.5" /> Phát kênh này
-                      </>
-                    )}
-                  </button>
-
-                  {isSelected && (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
-                      <Disc3 className="w-4 h-4 animate-spin" /> Đang phát
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Local Audio File & Custom Stream Input */}
-        <div className="mt-5 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-slate-700">
-                📂 Phát file nhạc chữa lành từ máy tính (.mp3, .wav, .ogg)
-              </p>
-              <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                {localFileName
-                  ? `Đang chọn: ${localFileName}`
-                  : 'Chọn bản nhạc yêu thích lưu sẵn trong máy của bạn'}
-              </p>
-            </div>
+          <div className="flex items-center gap-2">
             <input
               ref={fileInputRef}
               type="file"
@@ -788,74 +676,23 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
               onChange={handleLocalFileChange}
               className="hidden"
             />
+            {isRadioPlaying && localFileName && (
+              <button
+                onClick={onStopRadio}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition whitespace-nowrap"
+              >
+                <Pause className="w-3.5 h-3.5" />
+                Dừng phát file
+              </button>
+            )}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 transition whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-50 hover:bg-emerald-50 text-emerald-700 border border-emerald-200 transition whitespace-nowrap"
             >
               <FolderOpen className="w-3.5 h-3.5" />
-              Chọn file nhạc
+              Chọn file nhạc từ máy
             </button>
           </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center gap-2">
-            <input
-              type="text"
-              value={customStreamUrl}
-              onChange={(e) => setCustomStreamUrl(e.target.value)}
-              placeholder="Dán link stream nhạc trực tuyến (.mp3 / Icecast URL)..."
-              className="flex-1 bg-white px-3 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:border-sky-400"
-            />
-            <button
-              onClick={() => {
-                if (customStreamUrl.trim()) {
-                  onPlayRadioStream(customStreamUrl.trim(), 'Kênh tùy chỉnh');
-                }
-              }}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-500 hover:bg-sky-600 text-white transition whitespace-nowrap"
-            >
-              Phát Link
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Section 3: Curated Free Healing/Work Music Repositories */}
-      <div className="bg-gradient-to-br from-emerald-50/70 via-white to-sky-50/70 rounded-3xl p-6 border border-emerald-100 shadow-sm">
-        <h3 className="text-base font-bold text-slate-800">
-          3. Kho Nhạc Chữa Lành & Làm Việc Miễn Phí Bản Quyền (Khuyên Dùng)
-        </h3>
-        <p className="text-xs text-slate-500 mt-0.5 mb-4">
-          Danh sách các thư viện âm nhạc mở hoàn toàn miễn phí để anh tải thêm nhạc MP3 chất lượng cao về máy
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {FREE_MUSIC_RESOURCES.map((res) => (
-            <a
-              key={res.name}
-              href={res.url}
-              target="_blank"
-              rel="noreferrer"
-              className="p-4 rounded-2xl bg-white border border-slate-100 hover:border-emerald-300 hover:shadow-sm transition flex flex-col justify-between group"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                    {res.category}
-                  </span>
-                  <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition" />
-                </div>
-                <h4 className="text-sm font-bold text-slate-800 mt-2 group-hover:text-emerald-700 transition">
-                  {res.name}
-                </h4>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  {res.description}
-                </p>
-              </div>
-              <div className="mt-3 pt-2 border-t border-slate-100 text-[11px] font-medium text-slate-400">
-                Giấy phép: {res.license}
-              </div>
-            </a>
-          ))}
         </div>
       </div>
     </div>

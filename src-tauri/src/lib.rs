@@ -418,6 +418,28 @@ fn hide_to_tray(app: AppHandle) {
     }
 }
 
+#[tauri::command]
+fn send_tray_notification(app: AppHandle, title: String, body: String) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.request_user_attention(Some(tauri::UserAttentionType::Informational));
+    }
+    if let Some(tray) = app.tray_by_id("main-tray") {
+        let _ = tray.set_tooltip(Some(&format!("{title} — {body}")));
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let safe_title = title.replace('"', "\\\"");
+        let safe_body = body.replace('"', "\\\"");
+        let script = format!(
+            "display notification \"{}\" with title \"{}\"",
+            safe_body, safe_title
+        );
+        let _ = std::process::Command::new("osascript")
+            .args(["-e", &script])
+            .spawn();
+    }
+}
+
 fn build_tray_menu(app: &AppHandle, lang: &str) -> tauri::Result<Menu<tauri::Wry>> {
     let is_en = lang == "en";
 
@@ -706,6 +728,7 @@ pub fn run() {
             show_and_focus_window,
             set_window_always_on_top,
             hide_to_tray,
+            send_tray_notification,
             set_tray_language
         ])
         .run(tauri::generate_context!())

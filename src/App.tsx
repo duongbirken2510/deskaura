@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Activity,
+  BarChart3,
   Bell,
   Clock,
   Coffee,
@@ -30,7 +31,6 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { SoundMixerPanel } from './components/SoundMixerPanel';
 import {
   AMBIENT_SOUNDS,
-  ONLINE_STATIONS,
   SOUND_PRESETS,
 } from './data/wellnessCatalog';
 import { soundEngine } from './services/soundEngine';
@@ -41,6 +41,7 @@ import {
   hideWindowToTray,
   onTauriEvent,
   openWebMusicPlayer,
+  sendTrayNotification,
   setAutostartStatus,
   setTrayLanguage,
   setWindowAlwaysOnTop,
@@ -73,7 +74,7 @@ const getTodayString = (): string => {
 };
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'sounds' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'analytics' | 'sounds' | 'settings'>('dashboard');
   const [lang, setLang] = useState<AppLanguage>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
     return saved === 'en' ? 'en' : 'vi';
@@ -196,8 +197,9 @@ export const App: React.FC = () => {
   const [breakRemainingSec, setBreakRemainingSec] = useState<number>(180);
   const [breakTotalSec, setBreakTotalSec] = useState<number>(180);
 
-  // Water Toast Notification Banner
+  // Water Toast Notification Banner & Gentle Taskbar/Tray Break Banner
   const [waterToastVisible, setWaterToastVisible] = useState<boolean>(false);
+  const [gentleBreakBanner, setGentleBreakBanner] = useState<BreakType | null>(null);
 
   // System Context & Audio Ducking Status
   const [systemIdleSec, setSystemIdleSec] = useState<number>(0);
@@ -304,7 +306,7 @@ export const App: React.FC = () => {
 
   // Start a Break Session (Standup, Eye, or Combo)
   const startBreakSession = useCallback(
-    async (type: BreakType) => {
+    async (type: BreakType, forceOverlay: boolean = false) => {
       const duration =
         type === 'eye'
           ? standupSettings.eyeBreakDurationSeconds
@@ -313,13 +315,40 @@ export const App: React.FC = () => {
       setCurrentBreakType(type);
       setBreakTotalSec(duration);
       setBreakRemainingSec(duration);
+
+      if (!forceOverlay && standupSettings.reminderMode === 'gentle') {
+        setGentleBreakBanner(type);
+        const notifTitle =
+          type === 'eye'
+            ? lang === 'en'
+              ? '👀 20-20-20 Eye Care Time!'
+              : '👀 Đến giờ nghỉ mắt 20-20-20!'
+            : lang === 'en'
+            ? '🧘 Time to Stand Up & Stretch!'
+            : '🧘 Đến giờ đứng dậy giãn cơ rồi!';
+        const notifBody =
+          type === 'eye'
+            ? lang === 'en'
+              ? 'Look 20 feet away for 20 seconds to relax your eyes.'
+              : 'Hãy nhìn xa 6 mét trong 20 giây để thư giãn mắt nhé.'
+            : lang === 'en'
+            ? 'Click the DeskAura taskbar/tray icon whenever you are ready to stretch.'
+            : 'Nhấn vào biểu tượng DeskAura dưới Taskbar/Tray khi bạn sẵn sàng tập giãn cơ nhé.';
+        await sendTrayNotification(notifTitle, notifBody);
+        await triggerVoiceReminder(type);
+        return;
+      }
+
+      setGentleBreakBanner(null);
       setIsBreakModalOpen(true);
 
       await showAndFocusWindow(true);
       await triggerVoiceReminder(type);
     },
     [
+      lang,
       standupSettings.eyeBreakDurationSeconds,
+      standupSettings.reminderMode,
       standupSettings.standupDurationSeconds,
       triggerVoiceReminder,
     ]
@@ -431,7 +460,7 @@ export const App: React.FC = () => {
     }).then((unlisten) => unlisteners.push(unlisten));
 
     onTauriEvent<string>('tray-trigger-break', () => {
-      startBreakSession('standup');
+      startBreakSession('standup', true);
     }).then((unlisten) => unlisteners.push(unlisten));
 
     onTauriEvent<boolean>('tray-toggle-music', (hasZingWindow) => {
@@ -569,6 +598,7 @@ export const App: React.FC = () => {
       setWaterSecondsLeft((prev) => {
         if (prev <= 1) {
           setWaterToastVisible(true);
+          sendTrayNotification(t.waterToastTitle, t.waterToastDesc);
           triggerVoiceReminder('water');
           return hydrationSettings.intervalMinutes * 60;
         }
@@ -711,7 +741,7 @@ export const App: React.FC = () => {
                   DeskAura
                 </h1>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                  Office Wellness
+                  Office Wellness v1.1
                 </span>
               </div>
               <p className="text-xs text-slate-500">
@@ -732,6 +762,17 @@ export const App: React.FC = () => {
             >
               <LayoutDashboard className="w-4 h-4" />
               {t.navDashboard}
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                activeTab === 'analytics'
+                  ? 'bg-white text-emerald-700 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              {t.navAnalytics}
             </button>
             <button
               onClick={() => setActiveTab('sounds')}
@@ -824,6 +865,58 @@ export const App: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* Gentle Break Toast Banner (when reminderMode === 'gentle') */}
+      {gentleBreakBanner && !isBreakModalOpen && (
+        <div className="max-w-6xl mx-auto w-full px-6 pt-4 animate-fadeIn">
+          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl p-4 shadow-lg shadow-emerald-500/20 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <Activity className="w-6 h-6 text-white animate-pulse" />
+              </div>
+              <div>
+                <p className="text-sm font-extrabold">
+                  {gentleBreakBanner === 'eye'
+                    ? lang === 'en'
+                      ? '👀 Time for a 20-second Eye Rest!'
+                      : '👀 Đến giờ nghỉ mắt 20-20-20 rồi bạn ơi!'
+                    : lang === 'en'
+                    ? '🧘 Time to Stand Up & Stretch!'
+                    : '🧘 Đến giờ đứng dậy giãn cơ thư giãn rồi!'}
+                </p>
+                <p className="text-xs text-emerald-50">
+                  {lang === 'en'
+                    ? 'Gentle Taskbar/Tray reminder active — open the guided exercise whenever you are ready.'
+                    : 'Đang ở chế độ nhắc nhẹ dưới Taskbar — bấm vào bên phải khi bạn sẵn sàng tập nhé.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => startBreakSession(gentleBreakBanner, true)}
+                className="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-white text-emerald-700 hover:bg-emerald-50 transition shadow-sm"
+              >
+                {lang === 'en' ? '🧘 Open Guided Stretch' : '🧘 Mở bài tập ngay'}
+              </button>
+              <button
+                onClick={() => {
+                  setGentleBreakBanner(null);
+                  completeBreakSession();
+                }}
+                className="px-3 py-2 rounded-xl text-xs font-bold bg-white/20 hover:bg-white/30 text-white transition"
+              >
+                {lang === 'en' ? '✓ Done' : '✓ Đã nghỉ xong'}
+              </button>
+              <button
+                onClick={() => setGentleBreakBanner(null)}
+                className="px-3 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition"
+              >
+                {t.laterBtn}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Water Reminder Toast Banner */}
       {waterToastVisible && (
@@ -933,13 +1026,13 @@ export const App: React.FC = () => {
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2.5 pt-3 border-t border-slate-100">
                   <button
-                    onClick={() => startBreakSession('standup')}
+                    onClick={() => startBreakSession('standup', true)}
                     className="flex-1 py-2.5 px-4 rounded-2xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm shadow-emerald-500/20 transition"
                   >
                     {t.standNowBtn}
                   </button>
                   <button
-                    onClick={() => startBreakSession('eye')}
+                    onClick={() => startBreakSession('eye', true)}
                     className="py-2.5 px-3.5 rounded-2xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition"
                   >
                     {t.eye20sBtn}
@@ -1147,14 +1240,6 @@ export const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Row 2: Mebius 7-Day Wellness, Deep Focus Sparkline & Aura Score Charts */}
-            <MebiusAnalyticsRow
-              dailyStats={dailyStats}
-              weeklyHistory={weeklyHistory}
-              dailyWaterGoalMl={hydrationSettings.dailyGoalMl}
-              lang={lang}
-            />
-
             {/* Bottom Quick Bar: Active Audio & Voice Test */}
             <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -1188,17 +1273,6 @@ export const App: React.FC = () => {
                   {t.openZingBtn}
                 </button>
                 <button
-                  onClick={() =>
-                    handlePlayRadioStream(
-                      ONLINE_STATIONS[0].streamUrl,
-                      ONLINE_STATIONS[0].name
-                    )
-                  }
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 transition"
-                >
-                  {t.playSomaFmBtn}
-                </button>
-                <button
                   disabled={isTestingVoice}
                   onClick={async () => {
                     setIsTestingVoice(true);
@@ -1211,6 +1285,17 @@ export const App: React.FC = () => {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <MebiusAnalyticsRow
+              dailyStats={dailyStats}
+              weeklyHistory={weeklyHistory}
+              dailyWaterGoalMl={hydrationSettings.dailyGoalMl}
+              lang={lang}
+            />
           </div>
         )}
 

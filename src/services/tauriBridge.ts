@@ -158,6 +158,30 @@ export async function setTrayLanguage(lang: 'vi' | 'en'): Promise<void> {
   }
 }
 
+export async function sendTrayNotification(title: string, body: string): Promise<void> {
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    try {
+      if (Notification.permission === 'granted') {
+        new Notification(title, { body });
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then((perm) => {
+          if (perm === 'granted') {
+            new Notification(title, { body });
+          }
+        });
+      }
+    } catch {
+      // ignore web notification errors
+    }
+  }
+  if (!isTauriEnv()) return;
+  try {
+    await invoke('send_tray_notification', { title, body });
+  } catch {
+    // ignore
+  }
+}
+
 export async function onTauriEvent<T>(
   eventName: string,
   handler: (payload: T) => void

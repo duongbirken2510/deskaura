@@ -4,6 +4,7 @@ export const TRANSLATIONS = {
   vi: {
     brandSubtitle: 'Đứng dậy đúng giờ • Uống đủ nước • Nhạc nền chữa lành',
     navDashboard: 'Tổng Quan Sức Khỏe',
+    navAnalytics: 'Thống Kê',
     navSounds: 'Nhạc Nền Thư Giãn',
     navSettings: 'Cài Đặt & Giọng Đọc',
     duckingBadge: 'Đang giảm âm ứng dụng khác',
@@ -81,6 +82,7 @@ export const TRANSLATIONS = {
   en: {
     brandSubtitle: 'Stand on time • Stay hydrated • Healing ambient focus',
     navDashboard: 'Wellness Dashboard',
+    navAnalytics: 'Analytics',
     navSounds: 'Ambient & Music',
     navSettings: 'Settings & Voice',
     duckingBadge: 'Lowering other apps volume',
