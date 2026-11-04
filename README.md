@@ -92,7 +92,7 @@ Lựa chọn linh hoạt giữa **Bung màn hình nhắc nhở** hoặc **Chỉ 
 ### 🪟 1. Tải & Cài Đặt Trên Windows 10/11
 Bạn có thể tải trực tiếp trong thư mục [`Release_Windows/`](./Release_Windows) hoặc tại mục [**Releases**](https://github.com/duongbirken2510/deskaura/releases):
 
-1. **[`DeskAura_1.0.0_x64-setup.exe`](./Release_Windows/DeskAura_1.0.0_x64-setup.exe)** *(~2.9 MB)* — Bộ cài đặt chuẩn cho Windows 10/11 (Tự động tạo biểu tượng Desktop & Start Menu).
+1. **[`DeskAura_1.1.0_x64-setup.exe`](./Release_Windows/DeskAura_1.1.0_x64-setup.exe)** *(~2.9 MB)* — Bộ cài đặt chuẩn cho Windows 10/11 (Tự động tạo biểu tượng Desktop & Start Menu).
 2. **[`DeskAura_Portable.exe`](./Release_Windows/DeskAura_Portable.exe)** *(~10.8 MB)* — Bản chạy ngay lập tức (Portable), không cần cài đặt.
 
 > 💡 **Lưu ý khi mở lần đầu trên Windows (Windows SmartScreen):**
