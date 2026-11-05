@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./public/app-icon.svg" alt="DeskAura Logo" width="88" height="88" />
+<img src="./docs/media/deskaura_brand_banner.png" alt="DeskAura Official Brand Banner" width="100%" />
 
 # 🌱 DeskAura v1.2.4
 

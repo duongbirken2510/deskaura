@@ -1,5 +1,9 @@
 # 🌱 HỒ SƠ GIỚI THIỆU SẢN PHẨM & CÔNG NGHỆ: DESKAURA (v1.2.4)
 
+<div align="center">
+  <img src="../docs/media/deskaura_brand_banner.png" alt="DeskAura Brand Banner" width="100%" />
+</div>
+
 > **Khẩu hiệu (Tagline):** *"Bảo vệ cột sống. Tôn trọng dòng code. Trợ lý sức khỏe tĩnh lặng & Không gian nhạc nền chữa lành cho dân văn phòng."*  
 > **Nền tảng hỗ trợ:** Windows 10/11 (`.exe`) • macOS Apple Silicon (`.dmg`) • iOS / iPadOS (PWA & Native Mobile)  
 > **Tác giả & Website chính thức:** **Duong Birken** — [https://duongbirken.deta.vn](https://duongbirken.deta.vn) *(Phát hành miễn phí & Mã nguồn mở MIT)*  
