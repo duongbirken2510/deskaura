@@ -148,9 +148,16 @@ Vì DeskAura là công cụ đồng hành suốt ngày làm việc trên máy t�
 
 ---
 
-## 8. Thư Viện Video Demo 45s & Hình Ảnh Giao Diện Song Ngữ (`Visual Showcase`)
+## 8. Thư Viện Video TVC Điện Ảnh, Demo 45s & Hình Ảnh Giao Diện Song Ngữ (`Visual Showcase`)
 
-### 🎬 Video Demo 45 Giây (1080p60)
+### 🌟 8.1. Video TVC Điện Ảnh: "Chiếc Bẫy Rụt Vai" (Google Flow 4K & 1080p)
+- **Bản Full HD 1080p tối ưu Web (Có giọng đọc & Guitar Acoustic):** [`../docs/media/deskaura_tvc_intro.mp4`](../docs/media/deskaura_tvc_intro.mp4)
+- **Bản Gốc 4K UHD (`3840x2160`):** [`../docs/media/Video DeskAura 01.mp4`](../docs/media/Video%20DeskAura%2001.mp4)
+- **Ảnh động TVC Preview:**
+
+![DeskAura Official TVC Preview](../docs/media/deskaura_tvc_preview.gif)
+
+### 🎬 8.2. Video Trải Nghiệm Giao Diện 45 Giây (1080p60)
 - **File Video MP4 Full HD có âm thanh:** [`../docs/media/deskaura_demo_45s.mp4`](../docs/media/deskaura_demo_45s.mp4)
 - **Ảnh động Preview:**
 

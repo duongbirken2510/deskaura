@@ -2,9 +2,9 @@
 
 > **What's New from v1.2.0 $\rightarrow$ v1.2.4** | **Tổng hợp các nâng cấp mới từ bản v1.2.0 $\rightarrow$ v1.2.4**
 
-[![Watch 45s Official Demo Video](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/media/deskaura_demo_preview.gif)](https://github.com/duongbirken2510/deskaura/raw/main/docs/media/deskaura_demo_45s.mp4)
+[![Watch Official Cinematic TVC](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/media/deskaura_tvc_preview.gif)](https://github.com/duongbirken2510/deskaura/raw/main/docs/media/deskaura_tvc_intro.mp4)
 
-🎬 **[▶️ Nhấn vào đây để xem / tải Video Demo 45s Full HD 60fps (`deskaura_demo_45s.mp4`)](https://github.com/duongbirken2510/deskaura/raw/main/docs/media/deskaura_demo_45s.mp4)**
+🌟 **[▶️ Xem Video TVC Điện Ảnh Có Thuyết Minh (`deskaura_tvc_intro.mp4`)](https://github.com/duongbirken2510/deskaura/raw/main/docs/media/deskaura_tvc_intro.mp4)** • **[🎬 Xem Video Demo Giao Diện 45s (`deskaura_demo_45s.mp4`)](https://github.com/duongbirken2510/deskaura/raw/main/docs/media/deskaura_demo_45s.mp4)**
 
 ---
 

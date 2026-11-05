@@ -21,7 +21,19 @@
 
 ---
 
-## 🎬 Video Demo 45 Giây / 45-Second Product Showcase
+## 🎬 Video TVC Giới Thiệu & Demo Trực Quan / Official Cinematic TVC & 45s UI Walkthrough
+
+### 1. 🌟 TVC Điện Ảnh: "Chiếc Bẫy Rụt Vai & Giải Pháp Tĩnh Lặng" (Google Flow 4K / 1080p)
+
+<div align="center">
+
+[![DeskAura Official Cinematic TVC](./docs/media/deskaura_tvc_preview.gif)](./docs/media/deskaura_tvc_intro.mp4)
+
+🎥 **[▶️ Mở Video TVC Có Thuyết Minh & Nhạc Nền Acoustic (`deskaura_tvc_intro.mp4` — 1080p)](./docs/media/deskaura_tvc_intro.mp4)** • **[💎 Tải Bản Gốc 4K UHD (`Video DeskAura 01.mp4`)](./docs/media/Video%20DeskAura%2001.mp4)**
+
+</div>
+
+### 2. 🖥️ Video Trải Nghiệm Giao Diện Thực Tế 45 Giây (1080p60)
 
 <div align="center">
 
