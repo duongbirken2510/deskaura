@@ -4,7 +4,6 @@ import {
   Activity,
   BarChart3,
   Bell,
-  Cloud,
   Clock,
   Coffee,
   Droplets,
@@ -324,26 +323,30 @@ export const App: React.FC = () => {
 
     if (firebaseSyncService.isConfigured()) {
       const unsubAuth = firebaseSyncService.onUserChange((user) => {
-        setUserEmail(user?.email || null);
+        const email = user?.email ? user.email.trim().toLowerCase() : null;
+        setUserEmail(email);
+        setActiveSyncCode(email || '');
+        if (email) {
+          firebaseSyncService.startRealtimeSync(
+            email,
+            {
+              dailyStats,
+              weeklyHistory,
+              standupSettings,
+              hydrationSettings,
+              voiceSettings,
+            },
+            handleRemoteCloudSnapshot,
+            (status, err) => {
+              setSyncStatus(status);
+              setSyncError(err || null);
+            }
+          );
+        } else {
+          setSyncStatus('disconnected');
+          setConnectedDevices([]);
+        }
       });
-      const savedCode = firebaseSyncService.getSavedSyncCode();
-      if (savedCode) {
-        firebaseSyncService.startRealtimeSync(
-          savedCode,
-          {
-            dailyStats,
-            weeklyHistory,
-            standupSettings,
-            hydrationSettings,
-            voiceSettings,
-          },
-          handleRemoteCloudSnapshot,
-          (status, err) => {
-            setSyncStatus(status);
-            setSyncError(err || null);
-          }
-        );
-      }
       return () => {
         unsubAuth();
         firebaseSyncService.stopListening();
@@ -475,6 +478,8 @@ export const App: React.FC = () => {
   const handleLogoutAccount = async () => {
     await firebaseSyncService.logout();
     setUserEmail(null);
+    setActiveSyncCode('');
+    setConnectedDevices([]);
     setSyncStatus('disconnected');
   };
 
@@ -945,27 +950,22 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50/70 via-slate-50 to-sky-50/80 text-slate-800 flex flex-col">
       {/* Top Minimalist Daylight Navigation Bar */}
-      <header className="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-slate-200/70 px-6 py-3.5">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <header className="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-slate-200/70 px-5 py-2.5">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
           {/* Brand Logo */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <img
               src="/app-icon.svg"
               alt="DeskAura Logo"
-              className="w-10 h-10 rounded-2xl shadow-sm"
+              className="w-9 h-9 rounded-2xl shadow-sm"
             />
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base font-extrabold tracking-tight text-slate-800">
-                  DeskAura
-                </h1>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                  Office Wellness v1.1
-                </span>
-              </div>
-              <p className="text-xs text-slate-500">
-                {t.brandSubtitle}
-              </p>
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-base font-extrabold tracking-tight text-slate-800">
+                DeskAura
+              </h1>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                v1.1
+              </span>
             </div>
           </div>
 
@@ -973,35 +973,35 @@ export const App: React.FC = () => {
           <nav className="flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/60">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                 activeTab === 'dashboard'
                   ? 'bg-white text-emerald-700 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <LayoutDashboard className="w-4 h-4" />
+              <LayoutDashboard className="w-3.5 h-3.5" />
               {t.navDashboard}
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                 activeTab === 'analytics'
                   ? 'bg-white text-emerald-700 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <BarChart3 className="w-4 h-4" />
+              <BarChart3 className="w-3.5 h-3.5" />
               {t.navAnalytics}
             </button>
             <button
               onClick={() => setActiveTab('sounds')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                 activeTab === 'sounds'
                   ? 'bg-white text-emerald-700 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Headphones className="w-4 h-4" />
+              <Headphones className="w-3.5 h-3.5" />
               {t.navSounds}
               {anySoundActive && (
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
@@ -1009,43 +1009,30 @@ export const App: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('settings')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                 activeTab === 'settings'
                   ? 'bg-white text-emerald-700 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-3.5 h-3.5" />
               {t.navSettings}
             </button>
           </nav>
 
           {/* Right Quick Status, Language Toggle & Tray Action */}
-          <div className="flex items-center gap-2">
-            {/* Cloud Sync Quick Indicator Pill */}
+          <div className="flex items-center gap-1.5">
+            {/* Single-Icon Language Toggle (Click to switch VI <-> EN) */}
             <button
-              onClick={() => setActiveTab('settings')}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition ${
-                syncStatus === 'synced'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : syncStatus === 'offline_cached'
-                  ? 'bg-amber-50 text-amber-700 border-amber-200'
-                  : 'bg-slate-50 text-slate-600 border-slate-200/80 hover:bg-slate-100'
-              }`}
+              onClick={() => handleSwitchLanguage(lang === 'vi' ? 'en' : 'vi')}
+              className="w-8 h-8 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 flex items-center justify-center text-sm transition shadow-xs"
               title={
-                lang === 'en'
-                  ? 'Multi-Device Cloud Sync Status'
-                  : 'Trạng thái Đồng bộ Đa thiết bị (Cloud Sync)'
+                lang === 'vi'
+                  ? 'Đang dùng Tiếng Việt — Bấm để đổi sang Tiếng Anh (EN)'
+                  : 'Current: English — Click to switch to Vietnamese (VI)'
               }
             >
-              <Cloud className="w-3.5 h-3.5" />
-              {activeSyncCode
-                ? activeSyncCode
-                : syncStatus === 'synced'
-                ? 'Cloud'
-                : lang === 'en'
-                ? 'Sync'
-                : 'Đồng bộ'}
+              {lang === 'vi' ? '🇻🇳' : '🇬🇧'}
             </button>
 
             {/* Quick Voice Mute / Silent Mode Toggle Pill */}
@@ -1081,34 +1068,8 @@ export const App: React.FC = () => {
               )}
             </button>
 
-            {/* Language Switcher Pill (VI / EN) */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/80">
-              <button
-                onClick={() => handleSwitchLanguage('vi')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
-                  lang === 'vi'
-                    ? 'bg-white text-emerald-700 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="Chuyển sang Tiếng Việt"
-              >
-                🇻🇳 VI
-              </button>
-              <button
-                onClick={() => handleSwitchLanguage('en')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
-                  lang === 'en'
-                    ? 'bg-white text-emerald-700 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="Switch to English"
-              >
-                🇬🇧 EN
-              </button>
-            </div>
-
             {isDuckedActive && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-100 text-sky-800 border border-sky-200 animate-pulse">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-sky-100 text-sky-800 border border-sky-200 animate-pulse">
                 <Volume2 className="w-3.5 h-3.5" />
                 {t.duckingBadge}
               </span>
@@ -1116,7 +1077,7 @@ export const App: React.FC = () => {
 
             <button
               onClick={() => setIsPaused((p) => !p)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition ${
                 isPaused
                   ? 'bg-amber-50 text-amber-700 border-amber-200'
                   : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80'
@@ -1135,7 +1096,7 @@ export const App: React.FC = () => {
 
             <button
               onClick={() => hideWindowToTray()}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition"
             >
               <Minimize2 className="w-3.5 h-3.5" />
               {t.hideToTray}
@@ -1455,7 +1416,7 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Card 3: Virtual Desk Plant & Quick Soundscape (3 cols) */}
+              {/* Card 3: Virtual Desk Plant & Daily Wellness Milestones (3 cols) */}
               <div className="lg:col-span-3 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between">
@@ -1479,87 +1440,40 @@ export const App: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Quick Sound Presets on Dashboard */}
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-700">
-                        {t.quickPlaySound}
+                  {/* Daily Wellness Growth Breakdown */}
+                  <div className="mt-4 space-y-2.5">
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-600">
+                        {lang === 'en' ? '💧 Hydration Goal' : '💧 Mục tiêu nước'}
                       </span>
-                      <button
-                        onClick={handleStopAllSounds}
-                        className="text-[11px] font-bold text-rose-500 hover:underline"
-                      >
-                        {t.stopAllMusicBtn}
-                      </button>
+                      <span className="text-xs font-bold text-sky-600">
+                        {waterProgressPct}%
+                      </span>
                     </div>
-                    <div className="space-y-2">
-                      {SOUND_PRESETS.slice(0, 3).map((preset) => (
-                        <button
-                          key={preset.id}
-                          onClick={() => handleApplyPreset(preset.mix)}
-                          className="w-full text-left px-3 py-2 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200/60 hover:border-emerald-200 transition flex items-center justify-between"
-                        >
-                          <span className="text-xs font-semibold text-slate-700 truncate">
-                            {preset.name}
-                          </span>
-                          <Play className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                        </button>
-                      ))}
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-600">
+                        {lang === 'en' ? '🧘 Stand-up Breaks' : '🧘 Đứng dậy giãn cơ'}
+                      </span>
+                      <span className="text-xs font-bold text-emerald-600">
+                        {dailyStats.standupCompletedCount} / 8 {t.timesUnit}
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-600">
+                        {lang === 'en' ? '👀 Eye Rest 20-20-20' : '👀 Nghỉ mắt 20-20-20'}
+                      </span>
+                      <span className="text-xs font-bold text-amber-600">
+                        {dailyStats.eyeBreakCompletedCount} {t.timesUnit}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <button
-                  onClick={() => setActiveTab('sounds')}
+                  onClick={() => setActiveTab('analytics')}
                   className="mt-4 w-full py-2.5 rounded-2xl text-xs font-bold bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 transition"
                 >
-                  {t.openFullMixerBtn}
-                </button>
-              </div>
-            </div>
-
-            {/* Bottom Quick Bar: Active Audio & Voice Test */}
-            <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-800">
-                    {anySoundActive
-                      ? `${t.playingAmbientStatus} ${
-                          activeStationName ? `(${activeStationName})` : ''
-                        }`
-                      : t.noAmbientStatus}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {t.voiceDuckExplain}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2.5">
-                <button
-                  onClick={() =>
-                    openWebMusicPlayer(
-                      'https://zingmp3.vn/moi-phat-hanh',
-                      '🎶 DeskAura — Zing MP3 Mới Phát Hành'
-                    )
-                  }
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition"
-                >
-                  {t.openZingBtn}
-                </button>
-                <button
-                  disabled={isTestingVoice}
-                  onClick={async () => {
-                    setIsTestingVoice(true);
-                    await triggerVoiceReminder('test');
-                    setIsTestingVoice(false);
-                  }}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition disabled:opacity-60"
-                >
-                  {t.testVoiceBtn}
+                  {lang === 'en' ? 'View Full Statistics →' : 'Xem thống kê chi tiết →'}
                 </button>
               </div>
             </div>

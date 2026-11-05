@@ -6,9 +6,38 @@ export interface SystemContextInfo {
   is_fullscreen: boolean;
 }
 
+export interface HardwareDeviceInfo {
+  hardware_id: string;
+  device_name: string;
+  os: string;
+}
+
 const isTauriEnv = (): boolean => {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 };
+
+export async function getHardwareDeviceInfo(): Promise<HardwareDeviceInfo | null> {
+  if (!isTauriEnv()) {
+    return null;
+  }
+  try {
+    return await invoke<HardwareDeviceInfo>('get_hardware_device_info');
+  } catch {
+    return null;
+  }
+}
+
+export async function startGoogleOAuthLoopback(
+  apiKey: string,
+  authDomain: string,
+  projectId: string
+): Promise<string> {
+  return await invoke<string>('start_google_oauth_loopback', {
+    apiKey,
+    authDomain,
+    projectId,
+  });
+}
 
 export async function getSystemContext(): Promise<SystemContextInfo> {
   if (!isTauriEnv()) {

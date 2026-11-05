@@ -5,7 +5,7 @@ rules_version = '2';
 // ===============================================================
 //
 // Collection: /sync_rooms/{syncCode}
-// Document ID: syncCode (6..20 chars, e.g., "AURA-892145")
+// Document ID: syncCode (lowercase user email address, 5..128 chars, e.g., "duongbirken@gmail.com")
 // Allowed Fields:
 //   - syncCode: string (matches document ID, immutable on update)
 //   - ownerUid: string (set to request.auth.uid on create, immutable on update)
@@ -37,6 +37,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isSyncRoomEmailOwner(syncCode) {
+      return request.auth != null &&
+        request.auth.token.email != null &&
+        request.auth.token.email.lower() == syncCode &&
+        syncCode.size() >= 5 &&
+        syncCode.size() <= 128;
+    }
+
     function isValidSyncRoomData(syncCode) {
       return request.resource.data.keys().hasOnly([
         'syncCode',
@@ -51,9 +59,10 @@ service cloud.firestore {
         'hydrationSettings',
         'voiceSettings'
       ]) &&
+      request.resource.data.syncCode is string &&
       request.resource.data.syncCode == syncCode &&
-      syncCode.size() >= 6 &&
-      syncCode.size() <= 20;
+      syncCode.size() >= 5 &&
+      syncCode.size() <= 128;
     }
 
     function isValidUserWellnessData() {
@@ -70,30 +79,28 @@ service cloud.firestore {
       ]);
     }
 
-    // Multi-device Aura Sync Rooms (/sync_rooms/{syncCode})
+    // Multi-device Aura Sync Rooms keyed by lowercase email (/sync_rooms/{syncCode})
     match /sync_rooms/{syncCode} {
-      // Exact room lookup allowed for authenticated devices knowing the syncCode
-      allow get: if request.auth != null &&
-        syncCode.size() >= 6 &&
-        syncCode.size() <= 20;
+      // Exact room lookup allowed only for the authenticated owner of this email address
+      allow get: if isSyncRoomEmailOwner(syncCode);
 
       // Explicitly forbid listing/enumerating sync rooms
       allow list: if false;
 
-      // Creating a sync room requires authentication, valid keys, and creator as ownerUid
-      allow create: if request.auth != null &&
+      // Creating a sync room requires matching authenticated email, valid keys, and creator as ownerUid
+      allow create: if isSyncRoomEmailOwner(syncCode) &&
         request.resource.data.ownerUid == request.auth.uid &&
         isValidSyncRoomData(syncCode);
 
-      // Updating a sync room requires authentication, valid keys, and immutable ownerUid/syncCode
-      allow update: if request.auth != null &&
-        request.resource.data.ownerUid == resource.data.ownerUid &&
-        request.resource.data.syncCode == resource.data.syncCode &&
+      // Updating a sync room requires matching authenticated email, valid keys, and immutable ownerUid/syncCode
+      allow update: if isSyncRoomEmailOwner(syncCode) &&
+        (!('ownerUid' in resource.data) || request.resource.data.ownerUid == resource.data.ownerUid) &&
+        (!('syncCode' in resource.data) || request.resource.data.syncCode == resource.data.syncCode) &&
         isValidSyncRoomData(syncCode);
 
-      // Only the original creator/owner of the sync room may delete it
-      allow delete: if request.auth != null &&
-        resource.data.ownerUid == request.auth.uid;
+      // Only the authenticated owner of the email room may delete it
+      allow delete: if isSyncRoomEmailOwner(syncCode) &&
+        (!('ownerUid' in resource.data) || resource.data.ownerUid == request.auth.uid);
     }
 
     // Personal User Cloud Profile (/users/{userId})

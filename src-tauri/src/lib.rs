@@ -15,6 +15,287 @@ pub struct SystemContextInfo {
     pub is_fullscreen: bool,
 }
 
+#[derive(Serialize)]
+pub struct HardwareDeviceInfo {
+    pub hardware_id: String,
+    pub device_name: String,
+    pub os: String,
+}
+
+#[tauri::command]
+fn get_hardware_device_info() -> HardwareDeviceInfo {
+    #[cfg(target_os = "macos")]
+    {
+        let mut hardware_id = String::new();
+        if let Ok(out) = std::process::Command::new("ioreg")
+            .args(["-rd1", "-c", "IOPlatformExpertDevice"])
+            .output()
+        {
+            let text = String::from_utf8_lossy(&out.stdout);
+            for line in text.lines() {
+                if line.contains("IOPlatformUUID") {
+                    if let Some(val) = line.split('=').nth(1) {
+                        hardware_id = val.trim().trim_matches('"').to_string();
+                        break;
+                    }
+                }
+            }
+        }
+
+        let mut computer_name = String::new();
+        if let Ok(out) = std::process::Command::new("scutil")
+            .args(["--get", "ComputerName"])
+            .output()
+        {
+            let name = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            if !name.is_empty() {
+                computer_name = name;
+            }
+        }
+        if computer_name.is_empty() {
+            computer_name = "MacBook".to_string();
+        }
+        if hardware_id.is_empty() {
+            hardware_id = format!("mac-{}", computer_name.to_lowercase().replace(' ', "-"));
+        }
+
+        HardwareDeviceInfo {
+            hardware_id,
+            device_name: format!("{} (macOS)", computer_name),
+            os: "macOS".to_string(),
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        let mut hardware_id = String::new();
+        if let Ok(out) = std::process::Command::new("reg")
+            .args([
+                "query",
+                r"HKLM\SOFTWARE\Microsoft\Cryptography",
+                "/v",
+                "MachineGuid",
+            ])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output()
+        {
+            let text = String::from_utf8_lossy(&out.stdout);
+            for line in text.lines() {
+                if line.contains("MachineGuid") {
+                    if let Some(guid) = line.split_whitespace().last() {
+                        hardware_id = guid.trim().to_string();
+                        break;
+                    }
+                }
+            }
+        }
+        let computer_name = std::env::var("COMPUTERNAME").unwrap_or_else(|_| "Windows PC".to_string());
+        if hardware_id.is_empty() {
+            hardware_id = format!("win-{}", computer_name.to_lowercase());
+        }
+        HardwareDeviceInfo {
+            hardware_id,
+            device_name: format!("{} (Windows)", computer_name),
+            os: "Windows".to_string(),
+        }
+    }
+
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        HardwareDeviceInfo {
+            hardware_id: "desktop-generic".to_string(),
+            device_name: "Desktop PC".to_string(),
+            os: "Desktop".to_string(),
+        }
+    }
+}
+
+#[tauri::command]
+async fn start_google_oauth_loopback(
+    app: AppHandle,
+    api_key: String,
+    auth_domain: String,
+    project_id: String,
+) -> Result<String, String> {
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::time::{Duration, Instant};
+
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .map_err(|e| format!("Không thể khởi tạo cổng xác thực cục bộ: {e}"))?;
+    let port = listener
+        .local_addr()
+        .map_err(|e| format!("Không thể lấy cổng xác thực: {e}"))?
+        .port();
+
+    let auth_url = format!("http://localhost:{port}/");
+    let _ = open_in_system_browser(auth_url);
+
+    let app_clone = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let _ = listener.set_nonblocking(true);
+        let start = Instant::now();
+        let timeout = Duration::from_secs(180);
+
+        while start.elapsed() < timeout {
+            match listener.accept() {
+                Ok((mut stream, _)) => {
+                    let _ = stream.set_nonblocking(false);
+                    let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
+                    let mut buf = [0u8; 8192];
+                    let n = stream.read(&mut buf).unwrap_or(0);
+                    if n == 0 {
+                        continue;
+                    }
+                    let req = String::from_utf8_lossy(&buf[..n]);
+                    let first_line = req.lines().next().unwrap_or("");
+
+                    if first_line.starts_with("GET /callback?") {
+                        let path_part = first_line.split_whitespace().nth(1).unwrap_or("");
+                        let query = path_part.split('?').nth(1).unwrap_or("");
+                        let mut id_token = String::new();
+                        let mut err_msg = String::new();
+
+                        for pair in query.split('&') {
+                            let mut kv = pair.splitn(2, '=');
+                            let k = kv.next().unwrap_or("");
+                            let v = kv.next().unwrap_or("");
+                            if k == "id_token" {
+                                id_token = v.to_string();
+                            } else if k == "error" {
+                                err_msg = v.to_string();
+                            }
+                        }
+
+                        let success_html = r#"<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<title>DeskAura — Đã kết nối Gmail</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0fdf4; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #064e3b; }
+  .card { background: white; padding: 36px 40px; border-radius: 24px; box-shadow: 0 12px 32px rgba(16,185,129,0.12); text-align: center; max-width: 420px; border: 1px solid #d1fae5; }
+  .icon { font-size: 48px; margin-bottom: 12px; }
+  h2 { margin: 0 0 8px; font-size: 20px; }
+  p { margin: 0; font-size: 14px; color: #047857; line-height: 1.5; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">✅</div>
+    <h2>Đã kết nối Gmail thành công!</h2>
+    <p>Bạn có thể đóng tab trình duyệt này và quay lại ứng dụng <b>DeskAura</b>.</p>
+  </div>
+  <script>setTimeout(() => window.close(), 1500);</script>
+</body>
+</html>"#;
+
+                        let response = format!(
+                            "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            success_html.len(),
+                            success_html
+                        );
+                        let _ = stream.write_all(response.as_bytes());
+                        let _ = stream.flush();
+
+                        if let Some(window) = app_clone.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                        }
+
+                        if !id_token.is_empty() {
+                            return Ok(id_token);
+                        } else {
+                            return Err(format!("Đăng nhập Google bị hủy hoặc chưa bật trên Firebase Console ({err_msg})"));
+                        }
+                    } else {
+                        let login_html = format!(
+                            r#"<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<title>DeskAura — Đăng nhập bằng Google (Gmail)</title>
+<style>
+  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #1e293b; }}
+  .card {{ background: white; padding: 36px 40px; border-radius: 24px; box-shadow: 0 12px 32px rgba(15,23,42,0.08); text-align: center; max-width: 440px; border: 1px solid #e2e8f0; }}
+  h2 {{ margin: 0 0 8px; font-size: 20px; color: #0f172a; }}
+  p {{ margin: 0 0 20px; font-size: 14px; color: #64748b; line-height: 1.5; }}
+  button {{ background: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; }}
+  button:hover {{ background: #059669; }}
+  .err {{ margin-top: 14px; font-size: 12px; color: #e11d48; background: #fff1f2; padding: 10px; border-radius: 10px; display: none; }}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h2>💧 DeskAura Cloud Sync</h2>
+    <p id="status">Đang mở cửa sổ chọn tài khoản Gmail của bạn...</p>
+    <button id="btn" onclick="startLogin()">Chọn tài khoản Google (Gmail)</button>
+    <div id="err" class="err"></div>
+  </div>
+  <script type="module">
+    import {{ initializeApp }} from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js';
+    import {{ getAuth, GoogleAuthProvider, signInWithPopup }} from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js';
+
+    const app = initializeApp({{
+      apiKey: "{api_key}",
+      authDomain: "{auth_domain}",
+      projectId: "{project_id}"
+    }});
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({{ prompt: 'select_account' }});
+
+    window.startLogin = async () => {{
+      const errEl = document.getElementById('err');
+      errEl.style.display = 'none';
+      try {{
+        const result = await signInWithPopup(auth, provider);
+        const cred = GoogleAuthProvider.credentialFromResult(result);
+        if (cred && cred.idToken) {{
+          window.location.href = '/callback?id_token=' + encodeURIComponent(cred.idToken);
+        }} else {{
+          throw new Error('Không nhận được mã xác thực Google.');
+        }}
+      }} catch (e) {{
+        errEl.style.display = 'block';
+        errEl.textContent = e.message || String(e);
+      }}
+    }};
+
+    window.addEventListener('DOMContentLoaded', () => {{
+      setTimeout(() => window.startLogin(), 200);
+    }});
+  </script>
+</body>
+</html>"#
+                        );
+
+                        let response = format!(
+                            "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            login_html.len(),
+                            login_html
+                        );
+                        let _ = stream.write_all(response.as_bytes());
+                        let _ = stream.flush();
+                    }
+                }
+                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    std::thread::sleep(Duration::from_millis(80));
+                }
+                Err(_) => {
+                    std::thread::sleep(Duration::from_millis(80));
+                }
+            }
+        }
+        Err("Hết thời gian chờ đăng nhập Google (3 phút).".to_string())
+    })
+    .await
+    .map_err(|e| format!("Lỗi tiến trình xác thực: {e}"))?
+}
+
 #[tauri::command]
 fn get_system_context() -> SystemContextInfo {
     SystemContextInfo {
@@ -716,6 +997,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             get_system_context,
+            get_hardware_device_info,
+            start_google_oauth_loopback,
             duck_other_apps,
             restore_other_apps,
             open_web_music_player,

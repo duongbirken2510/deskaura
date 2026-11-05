@@ -6,7 +6,7 @@ import {
   createUserWithEmailAndPassword,
   getAuth,
   onAuthStateChanged,
-  signInAnonymously,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -29,6 +29,10 @@ import {
   VoiceReminderSettings,
   WaterLogEntry,
 } from '../types/wellness';
+import {
+  getHardwareDeviceInfo,
+  startGoogleOAuthLoopback,
+} from './tauriBridge';
 
 export interface FirebaseConfigPayload {
   apiKey: string;
@@ -71,6 +75,7 @@ export type SyncConnectionStatus =
 const FIREBASE_CONFIG_STORAGE_KEY = 'deskaura_firebase_config_v1';
 const SYNC_CODE_STORAGE_KEY = 'deskaura_sync_code_v1';
 const DEVICE_NAME_STORAGE_KEY = 'deskaura_device_name_v1';
+const HARDWARE_ID_STORAGE_KEY = 'deskaura_hardware_id_v1';
 
 const viteEnv = (import.meta as unknown as { env?: Record<string, string> }).env || {};
 
@@ -89,7 +94,11 @@ const DEFAULT_DESKAURA_FIREBASE_CONFIG: FirebaseConfigPayload = {
     viteEnv.VITE_FIREBASE_APP_ID || '1:1017938473342:web:d04594f1751072c4b4832f',
 };
 
+let cachedHardwareId: string | null = null;
+let cachedHardwareOS: string | null = null;
+
 export function getDetectedOS(): string {
+  if (cachedHardwareOS) return cachedHardwareOS;
   const ua = navigator.userAgent || '';
   if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS';
   if (/Macintosh|Mac OS X/i.test(ua)) return 'macOS';
@@ -104,7 +113,7 @@ export function getDefaultDeviceName(): string {
   const ua = navigator.userAgent || '';
   let detected = 'DeskAura Device';
   if (/Macintosh|Mac OS X/i.test(ua)) {
-    detected = 'MacBook / macOS';
+    detected = 'MacBook (macOS)';
   } else if (/Windows/i.test(ua)) {
     detected = 'Windows PC';
   } else if (/iPhone|iPad|iPod/i.test(ua)) {
@@ -114,9 +123,39 @@ export function getDefaultDeviceName(): string {
   return detected;
 }
 
+export async function ensureHardwareIdentity(): Promise<string> {
+  if (cachedHardwareId) return cachedHardwareId;
+
+  const hwInfo = await getHardwareDeviceInfo();
+  if (hwInfo && hwInfo.hardware_id) {
+    cachedHardwareId = hwInfo.hardware_id;
+    cachedHardwareOS = hwInfo.os;
+    localStorage.setItem(HARDWARE_ID_STORAGE_KEY, hwInfo.hardware_id);
+    const savedName = localStorage.getItem(DEVICE_NAME_STORAGE_KEY);
+    if (
+      !savedName ||
+      savedName === 'MacBook / macOS' ||
+      savedName === 'DeskAura Device'
+    ) {
+      localStorage.setItem(DEVICE_NAME_STORAGE_KEY, hwInfo.device_name);
+    }
+    return cachedHardwareId;
+  }
+
+  let storedId = localStorage.getItem(HARDWARE_ID_STORAGE_KEY);
+  if (!storedId) {
+    storedId = `web-${getDetectedOS().toLowerCase()}-${Math.random()
+      .toString(36)
+      .slice(2, 10)}`;
+    localStorage.setItem(HARDWARE_ID_STORAGE_KEY, storedId);
+  }
+  cachedHardwareId = storedId;
+  return cachedHardwareId;
+}
+
 export function mergeConnectedDevices(
   existing: ConnectedDeviceMetadata[] | undefined,
-  currentUid: string
+  hardwareDeviceId: string
 ): ConnectedDeviceMetadata[] {
   const byUid = new Map<string, ConnectedDeviceMetadata>();
   (existing || []).forEach((dev) => {
@@ -124,8 +163,8 @@ export function mergeConnectedDevices(
       byUid.set(dev.uid, dev);
     }
   });
-  byUid.set(currentUid, {
-    uid: currentUid,
+  byUid.set(hardwareDeviceId, {
+    uid: hardwareDeviceId,
     name: getDefaultDeviceName(),
     os: getDetectedOS(),
     lastSeenAt: Date.now(),
@@ -140,22 +179,11 @@ export function setDeviceName(name: string): void {
 }
 
 export function generateAuraSyncCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let suffix = '';
-  for (let i = 0; i < 6; i += 1) {
-    suffix += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return `AURA-${suffix}`;
+  return '';
 }
 
 export function normalizeSyncCode(input: string): string {
-  const clean = input.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
-  if (!clean) return '';
-  if (clean.startsWith('AURA-')) return clean;
-  if (clean.length === 6 && !clean.includes('-')) {
-    return `AURA-${clean}`;
-  }
-  return clean;
+  return input.trim().toLowerCase();
 }
 
 /**
@@ -166,16 +194,13 @@ export function mergeDailyStats(
   local: DailyWellnessStats,
   remote: DailyWellnessStats
 ): DailyWellnessStats {
-  // If remote is from an older date than local, keep local (today)
   if (remote.date < local.date) {
     return local;
   }
-  // If remote is a newer date than local, adopt remote
   if (remote.date > local.date) {
     return remote;
   }
 
-  // Same date (YYYY-MM-DD): Perform Deduplicated Log Union for waterLogs
   const logMap = new Map<string, WaterLogEntry>();
   [...(remote.waterLogs || []), ...(local.waterLogs || [])].forEach((entry) => {
     if (entry && entry.id) {
@@ -240,54 +265,6 @@ export function mergeWeeklyHistory(
     .slice(-14);
 }
 
-/**
- * Parses a pasted Firebase snippet (either JSON or JS `const firebaseConfig = { ... }`)
- */
-export function parseFirebaseConfigInput(rawInput: string): FirebaseConfigPayload | null {
-  const trimmed = rawInput.trim();
-  if (!trimmed) return null;
-
-  try {
-    const parsed = JSON.parse(trimmed);
-    if (parsed.apiKey && parsed.projectId) {
-      return {
-        apiKey: String(parsed.apiKey),
-        authDomain:
-          String(parsed.authDomain || `${parsed.projectId}.firebaseapp.com`),
-        projectId: String(parsed.projectId),
-        storageBucket: String(parsed.storageBucket || ''),
-        messagingSenderId: String(parsed.messagingSenderId || ''),
-        appId: String(parsed.appId || ''),
-      };
-    }
-  } catch {
-    // Fallback regex extraction for JS object literal pasted from Firebase Console
-  }
-
-  const extractField = (key: string): string => {
-    const regex = new RegExp(`${key}\\s*:\\s*["']([^"']+)["']`, 'i');
-    const match = trimmed.match(regex);
-    return match ? match[1].trim() : '';
-  };
-
-  const apiKey = extractField('apiKey');
-  const projectId = extractField('projectId');
-  const appId = extractField('appId');
-
-  if (!apiKey || !projectId) {
-    return null;
-  }
-
-  return {
-    apiKey,
-    authDomain: extractField('authDomain') || `${projectId}.firebaseapp.com`,
-    projectId,
-    storageBucket: extractField('storageBucket') || `${projectId}.firebasestorage.app`,
-    messagingSenderId: extractField('messagingSenderId'),
-    appId: appId || '1:000000000000:web:deskaura',
-  };
-}
-
 class FirebaseSyncService {
   private app: FirebaseApp | null = null;
   private auth: Auth | null = null;
@@ -296,7 +273,7 @@ class FirebaseSyncService {
   private unsubscribeAuth: (() => void) | null = null;
   private currentUser: User | null = null;
 
-  public getSavedConfig(): FirebaseConfigPayload | null {
+  public getSavedConfig(): FirebaseConfigPayload {
     const raw = localStorage.getItem(FIREBASE_CONFIG_STORAGE_KEY);
     if (raw) {
       try {
@@ -316,12 +293,20 @@ class FirebaseSyncService {
   }
 
   public getSavedSyncCode(): string {
-    return localStorage.getItem(SYNC_CODE_STORAGE_KEY) || '';
+    const saved = localStorage.getItem(SYNC_CODE_STORAGE_KEY) || '';
+    // Only keep valid email sync codes; discard legacy AURA- codes
+    if (saved.includes('@')) {
+      return saved.trim().toLowerCase();
+    }
+    if (saved) {
+      localStorage.removeItem(SYNC_CODE_STORAGE_KEY);
+    }
+    return '';
   }
 
   public saveSyncCode(code: string): void {
     const normalized = normalizeSyncCode(code);
-    if (normalized) {
+    if (normalized && normalized.includes('@')) {
       localStorage.setItem(SYNC_CODE_STORAGE_KEY, normalized);
     } else {
       localStorage.removeItem(SYNC_CODE_STORAGE_KEY);
@@ -357,6 +342,9 @@ class FirebaseSyncService {
         this.saveConfig(config);
       }
 
+      // Initialize hardware identity in background
+      ensureHardwareIdentity().catch(() => {});
+
       return { ok: true };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -382,8 +370,15 @@ class FirebaseSyncService {
     }
 
     this.unsubscribeAuth = onAuthStateChanged(this.auth, (user) => {
-      this.currentUser = user;
-      callback(user);
+      if (user && !user.isAnonymous && user.email) {
+        this.currentUser = user;
+        this.saveSyncCode(user.email);
+        callback(user);
+      } else {
+        this.currentUser = null;
+        this.saveSyncCode('');
+        callback(null);
+      }
     });
 
     return () => {
@@ -394,22 +389,6 @@ class FirebaseSyncService {
     };
   }
 
-  public async ensureAuthenticated(): Promise<User> {
-    if (!this.auth) {
-      const res = this.init();
-      if (!res.ok || !this.auth) {
-        throw new Error(res.error || 'Firebase chưa được khởi tạo');
-      }
-    }
-    if (this.auth.currentUser) {
-      this.currentUser = this.auth.currentUser;
-      return this.auth.currentUser;
-    }
-    const cred = await signInAnonymously(this.auth);
-    this.currentUser = cred.user;
-    return cred.user;
-  }
-
   public async signInWithGoogle(): Promise<User> {
     if (!this.auth) {
       const res = this.init();
@@ -417,9 +396,33 @@ class FirebaseSyncService {
         throw new Error(res.error || 'Firebase chưa được khởi tạo');
       }
     }
+
+    const isTauri =
+      typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
+    if (isTauri) {
+      const cfg = this.getSavedConfig();
+      const idToken = await startGoogleOAuthLoopback(
+        cfg.apiKey,
+        cfg.authDomain,
+        cfg.projectId
+      );
+      const credential = GoogleAuthProvider.credential(idToken);
+      const cred = await signInWithCredential(this.auth, credential);
+      this.currentUser = cred.user;
+      if (cred.user.email) {
+        this.saveSyncCode(cred.user.email);
+      }
+      return cred.user;
+    }
+
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     const cred = await signInWithPopup(this.auth, provider);
     this.currentUser = cred.user;
+    if (cred.user.email) {
+      this.saveSyncCode(cred.user.email);
+    }
     return cred.user;
   }
 
@@ -438,11 +441,45 @@ class FirebaseSyncService {
       ? await createUserWithEmailAndPassword(this.auth, email.trim(), password)
       : await signInWithEmailAndPassword(this.auth, email.trim(), password);
     this.currentUser = cred.user;
+    if (cred.user.email) {
+      this.saveSyncCode(cred.user.email);
+    }
     return cred.user;
   }
 
+  /**
+   * Unlinks this physical machine's Hardware ID from the current Gmail room before signing out!
+   * Ensures that if Machine 2 switches from Gmail 1 to Gmail 2, Gmail 1 immediately drops Machine 2.
+   */
   public async logout(): Promise<void> {
     this.stopListening();
+    try {
+      const currentEmail = this.currentUser?.email?.trim().toLowerCase();
+      if (currentEmail && this.db) {
+        const hwId = await ensureHardwareIdentity();
+        const docRef = doc(this.db, 'sync_rooms', currentEmail);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const data = snap.data() as CloudWellnessDocument;
+          const remainingDevices = (data.connectedDevices || []).filter(
+            (d) => d.uid !== hwId
+          );
+          await setDoc(
+            docRef,
+            {
+              ...data,
+              connectedDevices: remainingDevices,
+              updatedAt: Date.now(),
+            },
+            { merge: true }
+          );
+        }
+      }
+    } catch {
+      // ignore offline unlink errors
+    }
+
+    this.saveSyncCode('');
     if (this.auth) {
       await signOut(this.auth);
       this.currentUser = null;
@@ -450,41 +487,44 @@ class FirebaseSyncService {
   }
 
   /**
-   * Starts real-time listener on either `/sync_rooms/{syncCode}` (if paired via Aura Sync Code)
-   * or `/users/{uid}` (if signed in via Google/Email without a custom room code).
+   * Starts real-time listener on `/sync_rooms/{gmail}` using the authenticated Gmail address as the Room ID.
+   * Each physical computer is tracked inside `connectedDevices` via its permanent Hardware ID (`IOPlatformUUID` / `MachineGuid`).
    */
   public async startRealtimeSync(
-    syncCode: string | null,
+    _syncCode: string | null,
     initialLocalData: Omit<CloudWellnessDocument, 'updatedAt' | 'lastDeviceName'>,
     onRemoteData: (docData: CloudWellnessDocument) => void,
     onStatusChange: (status: SyncConnectionStatus, errorMsg?: string) => void
   ): Promise<void> {
     try {
+      if (!this.auth) {
+        this.init();
+      }
+      const user = this.auth?.currentUser || this.currentUser;
+      if (!user || user.isAnonymous || !user.email) {
+        onStatusChange('disconnected');
+        return;
+      }
+
       onStatusChange('connecting');
-      const user = await this.ensureAuthenticated();
       if (!this.db) {
         throw new Error('Firestore chưa sẵn sàng');
       }
 
       this.stopListening();
 
-      const normalizedCode = syncCode ? normalizeSyncCode(syncCode) : '';
-      const targetDocRef = normalizedCode
-        ? doc(this.db, 'sync_rooms', normalizedCode)
-        : doc(this.db, 'users', user.uid);
+      const emailKey = user.email.trim().toLowerCase();
+      this.saveSyncCode(emailKey);
+      const hwId = await ensureHardwareIdentity();
+      const targetDocRef = doc(this.db, 'sync_rooms', emailKey);
 
-      // Check if document exists on cloud; if not, seed it with local data
       const existingSnap = await getDoc(targetDocRef);
       if (!existingSnap.exists()) {
         const seedPayload: CloudWellnessDocument = {
-          ...(normalizedCode
-            ? {
-                syncCode: normalizedCode,
-                ownerUid: user.uid,
-                linkedUids: [user.uid],
-              }
-            : {}),
-          connectedDevices: mergeConnectedDevices([], user.uid),
+          syncCode: emailKey,
+          ownerUid: user.uid,
+          linkedUids: [user.uid],
+          connectedDevices: mergeConnectedDevices([], hwId),
           updatedAt: Date.now(),
           lastDeviceName: getDefaultDeviceName(),
           dailyStats: initialLocalData.dailyStats,
@@ -506,30 +546,28 @@ class FirebaseSyncService {
             )
           : initialLocalData.weeklyHistory.slice(-14);
 
-        if (normalizedCode) {
-          const ownerUid = existingData?.ownerUid || user.uid;
-          const linkedSet = new Set<string>(existingData?.linkedUids || [ownerUid]);
-          linkedSet.add(user.uid);
-          await setDoc(targetDocRef, {
-            syncCode: normalizedCode,
-            ownerUid,
-            linkedUids: Array.from(linkedSet).slice(0, 15),
-            connectedDevices: mergeConnectedDevices(
-              existingData?.connectedDevices,
-              user.uid
-            ),
-            updatedAt: Date.now(),
-            lastDeviceName: getDefaultDeviceName(),
-            dailyStats: mergedDaily,
-            weeklyHistory: mergedHistory,
-            standupSettings:
-              existingData?.standupSettings || initialLocalData.standupSettings,
-            hydrationSettings:
-              existingData?.hydrationSettings || initialLocalData.hydrationSettings,
-            voiceSettings:
-              existingData?.voiceSettings || initialLocalData.voiceSettings,
-          });
-        }
+        const ownerUid = existingData?.ownerUid || user.uid;
+        const linkedSet = new Set<string>(existingData?.linkedUids || [ownerUid]);
+        linkedSet.add(user.uid);
+        await setDoc(targetDocRef, {
+          syncCode: emailKey,
+          ownerUid,
+          linkedUids: Array.from(linkedSet).slice(0, 15),
+          connectedDevices: mergeConnectedDevices(
+            existingData?.connectedDevices,
+            hwId
+          ),
+          updatedAt: Date.now(),
+          lastDeviceName: getDefaultDeviceName(),
+          dailyStats: mergedDaily,
+          weeklyHistory: mergedHistory,
+          standupSettings:
+            existingData?.standupSettings || initialLocalData.standupSettings,
+          hydrationSettings:
+            existingData?.hydrationSettings || initialLocalData.hydrationSettings,
+          voiceSettings:
+            existingData?.voiceSettings || initialLocalData.voiceSettings,
+        });
       }
 
       this.unsubscribeSnapshot = onSnapshot(
@@ -555,16 +593,16 @@ class FirebaseSyncService {
   }
 
   public async pushUpdate(
-    syncCode: string | null,
+    _syncCode: string | null,
     payload: Omit<CloudWellnessDocument, 'updatedAt' | 'lastDeviceName'>
   ): Promise<void> {
     if (!this.db) return;
-    const user = this.currentUser || (await this.ensureAuthenticated());
-    const normalizedCode = syncCode ? normalizeSyncCode(syncCode) : '';
+    const user = this.auth?.currentUser || this.currentUser;
+    if (!user || user.isAnonymous || !user.email) return;
 
-    const targetDocRef = normalizedCode
-      ? doc(this.db, 'sync_rooms', normalizedCode)
-      : doc(this.db, 'users', user.uid);
+    const emailKey = user.email.trim().toLowerCase();
+    const hwId = await ensureHardwareIdentity();
+    const targetDocRef = doc(this.db, 'sync_rooms', emailKey);
 
     const existingSnap = await getDoc(targetDocRef);
     const existingData = existingSnap.exists()
@@ -579,45 +617,27 @@ class FirebaseSyncService {
       ? mergeWeeklyHistory(payload.weeklyHistory, existingData.weeklyHistory)
       : payload.weeklyHistory.slice(-14);
 
-    if (normalizedCode) {
-      const ownerUid = existingData?.ownerUid || user.uid;
-      const linkedSet = new Set<string>(existingData?.linkedUids || [ownerUid]);
-      linkedSet.add(user.uid);
-      const linkedUids = Array.from(linkedSet).slice(0, 15);
+    const ownerUid = existingData?.ownerUid || user.uid;
+    const linkedSet = new Set<string>(existingData?.linkedUids || [ownerUid]);
+    linkedSet.add(user.uid);
 
-      const roomDoc: CloudWellnessDocument = {
-        syncCode: normalizedCode,
-        ownerUid,
-        linkedUids,
-        connectedDevices: mergeConnectedDevices(
-          existingData?.connectedDevices,
-          user.uid
-        ),
-        updatedAt: Date.now(),
-        lastDeviceName: getDefaultDeviceName(),
-        dailyStats: mergedDaily,
-        weeklyHistory: mergedHistory,
-        standupSettings: payload.standupSettings,
-        hydrationSettings: payload.hydrationSettings,
-        voiceSettings: payload.voiceSettings,
-      };
-      await setDoc(targetDocRef, roomDoc);
-    } else {
-      const userDoc: CloudWellnessDocument = {
-        connectedDevices: mergeConnectedDevices(
-          existingData?.connectedDevices,
-          user.uid
-        ),
-        updatedAt: Date.now(),
-        lastDeviceName: getDefaultDeviceName(),
-        dailyStats: mergedDaily,
-        weeklyHistory: mergedHistory,
-        standupSettings: payload.standupSettings,
-        hydrationSettings: payload.hydrationSettings,
-        voiceSettings: payload.voiceSettings,
-      };
-      await setDoc(targetDocRef, userDoc);
-    }
+    const roomDoc: CloudWellnessDocument = {
+      syncCode: emailKey,
+      ownerUid,
+      linkedUids: Array.from(linkedSet).slice(0, 15),
+      connectedDevices: mergeConnectedDevices(
+        existingData?.connectedDevices,
+        hwId
+      ),
+      updatedAt: Date.now(),
+      lastDeviceName: getDefaultDeviceName(),
+      dailyStats: mergedDaily,
+      weeklyHistory: mergedHistory,
+      standupSettings: payload.standupSettings,
+      hydrationSettings: payload.hydrationSettings,
+      voiceSettings: payload.voiceSettings,
+    };
+    await setDoc(targetDocRef, roomDoc);
   }
 
   public stopListening(): void {
