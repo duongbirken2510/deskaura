@@ -186,6 +186,37 @@ export function normalizeSyncCode(input: string): string {
   return input.trim().toLowerCase();
 }
 
+export function mergeStandupSettings(
+  local: StandupSettings,
+  remote: StandupSettings
+): StandupSettings {
+  const now = Date.now();
+  const localTs = local.timerSyncUpdatedAt || 0;
+  const remoteTs = remote.timerSyncUpdatedAt || 0;
+  const newer = remoteTs > localTs ? remote : local;
+  const fallbackStandupAt =
+    local.nextStandupAt ||
+    remote.nextStandupAt ||
+    now + (newer.standupIntervalMinutes || 60) * 60 * 1000;
+  const fallbackEyeAt =
+    local.nextEyeAt ||
+    remote.nextEyeAt ||
+    now + (newer.eyeBreakIntervalMinutes || 20) * 60 * 1000;
+  const fallbackWaterAt =
+    local.nextWaterAt ||
+    remote.nextWaterAt ||
+    now + (newer.standupIntervalMinutes || 60) * 60 * 1000;
+
+  return {
+    ...local,
+    ...newer,
+    nextStandupAt: newer.nextStandupAt ?? fallbackStandupAt,
+    nextEyeAt: newer.nextEyeAt ?? fallbackEyeAt,
+    nextWaterAt: newer.nextWaterAt ?? fallbackWaterAt,
+    timerSyncUpdatedAt: Math.max(localTs, remoteTs, now),
+  };
+}
+
 /**
  * Deduplicated Union Merge for DailyWellnessStats across devices.
  * Prevents any device from overwriting water logs or standup counts made on another device!
@@ -324,6 +355,7 @@ class FirebaseSyncService {
         this.app = initializeApp(targetConfig);
         try {
           this.db = initializeFirestore(this.app, {
+            ignoreUndefinedProperties: true,
             localCache: persistentLocalCache({
               tabManager: persistentMultipleTabManager(),
             }),
@@ -561,8 +593,12 @@ class FirebaseSyncService {
           lastDeviceName: getDefaultDeviceName(),
           dailyStats: mergedDaily,
           weeklyHistory: mergedHistory,
-          standupSettings:
-            existingData?.standupSettings || initialLocalData.standupSettings,
+          standupSettings: existingData?.standupSettings
+            ? mergeStandupSettings(
+                initialLocalData.standupSettings,
+                existingData.standupSettings
+              )
+            : initialLocalData.standupSettings,
           hydrationSettings:
             existingData?.hydrationSettings || initialLocalData.hydrationSettings,
           voiceSettings:
@@ -633,7 +669,9 @@ class FirebaseSyncService {
       lastDeviceName: getDefaultDeviceName(),
       dailyStats: mergedDaily,
       weeklyHistory: mergedHistory,
-      standupSettings: payload.standupSettings,
+      standupSettings: existingData?.standupSettings
+        ? mergeStandupSettings(payload.standupSettings, existingData.standupSettings)
+        : payload.standupSettings,
       hydrationSettings: payload.hydrationSettings,
       voiceSettings: payload.voiceSettings,
     };

@@ -118,8 +118,8 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
                 : 'Nghỉ Mắt Quy Tắc 20-20-20'
               : breakType === 'combo'
               ? isEn
-                ? 'Stand Up, Stretch & Hydrate'
-                : 'Đứng Dậy Vươn Vai & Bổ Sung Nước'
+                ? '60m Combo Ritual: Stand & Stretch + Sip Water + Look Away'
+                : 'Nghi Thức Combo 60 Phút: Đứng Dậy Vươn Vai + Uống Nước + Nhìn Xa'
               : isEn
               ? 'Time to Stand Up & Stretch'
               : 'Giờ Đứng Dậy Thư Giãn Cơ Thể'}

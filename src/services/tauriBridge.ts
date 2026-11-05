@@ -187,6 +187,23 @@ export async function setTrayLanguage(lang: 'vi' | 'en'): Promise<void> {
   }
 }
 
+export async function updateTrayProgressIcon(
+  progressRatio: number,
+  isEyeCue: boolean,
+  tooltip: string
+): Promise<void> {
+  if (!isTauriEnv()) return;
+  try {
+    await invoke('update_tray_progress_icon', {
+      progressRatio,
+      isEyeCue,
+      tooltip,
+    });
+  } catch {
+    // ignore
+  }
+}
+
 export async function sendTrayNotification(title: string, body: string): Promise<void> {
   if (typeof window !== 'undefined' && 'Notification' in window) {
     try {

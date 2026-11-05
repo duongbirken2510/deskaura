@@ -55,6 +55,7 @@ import {
   setTrayLanguage,
   setWindowAlwaysOnTop,
   showAndFocusWindow,
+  updateTrayProgressIcon,
 } from './services/tauriBridge';
 import { AppLanguage, TRANSLATIONS } from './i18n/translations';
 import {
@@ -73,6 +74,7 @@ const STORAGE_KEYS = {
   DAILY_STATS: 'mamxanh_daily_stats_v1',
   WEEKLY_HISTORY: 'deskaura_weekly_history_v1',
   LANGUAGE: 'deskaura_lang_v1',
+  V12_COMBO_MIGRATED: 'deskaura_v12_combo_migrated',
 };
 
 const getTodayString = (): string => {
@@ -90,18 +92,24 @@ export const App: React.FC = () => {
   });
   const t = TRANSLATIONS[lang];
 
-  // 1. Settings States
+  // 1. Settings States (v1.2 Default: 60-minute Unified Combo Cycle + 5-min Natural Idle Reset)
   const [standupSettings, setStandupSettings] = useState<StandupSettings>(() => {
+    const isV12Migrated = localStorage.getItem(STORAGE_KEYS.V12_COMBO_MIGRATED) === '1';
     const saved = localStorage.getItem(STORAGE_KEYS.STANDUP);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed: StandupSettings = JSON.parse(saved);
+        if (!isV12Migrated && parsed.standupIntervalMinutes === 45) {
+          parsed.standupIntervalMinutes = 60;
+        }
+        return parsed;
       } catch {
         // fallback
       }
     }
+    const now = Date.now();
     return {
-      standupIntervalMinutes: 45,
+      standupIntervalMinutes: 60,
       standupDurationSeconds: 180,
       eyeBreakEnabled: true,
       eyeBreakIntervalMinutes: 20,
@@ -110,22 +118,33 @@ export const App: React.FC = () => {
       pauseOnFullscreen: true,
       reminderMode: 'overlay',
       holdToSkip: true,
+      nextStandupAt: now + 60 * 60 * 1000,
+      nextEyeAt: now + 20 * 60 * 1000,
+      nextWaterAt: now + 60 * 60 * 1000,
+      timerSyncUpdatedAt: now,
     };
   });
 
   const [hydrationSettings, setHydrationSettings] = useState<HydrationSettings>(() => {
+    const isV12Migrated = localStorage.getItem(STORAGE_KEYS.V12_COMBO_MIGRATED) === '1';
     const saved = localStorage.getItem(STORAGE_KEYS.HYDRATION);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed: HydrationSettings = JSON.parse(saved);
+        if (!isV12Migrated && parsed.intervalMinutes === 40) {
+          parsed.intervalMinutes = 60;
+        }
+        localStorage.setItem(STORAGE_KEYS.V12_COMBO_MIGRATED, '1');
+        return parsed;
       } catch {
         // fallback
       }
     }
+    localStorage.setItem(STORAGE_KEYS.V12_COMBO_MIGRATED, '1');
     return {
       dailyGoalMl: 1800,
       weightKg: 60,
-      intervalMinutes: 40,
+      intervalMinutes: 60,
       quickAmounts: [100, 200, 300],
     };
   });
@@ -206,9 +225,36 @@ export const App: React.FC = () => {
   const [breakRemainingSec, setBreakRemainingSec] = useState<number>(180);
   const [breakTotalSec, setBreakTotalSec] = useState<number>(180);
 
-  // Water Toast Notification Banner & Gentle Taskbar/Tray Break Banner
+  // Water Toast Notification Banner, Passive 20-20-20 Eye Cue & Gentle Break Banner
   const [waterToastVisible, setWaterToastVisible] = useState<boolean>(false);
   const [gentleBreakBanner, setGentleBreakBanner] = useState<BreakType | null>(null);
+  const [passiveEyeCueSec, setPassiveEyeCueSec] = useState<number>(0);
+  const wasIdleResetRef = useRef<boolean>(false);
+
+  const syncTimerTargets = useCallback(
+    (
+      nextStandupSec?: number,
+      nextEyeSec?: number,
+      nextWaterSec?: number
+    ) => {
+      const now = Date.now();
+      setStandupSettings((prev) => ({
+        ...prev,
+        nextStandupAt:
+          nextStandupSec !== undefined
+            ? now + nextStandupSec * 1000
+            : prev.nextStandupAt,
+        nextEyeAt:
+          nextEyeSec !== undefined ? now + nextEyeSec * 1000 : prev.nextEyeAt,
+        nextWaterAt:
+          nextWaterSec !== undefined
+            ? now + nextWaterSec * 1000
+            : prev.nextWaterAt,
+        timerSyncUpdatedAt: now,
+      }));
+    },
+    []
+  );
 
   // System Context & Audio Ducking Status
   const [systemIdleSec, setSystemIdleSec] = useState<number>(0);
@@ -308,6 +354,55 @@ export const App: React.FC = () => {
         return merged;
       });
     }
+
+    // Synchronize countdown timers across linked devices (prevents double reminders!)
+    if (docData.standupSettings) {
+      const now = Date.now();
+      const remoteStandup = docData.standupSettings;
+      if (remoteStandup.nextStandupAt && remoteStandup.nextStandupAt > now) {
+        const remSec = Math.round((remoteStandup.nextStandupAt - now) / 1000);
+        const maxSec = (remoteStandup.standupIntervalMinutes || 60) * 60;
+        const clampedSec = Math.min(maxSec, Math.max(5, remSec));
+        setStandupSecondsLeft(clampedSec);
+        // If another machine just completed/reset the break, auto-dismiss open popup on this machine!
+        if (clampedSec > 90) {
+          setIsBreakModalOpen(false);
+          setGentleBreakBanner(null);
+        }
+      }
+      if (remoteStandup.nextEyeAt && remoteStandup.nextEyeAt > now) {
+        const remEye = Math.round((remoteStandup.nextEyeAt - now) / 1000);
+        const maxEye = (remoteStandup.eyeBreakIntervalMinutes || 20) * 60;
+        setEyeSecondsLeft(Math.min(maxEye, Math.max(5, remEye)));
+      }
+      if (remoteStandup.nextWaterAt && remoteStandup.nextWaterAt > now) {
+        const remWater = Math.round((remoteStandup.nextWaterAt - now) / 1000);
+        setWaterSecondsLeft(Math.max(5, remWater));
+        if (remWater > 90) {
+          setWaterToastVisible(false);
+        }
+      }
+      if (remoteStandup.nextStandupAt && remoteStandup.nextStandupAt > now) {
+        setStandupSettings((prev) => ({
+          ...prev,
+          nextStandupAt: remoteStandup.nextStandupAt ?? prev.nextStandupAt,
+          nextEyeAt: remoteStandup.nextEyeAt ?? prev.nextEyeAt,
+          nextWaterAt: remoteStandup.nextWaterAt ?? prev.nextWaterAt,
+          timerSyncUpdatedAt:
+            remoteStandup.timerSyncUpdatedAt ?? prev.timerSyncUpdatedAt,
+        }));
+      } else {
+        // First machine on v1.2 seeds the shared countdown target in the cloud
+        setStandupSettings((prev) => ({
+          ...prev,
+          nextStandupAt: now + prev.standupIntervalMinutes * 60 * 1000,
+          nextEyeAt: now + prev.eyeBreakIntervalMinutes * 60 * 1000,
+          nextWaterAt: now + prev.standupIntervalMinutes * 60 * 1000,
+          timerSyncUpdatedAt: now,
+        }));
+      }
+    }
+
     setTimeout(() => {
       isApplyingRemoteRef.current = false;
     }, 350);
@@ -581,17 +676,24 @@ export const App: React.FC = () => {
   // Complete Break Session
   const completeBreakSession = useCallback(async () => {
     setIsBreakModalOpen(false);
+    setGentleBreakBanner(null);
     await setWindowAlwaysOnTop(false);
 
+    const nextEyeSec = standupSettings.eyeBreakIntervalMinutes * 60;
     if (currentBreakType === 'eye') {
-      setEyeSecondsLeft(standupSettings.eyeBreakIntervalMinutes * 60);
+      setEyeSecondsLeft(nextEyeSec);
+      syncTimerTargets(standupSecondsLeft, nextEyeSec, waterSecondsLeft);
       setDailyStats((prev) => ({
         ...prev,
         eyeBreakCompletedCount: prev.eyeBreakCompletedCount + 1,
       }));
     } else {
-      setStandupSecondsLeft(standupSettings.standupIntervalMinutes * 60);
-      setEyeSecondsLeft(standupSettings.eyeBreakIntervalMinutes * 60);
+      const nextStandupSec = standupSettings.standupIntervalMinutes * 60;
+      const nextWaterSec = hydrationSettings.intervalMinutes * 60;
+      setStandupSecondsLeft(nextStandupSec);
+      setEyeSecondsLeft(nextEyeSec);
+      setWaterSecondsLeft(nextWaterSec);
+      syncTimerTargets(nextStandupSec, nextEyeSec, nextWaterSec);
       setDailyStats((prev) => ({
         ...prev,
         standupCompletedCount: prev.standupCompletedCount + 1,
@@ -601,31 +703,50 @@ export const App: React.FC = () => {
     await triggerVoiceReminder('break_done');
   }, [
     currentBreakType,
+    hydrationSettings.intervalMinutes,
+    standupSecondsLeft,
     standupSettings.eyeBreakIntervalMinutes,
     standupSettings.standupIntervalMinutes,
+    syncTimerTargets,
     triggerVoiceReminder,
+    waterSecondsLeft,
   ]);
 
   // Snooze Break Session
-  const snoozeBreakSession = useCallback(async (minutes: number) => {
-    setIsBreakModalOpen(false);
-    await setWindowAlwaysOnTop(false);
-    setStandupSecondsLeft(minutes * 60);
-  }, []);
+  const snoozeBreakSession = useCallback(
+    async (minutes: number) => {
+      setIsBreakModalOpen(false);
+      setGentleBreakBanner(null);
+      await setWindowAlwaysOnTop(false);
+      const nextSec = minutes * 60;
+      setStandupSecondsLeft(nextSec);
+      syncTimerTargets(nextSec, eyeSecondsLeft, waterSecondsLeft);
+    },
+    [eyeSecondsLeft, syncTimerTargets, waterSecondsLeft]
+  );
 
   // Skip Break Session
   const skipBreakSession = useCallback(async () => {
     setIsBreakModalOpen(false);
+    setGentleBreakBanner(null);
     await setWindowAlwaysOnTop(false);
     if (currentBreakType === 'eye') {
-      setEyeSecondsLeft(standupSettings.eyeBreakIntervalMinutes * 60);
+      const nextEye = standupSettings.eyeBreakIntervalMinutes * 60;
+      setEyeSecondsLeft(nextEye);
+      syncTimerTargets(standupSecondsLeft, nextEye, waterSecondsLeft);
     } else {
-      setStandupSecondsLeft(standupSettings.standupIntervalMinutes * 60);
+      const nextStand = standupSettings.standupIntervalMinutes * 60;
+      setStandupSecondsLeft(nextStand);
+      syncTimerTargets(nextStand, eyeSecondsLeft, waterSecondsLeft);
     }
   }, [
     currentBreakType,
+    eyeSecondsLeft,
+    standupSecondsLeft,
     standupSettings.eyeBreakIntervalMinutes,
     standupSettings.standupIntervalMinutes,
+    syncTimerTargets,
+    waterSecondsLeft,
   ]);
 
   // Add Water Intake
@@ -668,11 +789,19 @@ export const App: React.FC = () => {
         };
       });
 
-      // Reset water reminder timer on drink
-      setWaterSecondsLeft(hydrationSettings.intervalMinutes * 60);
+      // Reset water reminder timer on drink & synchronize across linked devices
+      const nextWaterSec = hydrationSettings.intervalMinutes * 60;
+      setWaterSecondsLeft(nextWaterSec);
       setWaterToastVisible(false);
+      syncTimerTargets(standupSecondsLeft, eyeSecondsLeft, nextWaterSec);
     },
-    [hydrationSettings.dailyGoalMl, hydrationSettings.intervalMinutes]
+    [
+      eyeSecondsLeft,
+      hydrationSettings.dailyGoalMl,
+      hydrationSettings.intervalMinutes,
+      standupSecondsLeft,
+      syncTimerTargets,
+    ]
   );
 
   // Listen to System Tray Menu Events from Rust Backend
@@ -684,7 +813,7 @@ export const App: React.FC = () => {
     }).then((unlisten) => unlisteners.push(unlisten));
 
     onTauriEvent<string>('tray-trigger-break', () => {
-      startBreakSession('standup', true);
+      startBreakSession('combo', true);
     }).then((unlisten) => unlisteners.push(unlisten));
 
     onTauriEvent<boolean>('tray-toggle-music', (hasZingWindow) => {
@@ -692,7 +821,6 @@ export const App: React.FC = () => {
         const muted = soundEngine.toggleMasterMute();
         setIsMasterMuted(muted);
       } else if (!hasZingWindow) {
-        // Only start default rain preset if Zing MP3 is NOT open
         const defaultMix = SOUND_PRESETS[0].mix;
         soundEngine.applyPreset(defaultMix);
         setActiveSounds((prev) => ({
@@ -735,6 +863,34 @@ export const App: React.FC = () => {
     };
   }, [handleAddWater, startBreakSession]);
 
+  // Pillar 3: Dynamic System Tray Pie/Ring Progress Indicator
+  useEffect(() => {
+    const totalSec = Math.max(60, standupSettings.standupIntervalMinutes * 60);
+    const ratio = Math.min(
+      1,
+      Math.max(0, (totalSec - standupSecondsLeft) / totalSec)
+    );
+    const isEyeCue = passiveEyeCueSec > 0;
+    const minsLeft = Math.ceil(standupSecondsLeft / 60);
+
+    // Update tray icon immediately on passive eye cue state changes, or every 5 seconds of normal countdown
+    if (isEyeCue || standupSecondsLeft % 5 === 0) {
+      const tooltip = isEyeCue
+        ? lang === 'en'
+          ? `👀 DeskAura 20-20-20 — Blink & look 20ft away (${passiveEyeCueSec}s)`
+          : `👀 DeskAura 20-20-20 — Hãy chớp mắt & nhìn xa 6m (${passiveEyeCueSec}s)`
+        : lang === 'en'
+        ? `🌱 DeskAura v1.2 — Combo Cycle: ${Math.round(ratio * 100)}% (${minsLeft}m left)`
+        : `🌱 DeskAura v1.2 — Chu kỳ Combo: ${Math.round(ratio * 100)}% (Còn ${minsLeft} phút)`;
+      updateTrayProgressIcon(ratio, isEyeCue, tooltip);
+    }
+  }, [
+    lang,
+    passiveEyeCueSec,
+    standupSecondsLeft,
+    standupSettings.standupIntervalMinutes,
+  ]);
+
   // Main 1-Second Heartbeat Tick
   const tickCounterRef = useRef<number>(0);
 
@@ -742,20 +898,48 @@ export const App: React.FC = () => {
     const timer = window.setInterval(async () => {
       tickCounterRef.current += 1;
 
-      // Poll Windows Idle & Fullscreen every 3 seconds
+      // Count down Passive 20-20-20 Eye Cue (20s golden tray indicator, zero interruption)
+      setPassiveEyeCueSec((prev) => {
+        if (prev > 1) return prev - 1;
+        if (prev === 1) {
+          setDailyStats((d) => ({
+            ...d,
+            eyeBreakCompletedCount: d.eyeBreakCompletedCount + 1,
+          }));
+          return 0;
+        }
+        return 0;
+      });
+
+      // Pillar 1: Poll OS Mouse/Keyboard Idle & Fullscreen every 3 seconds
       if (tickCounterRef.current % 3 === 0) {
         const ctx = await getSystemContext();
         setSystemIdleSec(ctx.idle_seconds);
         setIsFullscreenApp(ctx.is_fullscreen);
 
-        // Auto-reset standup timer if user has been away from computer > threshold
+        // Auto-reset entire 60-minute Combo cycle if user steps away >= threshold (default 5 mins)
         if (
           ctx.idle_seconds >= standupSettings.autoResetIdleSeconds &&
           !isBreakModalOpen
         ) {
-          setStandupSecondsLeft(standupSettings.standupIntervalMinutes * 60);
-          setEyeSecondsLeft(standupSettings.eyeBreakIntervalMinutes * 60);
+          const fullStand = standupSettings.standupIntervalMinutes * 60;
+          const fullEye = standupSettings.eyeBreakIntervalMinutes * 60;
+          const fullWater = hydrationSettings.intervalMinutes * 60;
+          setStandupSecondsLeft(fullStand);
+          setEyeSecondsLeft(fullEye);
+          setWaterSecondsLeft(fullWater);
+          if (!wasIdleResetRef.current) {
+            wasIdleResetRef.current = true;
+            syncTimerTargets(fullStand, fullEye, fullWater);
+          }
           return;
+        } else if (ctx.idle_seconds < 10 && wasIdleResetRef.current) {
+          // User just returned to their desk! Lock in fresh 60m target timestamp across devices
+          wasIdleResetRef.current = false;
+          const fullStand = standupSettings.standupIntervalMinutes * 60;
+          const fullEye = standupSettings.eyeBreakIntervalMinutes * 60;
+          const fullWater = hydrationSettings.intervalMinutes * 60;
+          syncTimerTargets(fullStand, fullEye, fullWater);
         }
       }
 
@@ -781,36 +965,33 @@ export const App: React.FC = () => {
 
       if (isPaused) return;
 
-      // 1. Standup Countdown
+      // Pillar 2 (Part A): 60-Minute Unified Combo Ritual (Stand up + Drink Water + Stretch)
       setStandupSecondsLeft((prev) => {
         if (prev <= 1) {
           if (standupSettings.pauseOnFullscreen && isFullscreenApp) {
-            // Postpone by 2 minutes if user is in fullscreen meeting/presentation
             return 120;
           }
-          // If water timer is also close (< 5 mins), trigger a unified Combo Break + Water reminder!
-          const isWaterClose = waterSecondsLeft <= 300;
-          if (isWaterClose) {
-            setWaterSecondsLeft(hydrationSettings.intervalMinutes * 60);
-            startBreakSession('combo');
-          } else {
-            startBreakSession('standup');
-          }
-          return standupSettings.standupIntervalMinutes * 60;
+          const fullStand = standupSettings.standupIntervalMinutes * 60;
+          const fullEye = standupSettings.eyeBreakIntervalMinutes * 60;
+          const fullWater = hydrationSettings.intervalMinutes * 60;
+          setWaterSecondsLeft(fullWater);
+          setEyeSecondsLeft(fullEye);
+          syncTimerTargets(fullStand, fullEye, fullWater);
+          startBreakSession('combo');
+          return fullStand;
         }
         return prev - 1;
       });
 
-      // 2. Eye 20-20-20 Countdown
+      // Pillar 2 (Part B): Every 20 Minutes -> Passive Eye Cue ONLY (Golden Tray Icon, NO Popup/Voice interruption!)
       if (standupSettings.eyeBreakEnabled) {
         setEyeSecondsLeft((prev) => {
           if (prev <= 1) {
             if (standupSettings.pauseOnFullscreen && isFullscreenApp) {
               return 120;
             }
-            // Avoid clashing if standup break is within 2 minutes
-            if (standupSecondsLeft > 120) {
-              startBreakSession('eye');
+            if (standupSecondsLeft > 90) {
+              setPassiveEyeCueSec(standupSettings.eyeBreakDurationSeconds || 20);
             }
             return standupSettings.eyeBreakIntervalMinutes * 60;
           }
@@ -818,12 +999,15 @@ export const App: React.FC = () => {
         });
       }
 
-      // 3. Hydration Reminder Countdown
+      // 3. Hydration Reminder Countdown (Unified into Combo when intervals match)
       setWaterSecondsLeft((prev) => {
         if (prev <= 1) {
-          setWaterToastVisible(true);
-          sendTrayNotification(t.waterToastTitle, t.waterToastDesc);
-          triggerVoiceReminder('water');
+          // Only show separate water toast if user configured a shorter custom water interval far from the Combo break
+          if (standupSecondsLeft > 300) {
+            setWaterToastVisible(true);
+            sendTrayNotification(t.waterToastTitle, t.waterToastDesc);
+            triggerVoiceReminder('water');
+          }
           return hydrationSettings.intervalMinutes * 60;
         }
         return prev - 1;
@@ -839,13 +1023,16 @@ export const App: React.FC = () => {
     isPaused,
     standupSecondsLeft,
     standupSettings.autoResetIdleSeconds,
+    standupSettings.eyeBreakDurationSeconds,
     standupSettings.eyeBreakEnabled,
     standupSettings.eyeBreakIntervalMinutes,
     standupSettings.pauseOnFullscreen,
     standupSettings.standupIntervalMinutes,
     startBreakSession,
+    syncTimerTargets,
+    t.waterToastDesc,
+    t.waterToastTitle,
     triggerVoiceReminder,
-    waterSecondsLeft,
   ]);
 
   // Sound Mixer Handlers
@@ -964,7 +1151,7 @@ export const App: React.FC = () => {
                 DeskAura
               </h1>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                v1.1
+                v1.2
               </span>
             </div>
           </div>
@@ -1228,18 +1415,38 @@ export const App: React.FC = () => {
 
                   {/* Secondary Sub-timers: 20-20-20 Eye Break & Idle Detector */}
                   <div className="grid grid-cols-2 gap-3 mb-5">
-                    <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
+                    <div
+                      className={`p-3 rounded-2xl border flex items-center gap-2.5 transition-all ${
+                        passiveEyeCueSec > 0
+                          ? 'bg-amber-50 border-amber-300 shadow-sm shadow-amber-500/10 animate-pulse'
+                          : 'bg-slate-50 border-slate-100'
+                      }`}
+                    >
+                      <div
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                          passiveEyeCueSec > 0
+                            ? 'bg-amber-200 text-amber-800'
+                            : 'bg-emerald-100/80 text-emerald-700'
+                        }`}
+                      >
                         <Eye className="w-4 h-4" />
                       </div>
                       <div>
                         <p className="text-[11px] text-slate-500 font-medium">
                           {t.eyeBreak202020}
                         </p>
-                        <p className="text-xs font-bold text-slate-800 font-mono">
-                          {standupSettings.eyeBreakEnabled
-                            ? formatMMSS(eyeSecondsLeft)
-                            : t.disabledLabel}
+                        <p
+                          className={`text-xs font-bold font-mono ${
+                            passiveEyeCueSec > 0 ? 'text-amber-700' : 'text-slate-800'
+                          }`}
+                        >
+                          {!standupSettings.eyeBreakEnabled
+                            ? t.disabledLabel
+                            : passiveEyeCueSec > 0
+                            ? lang === 'en'
+                              ? `👀 Blink & look away: ${passiveEyeCueSec}s`
+                              : `👀 Chớp mắt & nhìn xa: ${passiveEyeCueSec}s`
+                            : formatMMSS(eyeSecondsLeft)}
                         </p>
                       </div>
                     </div>
@@ -1278,12 +1485,14 @@ export const App: React.FC = () => {
                   </button>
                   <button
                     onClick={() => {
-                      setStandupSecondsLeft(
-                        standupSettings.standupIntervalMinutes * 60
-                      );
-                      setEyeSecondsLeft(
-                        standupSettings.eyeBreakIntervalMinutes * 60
-                      );
+                      const nextStandupSec = standupSettings.standupIntervalMinutes * 60;
+                      const nextEyeSec = standupSettings.eyeBreakIntervalMinutes * 60;
+                      const nextWaterSec = hydrationSettings.intervalMinutes * 60;
+                      setStandupSecondsLeft(nextStandupSec);
+                      setEyeSecondsLeft(nextEyeSec);
+                      setWaterSecondsLeft(nextWaterSec);
+                      setPassiveEyeCueSec(0);
+                      syncTimerTargets(nextStandupSec, nextEyeSec, nextWaterSec);
                     }}
                     className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
                   >
@@ -1547,13 +1756,20 @@ export const App: React.FC = () => {
             onLogoutAccount={handleLogoutAccount}
             onForceSyncNow={handleForceSyncNow}
             onUpdateStandup={(partial) => {
+              const now = Date.now();
               setStandupSettings((prev) => {
                 const updated = { ...prev, ...partial };
                 if (partial.standupIntervalMinutes) {
-                  setStandupSecondsLeft(partial.standupIntervalMinutes * 60);
+                  const sec = partial.standupIntervalMinutes * 60;
+                  setStandupSecondsLeft(sec);
+                  updated.nextStandupAt = now + sec * 1000;
+                  updated.timerSyncUpdatedAt = now;
                 }
                 if (partial.eyeBreakIntervalMinutes) {
-                  setEyeSecondsLeft(partial.eyeBreakIntervalMinutes * 60);
+                  const sec = partial.eyeBreakIntervalMinutes * 60;
+                  setEyeSecondsLeft(sec);
+                  updated.nextEyeAt = now + sec * 1000;
+                  updated.timerSyncUpdatedAt = now;
                 }
                 return updated;
               });
@@ -1562,7 +1778,9 @@ export const App: React.FC = () => {
               setHydrationSettings((prev) => {
                 const updated = { ...prev, ...partial };
                 if (partial.intervalMinutes) {
-                  setWaterSecondsLeft(partial.intervalMinutes * 60);
+                  const sec = partial.intervalMinutes * 60;
+                  setWaterSecondsLeft(sec);
+                  syncTimerTargets(undefined, undefined, sec);
                 }
                 return updated;
               });

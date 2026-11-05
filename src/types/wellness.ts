@@ -1,15 +1,19 @@
 export type BreakType = 'standup' | 'eye' | 'combo';
 
 export interface StandupSettings {
-  standupIntervalMinutes: number;     // Mặc định: 45 phút
+  standupIntervalMinutes: number;     // Mặc định v1.2: 60 phút (Chu kỳ Combo Đứng dậy + Uống nước)
   standupDurationSeconds: number;     // Mặc định: 180 giây (3 phút)
-  eyeBreakEnabled: boolean;           // Quy tắc 20-20-20
+  eyeBreakEnabled: boolean;           // Quy tắc 20-20-20 (Nhắc thụ động qua Icon Tray)
   eyeBreakIntervalMinutes: number;    // Mặc định: 20 phút
   eyeBreakDurationSeconds: number;    // Mặc định: 20 giây
-  autoResetIdleSeconds: number;       // Mặc định: 300 giây (5 phút rời máy tự reset)
+  autoResetIdleSeconds: number;       // Mặc định: 300 giây (5 phút rời máy tự reset chu kỳ)
   pauseOnFullscreen: boolean;         // Không làm phiền khi đang họp/Fullscreen
   reminderMode: 'overlay' | 'gentle'; // Toàn màn hình hoặc Thẻ nhắc nhẹ nhàng
   holdToSkip: boolean;                // Nhấn giữ 2 giây để bỏ qua (chống bấm vô thức)
+  nextStandupAt?: number;             // Mốc timestamp (ms) đồng bộ đếm ngược Combo/Đứng dậy đa thiết bị
+  nextEyeAt?: number;                 // Mốc timestamp (ms) đồng bộ đếm ngược Nghỉ mắt 20-20-20
+  nextWaterAt?: number;               // Mốc timestamp (ms) đồng bộ đếm ngược Uống nước
+  timerSyncUpdatedAt?: number;        // Thời điểm cập nhật mốc đếm ngược gần nhất
 }
 
 export interface WaterLogEntry {

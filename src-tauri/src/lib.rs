@@ -699,6 +699,106 @@ fn hide_to_tray(app: AppHandle) {
     }
 }
 
+fn render_tray_pie_icon(progress_ratio: f32, is_eye_cue: bool) -> Vec<u8> {
+    let size: usize = 32;
+    let mut rgba = vec![0u8; size * size * 4];
+    let cx = 15.5_f32;
+    let cy = 15.5_f32;
+    let r_outer = 13.8_f32;
+    let r_inner = 7.2_f32;
+    let clamped = progress_ratio.clamp(0.0, 1.0);
+
+    for y in 0..size {
+        for x in 0..size {
+            let dx = (x as f32) - cx;
+            let dy = (y as f32) - cy;
+            let dist = (dx * dx + dy * dy).sqrt();
+            let idx = (y * size + x) * 4;
+
+            if dist <= r_outer + 0.7 && dist >= r_inner - 0.7 {
+                // Smooth edge anti-aliasing
+                let outer_aa = (r_outer + 0.5 - dist).clamp(0.0, 1.0);
+                let inner_aa = (dist - (r_inner - 0.5)).clamp(0.0, 1.0);
+                let alpha_factor = outer_aa * inner_aa;
+
+                if is_eye_cue {
+                    // Golden Amber Ring for 20-20-20 Passive Eye Rest
+                    rgba[idx] = 245;
+                    rgba[idx + 1] = 158;
+                    rgba[idx + 2] = 11;
+                    rgba[idx + 3] = (255.0 * alpha_factor) as u8;
+                } else {
+                    // Angle from 12 o'clock (-PI/2) clockwise [0..1]
+                    let mut angle = dy.atan2(dx) + std::f32::consts::FRAC_PI_2;
+                    if angle < 0.0 {
+                        angle += std::f32::consts::TAU;
+                    }
+                    let angle_norm = angle / std::f32::consts::TAU;
+
+                    if angle_norm <= clamped {
+                        // Active progress arc color
+                        let (r, g, b) = if clamped < 0.75 {
+                            (16u8, 185u8, 129u8) // Emerald Green (#10B981)
+                        } else if clamped < 0.90 {
+                            (245u8, 158u8, 11u8) // Warm Amber (#F59E0B)
+                        } else {
+                            (249u8, 115u8, 22u8) // Coral Orange (#F97316)
+                        };
+                        rgba[idx] = r;
+                        rgba[idx + 1] = g;
+                        rgba[idx + 2] = b;
+                        rgba[idx + 3] = (255.0 * alpha_factor) as u8;
+                    } else {
+                        // Background ring track
+                        rgba[idx] = 148;
+                        rgba[idx + 1] = 163;
+                        rgba[idx + 2] = 184;
+                        rgba[idx + 3] = (95.0 * alpha_factor) as u8;
+                    }
+                }
+            } else if dist <= 4.3 {
+                // Center indicator dot
+                let dot_aa = (4.3 - dist).clamp(0.0, 1.0);
+                if is_eye_cue {
+                    // Bright yellow-amber pupil cue for 20-20-20 eye rest
+                    rgba[idx] = 251;
+                    rgba[idx + 1] = 191;
+                    rgba[idx + 2] = 36;
+                    rgba[idx + 3] = (255.0 * dot_aa) as u8;
+                } else {
+                    // Calm sky-emerald center dot
+                    rgba[idx] = 14;
+                    rgba[idx + 1] = 165;
+                    rgba[idx + 2] = 233;
+                    rgba[idx + 3] = (235.0 * dot_aa) as u8;
+                }
+            }
+        }
+    }
+    rgba
+}
+
+#[tauri::command]
+fn update_tray_progress_icon(
+    app: AppHandle,
+    progress_ratio: f32,
+    is_eye_cue: bool,
+    tooltip: String,
+) {
+    if let Some(tray) = app.tray_by_id("main-tray") {
+        let rgba = render_tray_pie_icon(progress_ratio, is_eye_cue);
+        let img = tauri::image::Image::new_owned(rgba, 32, 32);
+        let _ = tray.set_icon(Some(img));
+        #[cfg(target_os = "macos")]
+        {
+            let _ = tray.set_icon_as_template(false);
+        }
+        if !tooltip.is_empty() {
+            let _ = tray.set_tooltip(Some(&tooltip));
+        }
+    }
+}
+
 #[tauri::command]
 fn send_tray_notification(app: AppHandle, title: String, body: String) {
     if let Some(window) = app.get_webview_window("main") {
@@ -1011,6 +1111,7 @@ pub fn run() {
             show_and_focus_window,
             set_window_always_on_top,
             hide_to_tray,
+            update_tray_progress_icon,
             send_tray_notification,
             set_tray_language
         ])
