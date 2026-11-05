@@ -10,7 +10,9 @@ export const AMBIENT_SOUNDS: AmbientSoundItem[] = [
   {
     id: 'rain',
     name: 'Mưa Hiên Nhà',
+    nameEn: 'Gentle Porch Rain',
     subtitle: 'Tiếng mưa rơi êm dịu ngoài khung cửa',
+    subtitleEn: 'Soothing raindrops falling outside the window',
     category: 'nature',
     iconName: 'CloudRain',
     color: 'from-sky-400 to-blue-500',
@@ -19,7 +21,9 @@ export const AMBIENT_SOUNDS: AmbientSoundItem[] = [
   {
     id: 'stream',
     name: 'Suối Rừng Mát Lành',
+    nameEn: 'Forest Creek',
     subtitle: 'Dòng nước chảy róc rách qua khe đá',
+    subtitleEn: 'Crystal water flowing gently over pebbles',
     category: 'nature',
     iconName: 'Waves',
     color: 'from-cyan-400 to-teal-500',
@@ -28,7 +32,9 @@ export const AMBIENT_SOUNDS: AmbientSoundItem[] = [
   {
     id: 'ocean',
     name: 'Sóng Biển Bình Minh',
+    nameEn: 'Sunrise Ocean Waves',
     subtitle: 'Nhịp sóng vỗ bờ đều đặn như hơi thở',
+    subtitleEn: 'Rhythmic shoreline waves for calm breathing',
     category: 'nature',
     iconName: 'Sunrise',
     color: 'from-blue-400 to-indigo-500',
@@ -37,7 +43,9 @@ export const AMBIENT_SOUNDS: AmbientSoundItem[] = [
   {
     id: 'wind',
     name: 'Gió Đồi Thông',
+    nameEn: 'Pine Hill Breeze',
     subtitle: 'Làn gió nhẹ thổi qua tán lá rừng',
+    subtitleEn: 'Soft mountain wind rustling through pine trees',
     category: 'nature',
     iconName: 'Wind',
     color: 'from-emerald-400 to-green-500',
@@ -46,7 +54,9 @@ export const AMBIENT_SOUNDS: AmbientSoundItem[] = [
   {
     id: 'campfire',
     name: 'Lửa Trại Ấm Áp',
+    nameEn: 'Cozy Campfire',
     subtitle: 'Tiếng củi khô tí tách thư thái',
+    subtitleEn: 'Warm crackling firewood in a quiet night',
     category: 'nature',
     iconName: 'Flame',
     color: 'from-amber-400 to-orange-500',
@@ -55,7 +65,9 @@ export const AMBIENT_SOUNDS: AmbientSoundItem[] = [
   {
     id: 'singing_bowl',
     name: 'Chuông Xoay Tây Tạng',
+    nameEn: 'Tibetan Singing Bowl',
     subtitle: 'Tần số cộng hưởng 432Hz & 528Hz chữa lành',
+    subtitleEn: 'Harmonic 432Hz & 528Hz healing resonance',
     category: 'healing',
     iconName: 'Bell',
     color: 'from-violet-400 to-purple-500',
@@ -64,7 +76,9 @@ export const AMBIENT_SOUNDS: AmbientSoundItem[] = [
   {
     id: 'alpha_waves',
     name: 'Sóng Não Alpha 10Hz',
+    nameEn: 'Alpha Waves 10Hz',
     subtitle: 'Tăng cường tập trung sâu & giảm căng thẳng',
+    subtitleEn: 'Boosts deep flow focus & relieves mental fatigue',
     category: 'focus',
     iconName: 'Sparkles',
     color: 'from-teal-400 to-emerald-500',
@@ -73,7 +87,9 @@ export const AMBIENT_SOUNDS: AmbientSoundItem[] = [
   {
     id: 'theta_waves',
     name: 'Sóng Não Theta 6Hz',
+    nameEn: 'Theta Waves 6Hz',
     subtitle: 'Thư giãn sâu, cân bằng cảm xúc & sáng tạo',
+    subtitleEn: 'Deep meditation, emotional balance & creativity',
     category: 'healing',
     iconName: 'HeartHandshake',
     color: 'from-rose-400 to-pink-500',
@@ -82,7 +98,9 @@ export const AMBIENT_SOUNDS: AmbientSoundItem[] = [
   {
     id: 'brown_noise',
     name: 'Brown Noise Trầm Ấm',
+    nameEn: 'Warm Brown Noise',
     subtitle: 'Che lấp tiếng ồn văn phòng cực kỳ hiệu quả',
+    subtitleEn: 'Masks office chatter and background distractions',
     category: 'focus',
     iconName: 'Volume2',
     color: 'from-amber-500 to-yellow-600',
@@ -91,7 +109,9 @@ export const AMBIENT_SOUNDS: AmbientSoundItem[] = [
   {
     id: 'pink_noise',
     name: 'Pink Noise Cân Bằng',
+    nameEn: 'Balanced Pink Noise',
     subtitle: 'Âm nền mềm mại giúp giữ nhịp làm việc bền bỉ',
+    subtitleEn: 'Smooth acoustic blanket for sustained productivity',
     category: 'focus',
     iconName: 'Sliders',
     color: 'from-pink-400 to-rose-500',
@@ -102,8 +122,11 @@ export const AMBIENT_SOUNDS: AmbientSoundItem[] = [
 export interface SoundPreset {
   id: string;
   name: string;
+  nameEn?: string;
   description: string;
+  descriptionEn?: string;
   badge: string;
+  badgeEn?: string;
   mix: Partial<Record<SoundId, number>>;
 }
 
@@ -111,8 +134,11 @@ export const SOUND_PRESETS: SoundPreset[] = [
   {
     id: 'deep_work_rain',
     name: 'Mưa Nhẹ & Tập Trung Sâu',
+    nameEn: 'Gentle Rain & Deep Focus',
     description: 'Mưa hiên nhà + Brown Noise chống ồn + Sóng Alpha 10Hz',
+    descriptionEn: 'Porch rain + Noise-blocking Brown Noise + 10Hz Alpha Waves',
     badge: 'Deep Work',
+    badgeEn: 'Deep Work',
     mix: {
       rain: 0.55,
       brown_noise: 0.25,
@@ -122,8 +148,11 @@ export const SOUND_PRESETS: SoundPreset[] = [
   {
     id: 'zen_healing',
     name: 'Suối Nguồn Chữa Lành',
+    nameEn: 'Zen Sanctuary Stream',
     description: 'Suối rừng mát lành + Chuông xoay Tây Tạng + Sóng Theta 6Hz',
+    descriptionEn: 'Forest creek + Tibetan Singing Bowl + 6Hz Theta Waves',
     badge: 'Chữa lành',
+    badgeEn: 'Healing',
     mix: {
       stream: 0.5,
       singing_bowl: 0.42,
@@ -133,8 +162,11 @@ export const SOUND_PRESETS: SoundPreset[] = [
   {
     id: 'forest_breeze',
     name: 'Rừng Thông Buổi Sớm',
+    nameEn: 'Morning Pine Forest',
     description: 'Gió đồi thông + Suối chảy nhẹ + Pink Noise dịu mắt',
+    descriptionEn: 'Pine hill breeze + Gentle stream + Soft Pink Noise',
     badge: 'Tươi mới',
+    badgeEn: 'Fresh',
     mix: {
       wind: 0.48,
       stream: 0.38,
@@ -144,8 +176,11 @@ export const SOUND_PRESETS: SoundPreset[] = [
   {
     id: 'cozy_evening',
     name: 'Góc Nhỏ Ấm Áp',
+    nameEn: 'Cozy Fireside Retreat',
     description: 'Lửa trại tí tách + Mưa rơi ngoài hiên',
+    descriptionEn: 'Crackling campfire + Gentle rain outside',
     badge: 'Thư giãn',
+    badgeEn: 'Relaxing',
     mix: {
       campfire: 0.55,
       rain: 0.42,

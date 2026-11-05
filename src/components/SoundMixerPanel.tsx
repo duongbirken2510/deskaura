@@ -9,6 +9,7 @@ import {
   EyeOff,
   Flame,
   FolderOpen,
+  Globe,
   HeartHandshake,
   Music,
   Pause,
@@ -78,6 +79,39 @@ const DEFAULT_ZING_CHANNELS: SavedZingBookmark[] = [
   },
 ];
 
+const DEFAULT_GLOBAL_CHANNELS: SavedZingBookmark[] = [
+  {
+    id: 'global_lofigirl',
+    title: '☕ Lofi Girl — Beats to Relax / Study to',
+    url: 'https://soundcloud.com/lofigirl/sets/lofi-hip-hop-beats',
+  },
+  {
+    id: 'global_coderadio',
+    title: '💻 freeCodeCamp — 24/7 Code Radio',
+    url: 'https://coderadio.freecodecamp.org',
+  },
+  {
+    id: 'global_chillhop',
+    title: '🌌 Chillhop — Jazz & Lofi Hip Hop Mix',
+    url: 'https://soundcloud.com/chillhopdotcom/sets/lofi-hip-hop-beats-music-to',
+  },
+  {
+    id: 'global_piano',
+    title: '🎹 Peaceful Piano & Deep Focus Instrumental',
+    url: 'https://soundcloud.com/relaxdaily/sets/deep-focus-music-studying-concentration-work',
+  },
+  {
+    id: 'global_ambient',
+    title: '🧘 Ambient Space & Meditation Soundscapes',
+    url: 'https://soundcloud.com/ambientmusicalgenre/sets/ambient-music',
+  },
+  {
+    id: 'global_acoustic',
+    title: '🌧️ Indie & Acoustic Coffeehouse Chill',
+    url: 'https://soundcloud.com/alexrainbirdmusic',
+  },
+];
+
 const BOOKMARKS_KEY = 'mamxanh_zing_bookmarks_v1';
 
 interface SoundMixerPanelProps {
@@ -118,7 +152,14 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
   onStopRadio,
 }) => {
   const isEn = lang === 'en';
-  const [zingCustomUrl, setZingCustomUrl] = useState('https://zingmp3.vn/moi-phat-hanh');
+  const [musicPlatform, setMusicPlatform] = useState<'zing' | 'global'>(
+    lang === 'en' ? 'global' : 'zing'
+  );
+  const [zingCustomUrl, setZingCustomUrl] = useState(
+    lang === 'en'
+      ? 'https://soundcloud.com/lofigirl/sets/lofi-hip-hop-beats'
+      : 'https://zingmp3.vn/moi-phat-hanh'
+  );
   const [zingCustomTitle, setZingCustomTitle] = useState('');
   const [zingWindowState, setZingWindowState] = useState<'closed' | 'visible' | 'hidden_playing'>('closed');
   const [zingVolume, setZingVolume] = useState<number>(0.8);
@@ -136,6 +177,17 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
 
   const [localFileName, setLocalFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Sync default music platform when user toggles VI <-> EN language
+  useEffect(() => {
+    if (lang === 'en') {
+      setMusicPlatform('global');
+      setZingCustomUrl('https://soundcloud.com/lofigirl/sets/lofi-hip-hop-beats');
+    } else {
+      setMusicPlatform('zing');
+      setZingCustomUrl('https://zingmp3.vn/moi-phat-hanh');
+    }
+  }, [lang]);
 
   useEffect(() => {
     localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(savedBookmarks));
@@ -155,10 +207,21 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
     };
   }, []);
 
+  const isGlobalHub = musicPlatform === 'global';
+  const activeChannelList = isGlobalHub ? DEFAULT_GLOBAL_CHANNELS : DEFAULT_ZING_CHANNELS;
+  const platformName = isGlobalHub
+    ? isEn
+      ? 'Global Lofi & SoundCloud'
+      : 'Lofi Quốc Tế & SoundCloud'
+    : 'Zing MP3';
+
   const handleOpenZingUrl = async (url: string, title?: string) => {
     setZingCustomUrl(url);
     setZingWindowState('visible');
-    await openWebMusicPlayer(url, title || '🎶 DeskAura — Trình Phát Nhạc Zing MP3');
+    const defaultTitle = isEn
+      ? `🎶 DeskAura — ${platformName} Background Player`
+      : `🎶 DeskAura — Trình Phát Nhạc ${platformName}`;
+    await openWebMusicPlayer(url, title || defaultTitle);
   };
 
   const handleAddBookmark = () => {
@@ -166,7 +229,9 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
     if (!cleanUrl) return;
     const label =
       zingCustomTitle.trim() ||
-      `🎵 Playlist Zing MP3 #${savedBookmarks.length + 1}`;
+      (isEn
+        ? `🎵 Saved Playlist #${savedBookmarks.length + 1}`
+        : `🎵 Playlist Yêu Thích #${savedBookmarks.length + 1}`);
     setSavedBookmarks((prev) => [
       { id: `${Date.now()}`, title: label, url: cleanUrl },
       ...prev,
@@ -215,34 +280,85 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Section: Advanced Zing MP3 Hub & Background Remote Controller (Moved to Top) */}
+      {/* Section: Smart Regional Web Music Hub (Zing MP3 for VI / Global Lofi & SoundCloud for EN) */}
       <div className="bg-gradient-to-br from-purple-50/90 via-white to-fuchsia-50/70 rounded-3xl p-6 border border-purple-200/80 shadow-sm space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="flex flex-wrap items-center gap-2 mb-1">
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
               <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-purple-600 text-white">
-                🎶 Trung Tâm Điều Khiển Zing MP3 Nâng Cao
+                {isGlobalHub
+                  ? isEn
+                    ? '🎧 Global Lofi & SoundCloud Focus Hub'
+                    : '🎧 Trung Tâm Nhạc Lofi Quốc Tế & SoundCloud'
+                  : isEn
+                  ? '🎶 Zing MP3 Background Music Hub'
+                  : '🎶 Trung Tâm Điều Khiển Zing MP3 Nâng Cao'}
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                🛡️ Đã bật Chặn Nhạc Quảng Cáo 3 Lớp (Auto-Skip Ad)
+                {isEn
+                  ? '🛡️ 3-Layer Audio Ad-Blocker Active'
+                  : '🛡️ Đã bật Chặn Nhạc Quảng Cáo 3 Lớp'}
               </span>
+
+              {/* 1-Click Regional Platform Switcher Pill */}
+              <div className="inline-flex items-center bg-white rounded-full p-0.5 border border-purple-200 shadow-2xs">
+                <button
+                  onClick={() => {
+                    setMusicPlatform('zing');
+                    setZingCustomUrl('https://zingmp3.vn/moi-phat-hanh');
+                  }}
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold transition ${
+                    !isGlobalHub
+                      ? 'bg-purple-600 text-white'
+                      : 'text-slate-600 hover:text-purple-700'
+                  }`}
+                >
+                  🇻🇳 Zing MP3
+                </button>
+                <button
+                  onClick={() => {
+                    setMusicPlatform('global');
+                    setZingCustomUrl('https://soundcloud.com/lofigirl/sets/lofi-hip-hop-beats');
+                  }}
+                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold transition ${
+                    isGlobalHub
+                      ? 'bg-purple-600 text-white'
+                      : 'text-slate-600 hover:text-purple-700'
+                  }`}
+                >
+                  <Globe className="w-3 h-3" />
+                  {isEn ? 'Global Lofi / SoundCloud' : 'Lofi Quốc Tế'}
+                </button>
+              </div>
+
               {zingWindowState === 'hidden_playing' && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 animate-pulse">
                   <Disc3 className="w-3.5 h-3.5 animate-spin" />
-                  Đang chạy ngầm phát nhạc
+                  {isEn ? 'Playing in background' : 'Đang chạy ngầm phát nhạc'}
                 </span>
               )}
               {zingWindowState === 'visible' && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-300">
-                  Đang mở cửa sổ trình phát
+                  {isEn ? 'Player window open' : 'Đang mở cửa sổ trình phát'}
                 </span>
               )}
             </div>
             <h3 className="text-base font-bold text-slate-800">
-              Phát Nhạc Zing MP3 Chạy Ngầm & Điều Khiển Từ Xa Ngay Trên DeskAura
+              {isEn
+                ? `Stream ${platformName} in the Background & Remote-Control from DeskAura`
+                : `Phát Nhạc ${platformName} Chạy Ngầm & Điều Khiển Từ Xa Ngay Trên DeskAura`}
             </h3>
             <p className="text-xs text-slate-600 mt-0.5">
-              💡 <strong>Mẹo hay:</strong> Khi bấm nút <strong>X (Đóng)</strong> trên cửa sổ Zing MP3, cửa sổ sẽ <strong>tự động ẩn xuống chạy ngầm và nhạc vẫn tiếp tục phát</strong>! Bạn chỉ cần dùng bảng điều khiển bên dưới để chuyển bài hoặc chỉnh âm lượng.
+              {isEn ? (
+                <>
+                  💡 <strong>Pro tip:</strong> Closing (<strong>X</strong>) the music window{' '}
+                  <strong>minimizes it to the background while keeping your music playing</strong>! Use the remote control bar below to skip tracks or adjust volume.
+                </>
+              ) : (
+                <>
+                  💡 <strong>Mẹo hay:</strong> Khi bấm nút <strong>X (Đóng)</strong> trên cửa sổ nhạc, cửa sổ sẽ <strong>tự động ẩn xuống chạy ngầm và nhạc vẫn tiếp tục phát</strong>! Bạn chỉ cần dùng bảng điều khiển bên dưới để chuyển bài hoặc chỉnh âm lượng.
+                </>
+              )}
             </p>
           </div>
 
@@ -253,20 +369,26 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
                 className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition"
               >
                 <Eye className="w-4 h-4" />
-                Hiện lại cửa sổ Zing MP3
+                {isEn ? `Show ${platformName} Window` : `Hiện lại cửa sổ ${platformName}`}
               </button>
             ) : (
               <button
                 onClick={() =>
                   handleOpenZingUrl(
-                    'https://zingmp3.vn/moi-phat-hanh',
-                    '🎶 DeskAura — Zing MP3 Mới Phát Hành'
+                    activeChannelList[0].url,
+                    `🎶 DeskAura — ${activeChannelList[0].title}`
                   )
                 }
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 text-white shadow-md shadow-purple-500/20 transition"
               >
                 <Play className="w-4 h-4" />
-                Mở Zing MP3 — Mới Phát Hành
+                {isGlobalHub
+                  ? isEn
+                    ? 'Open Lofi Girl Beats'
+                    : 'Mở Lofi Girl Quốc Tế'
+                  : isEn
+                  ? 'Open Zing MP3 — New Releases'
+                  : 'Mở Zing MP3 — Mới Phát Hành'}
               </button>
             )}
 
@@ -277,10 +399,14 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
                   setZingWindowState('hidden_playing');
                 }}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition"
-                title="Ẩn cửa sổ Zing MP3 xuống chạy ngầm, nhạc vẫn phát bình thường"
+                title={
+                  isEn
+                    ? 'Hide player window to background while music keeps playing'
+                    : 'Ẩn cửa sổ nhạc xuống chạy ngầm, nhạc vẫn phát bình thường'
+                }
               >
                 <EyeOff className="w-3.5 h-3.5" />
-                Ẩn xuống chạy ngầm
+                {isEn ? 'Hide to Background' : 'Ẩn xuống chạy ngầm'}
               </button>
             )}
 
@@ -291,56 +417,65 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
                   setZingWindowState('closed');
                 }}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition"
-                title="Đóng hoàn toàn trình phát và tắt nhạc Zing MP3"
+                title={
+                  isEn
+                    ? 'Completely close the web music player'
+                    : 'Đóng hoàn toàn trình phát và tắt nhạc'
+                }
               >
                 <PowerOff className="w-3.5 h-3.5" />
-                Tắt hẳn nhạc Zing MP3
+                {isEn ? 'Close Player' : 'Tắt hẳn trình phát'}
               </button>
             )}
           </div>
         </div>
 
-        {/* Remote Control Bar for Zing MP3 (Works even when Zing window is hidden!) */}
+        {/* Remote Control Bar (Works even when music window is hidden!) */}
         <div className="bg-white/95 rounded-2xl p-4 border border-purple-200/80 flex flex-wrap items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-purple-900 mr-1">
-              🎛️ Điều khiển từ xa:
+              {isEn ? '🎛️ Remote Control:' : '🎛️ Điều khiển từ xa:'}
             </span>
             <button
               onClick={() => controlWebMusicPlayer('prev')}
               className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-800 transition"
-              title="Bài trước trên Zing MP3"
+              title={isEn ? 'Previous track' : 'Bài trước'}
             >
-              <SkipBack className="w-3.5 h-3.5" /> Bài trước
+              <SkipBack className="w-3.5 h-3.5" /> {isEn ? 'Prev' : 'Bài trước'}
             </button>
             <button
               onClick={() => controlWebMusicPlayer('play_pause')}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition"
-              title="Phát hoặc Tạm dừng nhạc Zing MP3"
+              title={isEn ? 'Play or Pause' : 'Phát hoặc Tạm dừng'}
             >
-              <Play className="w-3.5 h-3.5" /> Phát / Tạm dừng
+              <Play className="w-3.5 h-3.5" /> {isEn ? 'Play / Pause' : 'Phát / Tạm dừng'}
             </button>
             <button
               onClick={() => controlWebMusicPlayer('next')}
               className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-800 transition"
-              title="Bài tiếp theo trên Zing MP3"
+              title={isEn ? 'Next track' : 'Bài tiếp theo'}
             >
-              Bài tiếp <SkipForward className="w-3.5 h-3.5" />
+              {isEn ? 'Next' : 'Bài tiếp'} <SkipForward className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => controlWebMusicPlayer('play_first')}
               className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-fuchsia-50 hover:bg-fuchsia-100 text-fuchsia-700 border border-fuchsia-200 transition"
-              title="Tự động bấm nút Phát Tất Cả trên trang Zing MP3 hiện tại"
+              title={
+                isEn
+                  ? 'Click Play All on the current page'
+                  : 'Tự động bấm nút Phát Tất Cả trên trang hiện tại'
+              }
             >
-              <Sparkles className="w-3.5 h-3.5" /> Phát tất cả trang này
+              <Sparkles className="w-3.5 h-3.5" />{' '}
+              {isEn ? 'Play All on Page' : 'Phát tất cả trang này'}
             </button>
           </div>
 
-          {/* Dedicated Zing MP3 Volume Slider */}
+          {/* Dedicated Web Player Volume Slider */}
           <div className="flex items-center gap-2.5 bg-purple-50/80 px-3.5 py-2 rounded-xl border border-purple-200/70">
             <Volume2 className="w-4 h-4 text-purple-600" />
             <span className="text-xs font-bold text-purple-900">
-              Âm lượng Zing MP3:
+              {isEn ? 'Player Volume:' : 'Âm lượng trình phát:'}
             </span>
             <input
               type="range"
@@ -361,13 +496,19 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
           </div>
         </div>
 
-        {/* 6 Curated Office & Healing Zing MP3 Channels */}
+        {/* 6 Curated Office & Healing Channels */}
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-purple-800/70 mb-2.5">
-            Chuyên mục Zing MP3 chọn lọc cho dân văn phòng (1-Click):
+            {isGlobalHub
+              ? isEn
+                ? 'Curated Global Focus & Lofi Channels (1-Click):'
+                : 'Kênh Nhạc Lofi & Tập Trung Quốc Tế Chọn Lọc (1-Chạm):'
+              : isEn
+              ? 'Curated Zing MP3 Office Channels (1-Click):'
+              : 'Chuyên mục Zing MP3 chọn lọc cho dân văn phòng (1-Click):'}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-            {DEFAULT_ZING_CHANNELS.map((item) => (
+            {activeChannelList.map((item) => (
               <button
                 key={item.id}
                 onClick={() =>
@@ -389,11 +530,13 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
           </div>
         </div>
 
-        {/* User Saved Zing MP3 Playlists / Bookmarks */}
+        {/* User Saved Playlists / Bookmarks */}
         {savedBookmarks.length > 0 && (
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-purple-800/70 mb-2">
-              ⭐ Playlist Zing MP3 Yêu Thích Của Bạn:
+              {isEn
+                ? '⭐ Your Saved Favorite Playlists:'
+                : '⭐ Playlist Yêu Thích Của Bạn:'}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               {savedBookmarks.map((bm) => (
@@ -414,7 +557,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
                       )
                     }
                     className="text-slate-400 hover:text-rose-500 p-0.5"
-                    title="Xóa khỏi danh sách yêu thích"
+                    title={isEn ? 'Remove bookmark' : 'Xóa khỏi danh sách yêu thích'}
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
@@ -424,20 +567,28 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
           </div>
         )}
 
-        {/* Custom Zing URL Input + Bookmark Saver + External Browser Option */}
+        {/* Custom URL Input + Bookmark Saver + External Browser Option */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 bg-white/85 p-3 rounded-2xl border border-purple-100">
           <input
             type="text"
             value={zingCustomTitle}
             onChange={(e) => setZingCustomTitle(e.target.value)}
-            placeholder="Tên gợi nhớ (VD: Nhạc chiều thứ 6)..."
+            placeholder={
+              isEn
+                ? 'Custom label (e.g. Friday Chill)...'
+                : 'Tên gợi nhớ (VD: Nhạc chiều thứ 6)...'
+            }
             className="lg:col-span-3 bg-white px-3 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:border-purple-400"
           />
           <input
             type="text"
             value={zingCustomUrl}
             onChange={(e) => setZingCustomUrl(e.target.value)}
-            placeholder="Dán link Zing MP3, Album hoặc Playlist bất kỳ..."
+            placeholder={
+              isEn
+                ? 'Paste any SoundCloud, YouTube Music, CodeRadio or Zing MP3 URL...'
+                : 'Dán link Zing MP3, SoundCloud, Album hoặc Playlist bất kỳ...'
+            }
             className="lg:col-span-5 bg-white px-3 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:border-purple-400"
           />
           <div className="lg:col-span-4 flex items-center gap-2">
@@ -446,20 +597,24 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
                 if (zingCustomUrl.trim()) {
                   handleOpenZingUrl(
                     zingCustomUrl.trim(),
-                    zingCustomTitle.trim() || '🎶 DeskAura — Zing MP3'
+                    zingCustomTitle.trim() || `🎶 DeskAura — ${platformName}`
                   );
                 }
               }}
               className="flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white transition whitespace-nowrap"
             >
-              Mở trên App
+              {isEn ? 'Open in App' : 'Mở trên App'}
             </button>
             <button
               onClick={handleAddBookmark}
               className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition whitespace-nowrap"
-              title="Lưu link này vào danh sách Playlist yêu thích"
+              title={
+                isEn
+                  ? 'Save this URL to your favorite playlists'
+                  : 'Lưu link này vào danh sách Playlist yêu thích'
+              }
             >
-              <BookmarkPlus className="w-3.5 h-3.5" /> Lưu
+              <BookmarkPlus className="w-3.5 h-3.5" /> {isEn ? 'Save' : 'Lưu'}
             </button>
             <button
               onClick={() => {
@@ -468,7 +623,11 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
                 }
               }}
               className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
-              title="Mở link này bằng trình duyệt Chrome/Edge bên ngoài"
+              title={
+                isEn
+                  ? 'Open in external browser (Chrome/Edge/Safari)'
+                  : 'Mở link này bằng trình duyệt bên ngoài'
+              }
             >
               <ExternalLink className="w-3.5 h-3.5" />
             </button>
@@ -483,13 +642,13 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
               <Music className="w-5 h-5 text-emerald-500" />
               {isEn
-                ? 'Ambient Sound Studio & Focus Music (Offline + Zing MP3)'
-                : 'Phòng Thu Âm Thanh Chữa Lành & Tập Trung (Offline + Zing MP3)'}
+                ? `Ambient Sound Studio & Focus Music (Offline + ${platformName})`
+                : `Phòng Thu Âm Thanh Chữa Lành & Tập Trung (Offline + ${platformName})`}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               {isEn
-                ? 'Layer multiple offline nature soundscapes and mix with Zing MP3'
-                : 'Bật nhiều lớp âm thanh thiên nhiên Offline cùng lúc và hòa trộn với nhạc Zing MP3'}
+                ? `Layer multiple offline nature soundscapes and mix seamlessly with ${platformName}`
+                : `Bật nhiều lớp âm thanh thiên nhiên Offline cùng lúc và hòa trộn với nhạc ${platformName}`}
             </p>
           </div>
 
@@ -551,15 +710,15 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-full">
-                    {preset.badge}
+                    {isEn ? preset.badgeEn || preset.badge : preset.badge}
                   </span>
                   <Play className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition" />
                 </div>
                 <p className="text-sm font-bold text-slate-800 mt-2">
-                  {preset.name}
+                  {isEn ? preset.nameEn || preset.name : preset.name}
                 </p>
                 <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                  {preset.description}
+                  {isEn ? preset.descriptionEn || preset.description : preset.description}
                 </p>
               </button>
             ))}
@@ -572,14 +731,18 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-base font-bold text-slate-800">
-              1. Bộ Trộn Âm Thanh Tự Nhiên & Sóng Não Chữa Lành (Hoạt động 100% Offline)
+              {isEn
+                ? '1. Natural Soundscapes & Healing Brainwaves (100% Offline)'
+                : '1. Bộ Trộn Âm Thanh Tự Nhiên & Sóng Não Chữa Lành (Hoạt động 100% Offline)'}
             </h3>
             <p className="text-xs text-slate-500">
-              Chạm vào thẻ để bật/tắt và kéo thanh trượt để pha trộn cùng nhạc Zing MP3 hoặc nghe độc lập
+              {isEn
+                ? `Click any card to toggle and drag the slider to blend with ${platformName} or listen standalone`
+                : `Chạm vào thẻ để bật/tắt và kéo thanh trượt để pha trộn cùng nhạc ${platformName} hoặc nghe độc lập`}
             </p>
           </div>
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            Không cần Internet
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+            {isEn ? 'No Internet Needed' : 'Không cần Internet'}
           </span>
         </div>
 
@@ -615,14 +778,14 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
                           : 'bg-slate-200/70 text-slate-600'
                       }`}
                     >
-                      {isActive ? 'Đang phát' : 'Tắt'}
+                      {isActive ? (isEn ? 'Playing' : 'Đang phát') : isEn ? 'Off' : 'Tắt'}
                     </span>
                   </div>
                   <h4 className="text-sm font-bold text-slate-800 mt-3">
-                    {item.name}
+                    {isEn ? item.nameEn || item.name : item.name}
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                    {item.subtitle}
+                    {isEn ? item.subtitleEn || item.subtitle : item.subtitle}
                   </p>
                 </div>
 
@@ -660,11 +823,17 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
         <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-bold text-slate-700">
-              📂 Phát file nhạc chữa lành từ máy tính (.mp3, .wav, .ogg)
+              {isEn
+                ? '📂 Play Local Healing Audio File (.mp3, .wav, .ogg)'
+                : '📂 Phát file nhạc chữa lành từ máy tính (.mp3, .wav, .ogg)'}
             </p>
             <p className="text-[11px] text-slate-500 truncate mt-0.5">
               {localFileName
-                ? `Đang chọn: ${localFileName}`
+                ? isEn
+                  ? `Selected: ${localFileName}`
+                  : `Đang chọn: ${localFileName}`
+                : isEn
+                ? 'Choose a favorite audio track saved on your computer'
                 : 'Chọn bản nhạc yêu thích lưu sẵn trong máy của bạn'}
             </p>
           </div>
@@ -682,7 +851,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition whitespace-nowrap"
               >
                 <Pause className="w-3.5 h-3.5" />
-                Dừng phát file
+                {isEn ? 'Stop Local File' : 'Dừng phát file'}
               </button>
             )}
             <button
@@ -690,7 +859,7 @@ export const SoundMixerPanel: React.FC<SoundMixerPanelProps> = ({
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-50 hover:bg-emerald-50 text-emerald-700 border border-emerald-200 transition whitespace-nowrap"
             >
               <FolderOpen className="w-3.5 h-3.5" />
-              Chọn file nhạc từ máy
+              {isEn ? 'Choose Audio File' : 'Chọn file nhạc từ máy'}
             </button>
           </div>
         </div>

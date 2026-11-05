@@ -59,7 +59,9 @@ export type SoundId =
 export interface AmbientSoundItem {
   id: SoundId;
   name: string;
+  nameEn?: string;
   subtitle: string;
+  subtitleEn?: string;
   category: 'nature' | 'healing' | 'focus';
   iconName: string;
   color: string;

@@ -369,7 +369,7 @@ pub fn execute_zing_action(app: &AppHandle, action: &str, value: Option<f32>) ->
                     else a.pause();
                     return;
                 }
-                const playBtn = document.querySelector('.player-controls .btn-play, .player-controls [title*="Tạm dừng"], .player-controls [title*="Phát"], button.zm-btn.ic-play-circle-outline, button.zm-btn.ic-pause-circle-outline');
+                const playBtn = document.querySelector('.player-controls .btn-play, .player-controls [title*="Tạm dừng"], .player-controls [title*="Phát"], button.zm-btn.ic-play-circle-outline, button.zm-btn.ic-pause-circle-outline, .playControl, #play-pause-button, button[aria-label*="Play"], button[aria-label*="Pause"]');
                 if (playBtn) playBtn.click();
             })();
         "#.to_string(),
@@ -385,7 +385,7 @@ pub fn execute_zing_action(app: &AppHandle, action: &str, value: Option<f32>) ->
         "#.to_string(),
         "next" => r#"
             (function() {
-                const nextBtn = document.querySelector('.btn-next, [title*="Bài tiếp theo"], .ic-next');
+                const nextBtn = document.querySelector('.btn-next, [title*="Bài tiếp theo"], .ic-next, .skipControl__next, button[aria-label*="Next"]');
                 if (nextBtn) {
                     const btn = nextBtn.closest('button') || nextBtn;
                     btn.click();
@@ -394,7 +394,7 @@ pub fn execute_zing_action(app: &AppHandle, action: &str, value: Option<f32>) ->
         "#.to_string(),
         "prev" => r#"
             (function() {
-                const prevBtn = document.querySelector('.btn-pre, .btn-prev, [title*="Bài trước"], .ic-pre');
+                const prevBtn = document.querySelector('.btn-pre, .btn-prev, [title*="Bài trước"], .ic-pre, .skipControl__previous, button[aria-label*="Previous"]');
                 if (prevBtn) {
                     const btn = prevBtn.closest('button') || prevBtn;
                     btn.click();
@@ -416,7 +416,7 @@ pub fn execute_zing_action(app: &AppHandle, action: &str, value: Option<f32>) ->
         }
         "play_first" => r#"
             (function() {
-                const firstPlay = document.querySelector('button[title*="Phát tất cả"], .zm-card-image .ic-play, .media-item .ic-play, .song-thumb .ic-play');
+                const firstPlay = document.querySelector('button[title*="Phát tất cả"], .zm-card-image .ic-play, .media-item .ic-play, .song-thumb .ic-play, .playButton, .sc-button-play, #play-pause-button');
                 if (firstPlay) {
                     const btn = firstPlay.closest('button') || firstPlay;
                     btn.click();
@@ -975,89 +975,115 @@ fn hide_to_tray(app: AppHandle) {
     }
 }
 
+/// Renders the 32x32 Liquid-Fill Water Droplet icon for the System Tray / Menu Bar (Option A).
 fn render_tray_pie_icon(progress_ratio: f32, is_eye_cue: bool, is_deferred_alert: bool) -> Vec<u8> {
     let size: usize = 32;
     let mut rgba = vec![0u8; size * size * 4];
     let cx = 15.5_f32;
-    let cy = 15.5_f32;
-    let r_outer = 13.8_f32;
-    let r_inner = 7.2_f32;
-    let clamped = progress_ratio.clamp(0.0, 1.0);
+    let y_top = 2.5_f32;
+    let y_equator = 19.5_f32;
+    let r_belly = 9.8_f32;
+
+    let fill_ratio = if is_deferred_alert || is_eye_cue {
+        0.92_f32
+    } else {
+        progress_ratio.clamp(0.15, 1.0)
+    };
+    // Liquid rises from bottom (y=28.8) to top tip (y=3.5)
+    let base_fill_y = 28.8_f32 - fill_ratio * (28.8_f32 - 3.5_f32);
 
     for y in 0..size {
         for x in 0..size {
-            let dx = (x as f32) - cx;
-            let dy = (y as f32) - cy;
-            let dist = (dx * dx + dy * dy).sqrt();
-            let idx = (y * size + x) * 4;
+            let xf = x as f32;
+            let yf = y as f32;
+            let dx = (xf - cx).abs();
 
-            if dist <= r_outer + 0.7 && dist >= r_inner - 0.7 {
-                // Smooth edge anti-aliasing
-                let outer_aa = (r_outer + 0.5 - dist).clamp(0.0, 1.0);
-                let inner_aa = (dist - (r_inner - 0.5)).clamp(0.0, 1.0);
-                let alpha_factor = outer_aa * inner_aa;
+            // Compute signed distance inside the water droplet silhouette
+            let inside_dist = if yf >= y_top && yf <= y_equator {
+                let t = ((yf - y_top) / (y_equator - y_top)).clamp(0.0, 1.0);
+                // Smooth C1-continuous teardrop curve joining circle of radius r_belly at t=1.0
+                let half_w = r_belly * (1.5 * t - 0.5 * t * t * t);
+                half_w - dx
+            } else if yf > y_equator && yf <= 30.5 {
+                let dy_belly = yf - y_equator;
+                let dist_belly = ((xf - cx) * (xf - cx) + dy_belly * dy_belly).sqrt();
+                r_belly - dist_belly
+            } else {
+                -10.0
+            };
 
-                if is_deferred_alert {
-                    // Ruby Red Ring (#EF4444) when Break is Deferred due to Fullscreen / Presentation / DND
-                    rgba[idx] = 239;
-                    rgba[idx + 1] = 68;
-                    rgba[idx + 2] = 68;
-                    rgba[idx + 3] = (255.0 * alpha_factor) as u8;
-                } else if is_eye_cue {
-                    // Golden Amber Ring for 20-20-20 Passive Eye Rest
-                    rgba[idx] = 245;
-                    rgba[idx + 1] = 158;
-                    rgba[idx + 2] = 11;
-                    rgba[idx + 3] = (255.0 * alpha_factor) as u8;
-                } else {
-                    // Angle from 12 o'clock (-PI/2) clockwise [0..1]
-                    let mut angle = dy.atan2(dx) + std::f32::consts::FRAC_PI_2;
-                    if angle < 0.0 {
-                        angle += std::f32::consts::TAU;
-                    }
-                    let angle_norm = angle / std::f32::consts::TAU;
+            if inside_dist > -0.65 {
+                let idx = (y * size + x) * 4;
+                let outer_aa = (inside_dist + 0.65).clamp(0.0, 1.0);
+                let border_w = 1.75_f32;
 
-                    if angle_norm <= clamped {
-                        // Active progress arc color
-                        let (r, g, b) = if clamped < 0.75 {
-                            (16u8, 185u8, 129u8) // Emerald Green (#10B981)
-                        } else if clamped < 0.90 {
-                            (245u8, 158u8, 11u8) // Warm Amber (#F59E0B)
-                        } else {
-                            (249u8, 115u8, 22u8) // Coral Orange (#F97316)
-                        };
-                        rgba[idx] = r;
-                        rgba[idx + 1] = g;
-                        rgba[idx + 2] = b;
-                        rgba[idx + 3] = (255.0 * alpha_factor) as u8;
+                // Gentle wave along the liquid surface
+                let wave = 0.6 * ((xf * 0.42).sin());
+                let fill_y = base_fill_y + wave;
+
+                if inside_dist < border_w {
+                    // Crisp Droplet Outline Border
+                    let (br, bg, bb) = if is_deferred_alert {
+                        (239u8, 68u8, 68u8) // Ruby Red (#EF4444)
+                    } else if is_eye_cue {
+                        (245u8, 158u8, 11u8) // Amber Gold (#F59E0B)
                     } else {
-                        // Background ring track
-                        rgba[idx] = 148;
-                        rgba[idx + 1] = 163;
-                        rgba[idx + 2] = 184;
-                        rgba[idx + 3] = (95.0 * alpha_factor) as u8;
+                        (14u8, 165u8, 233u8) // Sky Blue (#0EA5E9)
+                    };
+                    rgba[idx] = br;
+                    rgba[idx + 1] = bg;
+                    rgba[idx + 2] = bb;
+                    rgba[idx + 3] = (255.0 * outer_aa) as u8;
+                } else if yf >= fill_y - 0.5 {
+                    // Rising Liquid Fill inside the Droplet
+                    let wave_aa = ((yf - (fill_y - 0.5)).clamp(0.0, 1.0)).max(0.25);
+                    let v_grad = ((29.0 - yf) / 25.0).clamp(0.0, 1.0);
+
+                    let (mut lr, mut lg, mut lb) = if is_deferred_alert {
+                        // Ruby Red Liquid
+                        (
+                            (220.0 + 28.0 * v_grad) as u8,
+                            (38.0 + 60.0 * v_grad) as u8,
+                            (38.0 + 60.0 * v_grad) as u8,
+                        )
+                    } else if is_eye_cue {
+                        // Golden Amber Liquid
+                        (
+                            (217.0 + 34.0 * v_grad) as u8,
+                            (119.0 + 72.0 * v_grad) as u8,
+                            (6.0 + 30.0 * v_grad) as u8,
+                        )
+                    } else {
+                        // DeskAura Ocean Sky -> Emerald Teal Gradient
+                        (
+                            (2.0 + 18.0 * v_grad) as u8,
+                            (132.0 + 58.0 * v_grad) as u8,
+                            (199.0 + 35.0 * (1.0 - v_grad)) as u8,
+                        )
+                    };
+
+                    // Glossy 3D specular highlight on the left curve of the droplet
+                    if xf < cx - 2.2
+                        && inside_dist > 2.4
+                        && inside_dist < 4.3
+                        && yf > 13.5
+                        && yf < 24.5
+                    {
+                        lr = ((lr as u16 + 255) / 2) as u8;
+                        lg = ((lg as u16 + 255) / 2) as u8;
+                        lb = ((lb as u16 + 255) / 2) as u8;
                     }
-                }
-            } else if dist <= 4.3 {
-                // Center indicator dot
-                let dot_aa = (4.3 - dist).clamp(0.0, 1.0);
-                if is_deferred_alert {
-                    rgba[idx] = 248;
-                    rgba[idx + 1] = 113;
-                    rgba[idx + 2] = 113;
-                    rgba[idx + 3] = (255.0 * dot_aa) as u8;
-                } else if is_eye_cue {
-                    // Bright yellow-amber pupil cue for 20-20-20 eye rest
-                    rgba[idx] = 251;
-                    rgba[idx + 1] = 191;
-                    rgba[idx + 2] = 36;
-                    rgba[idx + 3] = (255.0 * dot_aa) as u8;
+
+                    rgba[idx] = lr;
+                    rgba[idx + 1] = lg;
+                    rgba[idx + 2] = lb;
+                    rgba[idx + 3] = (250.0 * outer_aa * wave_aa) as u8;
                 } else {
-                    // Calm sky-emerald center dot
-                    rgba[idx] = 14;
-                    rgba[idx + 1] = 165;
-                    rgba[idx + 2] = 233;
-                    rgba[idx + 3] = (235.0 * dot_aa) as u8;
+                    // Unfilled upper glass cavity of the droplet
+                    rgba[idx] = 186;
+                    rgba[idx + 1] = 230;
+                    rgba[idx + 2] = 253;
+                    rgba[idx + 3] = (70.0 * outer_aa) as u8;
                 }
             }
         }
