@@ -12,9 +12,10 @@
 [![Platform macOS](https://img.shields.io/badge/Platform-macOS%20(Apple%20Silicon%20.dmg)-000000?style=for-the-badge&logo=apple)](./Release_macOS)
 [![Built with Tauri v2](https://img.shields.io/badge/Tauri%20v2-Rust%20%2B%20React-24C8DB?style=for-the-badge&logo=tauri)](https://tauri.app/)
 [![Languages](https://img.shields.io/badge/Language-Ti%E1%BA%BFng%20Vi%E1%BB%87t%20%7C%20English-059669?style=for-the-badge)](#)
+[![Author Website](https://img.shields.io/badge/Website-duongbirken.deta.vn-0EA5E9?style=for-the-badge&logo=googlechrome&logoColor=white)](https://duongbirken.deta.vn)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge)](./LICENSE)
 
-[**🎬 Video Demo 45s**](#-video-demo-45-giây--45-second-product-showcase) • [**🚀 Có Gì Mới Ở v1.2.4 (VI/EN)**](#-có-gì-mới-trong-phiên-bản-deskaura-v124--whats-new-v120--v124) • [**📸 Giao Diện Tiếng Việt & English**](#-ảnh-chụp-giao-diện-v124-tiếng-việt--english--bilingual-screenshots) • [**📥 Tải Về (Windows / macOS)**](#-hướng-dẫn-tải--cài-đặt-windows--macos--ios)
+[**🎬 Video Demo 45s**](#-video-demo-45-giây--45-second-product-showcase) • [**🚀 Có Gì Mới Ở v1.2.4 (VI/EN)**](#-có-gì-mới-trong-phiên-bản-deskaura-v124--whats-new-v120--v124) • [**📸 Giao Diện Tiếng Việt & English**](#-ảnh-chụp-giao-diện-v124-tiếng-việt--english--bilingual-screenshots) • [**📥 Tải Về (Windows / macOS)**](#-hướng-dẫn-tải--cài-đặt-windows--macos--ios) • [**👨‍💻 Tác Giả & Liên Hệ**](#-tác-giả--liên-hệ--author--contact)
 
 </div>
 
@@ -194,6 +195,21 @@ npm run video:demo
 
 ---
 
+## 👨‍💻 Tác Giả & Liên Hệ / Author & Contact
+
+| 🇻🇳 Lời nhắn từ Tác giả | 🇬🇧 Note from the Author |
+| :--- | :--- |
+| **DeskAura** là dự án tâm huyết được mình phát triển và chia sẻ **hoàn toàn miễn phí** cho cộng đồng, với mong muốn giúp anh chị em văn phòng & lập trình viên bảo vệ cột sống, đôi mắt và giữ trọn sự tĩnh lặng khi làm việc sâu (*Deep Work*).<br><br>Nếu ứng dụng hữu ích với bạn, hãy tặng dự án một ngôi sao (**⭐ Star**) trên GitHub hoặc ghé thăm website của mình để kết nối và góp ý thêm nhé! | **DeskAura** is a passion project built and shared **100% free and open-source**, designed to help office workers, creators, and developers protect their spine, eyesight, and deep-work focus without intrusive interruptions.<br><br>If you find DeskAura helpful, please consider giving this repo a **⭐ Star** on GitHub or visiting my website to connect and share your feedback! |
+
+<div align="center">
+
+**🌐 Website & Liên hệ / Official Website:** [**https://duongbirken.deta.vn**](https://duongbirken.deta.vn)  
+**🐞 Báo lỗi & Góp ý / Issues & Feedback:** [**GitHub Issues**](https://github.com/duongbirken2510/deskaura/issues)
+
+</div>
+
+---
+
 ## 📄 Giấy Phép / License
 
-Dự án được phân phối dưới giấy phép mã nguồn mở [**MIT License**](./LICENSE).
+Dự án được phân phối miễn phí dưới giấy phép mã nguồn mở [**MIT License**](./LICENSE) — Phát triển bởi [**Duong Birken**](https://duongbirken.deta.vn).
