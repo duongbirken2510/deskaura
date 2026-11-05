@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeskAura for Devs — Giữ Trọn Dòng Code. Xoa Dịu Những Đêm OT.</title>
+  <meta name="description" content="Built with Tauri v2 & Rust (~10MB, 0% GPU). Bảo vệ Flow State của lập trình viên, nhắc nghỉ mắt 20-20-20, 8 kênh âm thanh Offline không sợ VPN và đồng bộ LAN UDP <5ms." />
+  <meta name="author" content="Duong Birken" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="DeskAura for Devs — Giữ Trọn Dòng Code. Xoa Dịu Những Đêm OT." />
+  <meta property="og:description" content="Built with Tauri v2 & Rust. Zero Bloatware, ~10MB installer, 0% GPU in Tray, Offline Audio Hub & Native C FFI Idle Guard." />
+  <meta property="og:image" content="../media/deskaura_brand_banner.png" />
+
+  <link rel="icon" type="image/svg+xml" href="../media/deskaura_logo_wordmark.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      interpolate-size: allow-keywords;
+      --bg-void: #070b12;
+      --bg-surface: #0f172a;
+      --bg-elevated: #131f38;
+      --text-bright: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --neon-emerald: #10b981;
+      --neon-cyan: #38bdf8;
+      --neon-purple: #a855f7;
+      --border-neon: rgba(16, 185, 129, 0.25);
+      --border-subtle: rgba(148, 163, 184, 0.14);
+      --shadow-neon: 0 20px 55px rgba(16, 185, 129, 0.16);
+      --radius-sm: 10px;
+      --radius-md: 18px;
+      --radius-lg: 26px;
+      --radius-pill: 999px;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-behavior: smooth;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-bright);
+      background-color: var(--bg-void);
+      line-height: 1.65;
+    }
+
+    body {
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(16, 185, 129, 0.14) 0%, transparent 40%),
+        radial-gradient(circle at 82% 16%, rgba(56, 189, 248, 0.12) 0%, transparent 42%),
+        radial-gradient(circle at 50% 75%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
+    }
+
+    /* Targeted typography wrapping rules (modern-web-guidance: improve-text-layout-and-legibility) */
+    h1, h2, h3, h4 {
+      text-wrap: balance;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+      color: var(--text-bright);
+    }
+
+    p, li, blockquote {
+      text-wrap: pretty;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .container {
+      width: min(1180px, 92vw);
+      margin-inline: auto;
+    }
+
+    /* Top Niche Funnel Bar */
+    .funnel-bar {
+      background: #04070c;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      padding: 8px 16px;
+      text-align: center;
+    }
+
+    .funnel-bar-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px 18px;
+    }
+
+    .funnel-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 12px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-secondary);
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+
+    .funnel-pill:hover, .funnel-pill.active {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--neon-emerald);
+      border: 1px solid var(--border-neon);
+    }
+
+    /* Sticky Dark Navbar */
+    .navbar {
+      position: sticky;
+      top: 14px;
+      z-index: 100;
+      width: min(1180px, 94vw);
+      margin: 14px auto 0;
+      padding: 12px 22px;
+      border-radius: var(--radius-pill);
+      background: rgba(15, 23, 42, 0.86);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-neon);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-dev {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.15rem;
+    }
+
+    .dev-badge {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(16, 185, 129, 0.16);
+      color: var(--neon-emerald);
+      border: 1px solid var(--border-neon);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .nav-links a:hover { color: var(--neon-emerald); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 13px 24px;
+      border-radius: var(--radius-pill);
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border: none;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+
+    .btn-neon {
+      background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+      color: #04130e;
+      font-weight: 800;
+      box-shadow: 0 0 28px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-dark {
+      background: var(--bg-surface);
+      color: var(--text-bright);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-dark:hover { border-color: var(--neon-cyan); }
+
+    .btn-sm { padding: 8px 16px; font-size: 0.84rem; }
+
+    /* 1. Hero Section (Night Owl Vibe) */
+    .hero {
+      padding: 60px 0 48px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .mono-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid var(--border-neon);
+      color: var(--neon-emerald);
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 4vw, 3.35rem);
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    .neon-gradient {
+      background: linear-gradient(135deg, #34d399 0%, #38bdf8 60%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.06rem;
+      color: var(--text-secondary);
+      margin-bottom: 26px;
+    }
+
+    .terminal-snippet {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      background: #04070c;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      color: #a7f3d0;
+      margin-top: 18px;
+      display: inline-block;
+    }
+
+    .video-neon-frame {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-neon);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-neon);
+    }
+
+    .video-neon-frame video {
+      width: 100%;
+      border-radius: var(--radius-md);
+      display: block;
+      aspect-ratio: 16 / 9;
+      background: #000;
+    }
+
+    .video-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 6px 2px;
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    /* Section Generic */
+    .section { padding: 76px 0; }
+
+    .section-header {
+      text-align: center;
+      max-width: 760px;
+      margin: 0 auto 48px;
+    }
+
+    .section-header h2 {
+      font-size: clamp(1.85rem, 3.2vw, 2.55rem);
+      margin-bottom: 12px;
+    }
+
+    /* 2. The Problem (Nỗi đau Geeks) */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .problem-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 28px;
+    }
+
+    .problem-metric {
+      font-family: var(--font-mono);
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #f87171;
+      margin-bottom: 10px;
+    }
+
+    .problem-card h3 { font-size: 1.2rem; margin-bottom: 10px; }
+    .problem-card p { font-size: 0.93rem; color: var(--text-secondary); }
+
+    /* 3. Core Solutions (Giải pháp Hacker) */
+    .hacker-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .hacker-card {
+      background: linear-gradient(180deg, var(--bg-surface) 0%, #0b1324 100%);
+      border: 1px solid var(--border-neon);
+      border-radius: var(--radius-md);
+      padding: 30px;
+      box-shadow: var(--shadow-neon);
+    }
+
+    .hacker-tag {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: var(--neon-cyan);
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .hacker-card h3 { font-size: 1.28rem; margin-bottom: 12px; }
+    .hacker-card p { font-size: 0.94rem; color: var(--text-secondary); }
+
+    /* 4. Geeky Specs Table (Terminal Benchmark) */
+    .terminal-window {
+      background: #04070c;
+      border: 1px solid var(--border-neon);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-neon);
+    }
+
+    .terminal-header {
+      background: #0f172a;
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+    }
+
+    .dots { display: flex; gap: 8px; }
+    .dots span { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+
+    .specs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+    }
+
+    .specs-table th, .specs-table td {
+      padding: 16px 24px;
+      text-align: left;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .specs-table th {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    .specs-table td.good { color: var(--neon-emerald); font-weight: 700; }
+    .specs-table td.bad { color: #f87171; }
+
+    /* 5. Final CTA */
+    .cta-dev {
+      background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+      border: 1px solid var(--border-neon);
+      border-radius: var(--radius-lg);
+      padding: 56px 36px;
+      text-align: center;
+      margin-bottom: 64px;
+      box-shadow: var(--shadow-neon);
+    }
+
+    .cta-dev h2 { font-size: clamp(1.9rem, 3.2vw, 2.55rem); margin-bottom: 12px; }
+    .cta-dev p { color: var(--text-secondary); max-width: 640px; margin: 0 auto 28px; }
+
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 32px 0 44px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 920px) {
+      .hero, .problem-grid, .hacker-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .specs-table th, .specs-table td { padding: 12px 14px; font-size: 0.78rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Niche Switcher -->
+  <div class="funnel-bar">
+    <div class="funnel-bar-inner">
+      <span>Developer &amp; Night-Owl Edition:</span>
+      <a href="../index.html" class="funnel-pill">☀️ Trang Chủ Tổng Quan</a>
+      <a href="../van-phong/index.html" class="funnel-pill">🏥 Chuyên Trang Dân Văn Phòng (/van-phong)</a>
+      <a href="./index.html" class="funnel-pill active">🌙 Chuyên Trang Dev &amp; Cú Đêm (/for-devs)</a>
+    </div>
+  </div>
+
+  <!-- Sticky Dark Navbar -->
+  <header class="navbar">
+    <a href="../index.html" class="brand-dev">
+      <span style="display:inline-flex; align-items:center; background:rgba(255,255,255,0.92); padding:4px 12px 4px 6px; border-radius:999px;">
+        <img src="../media/deskaura_logo_wordmark.svg" alt="DeskAura" style="height:28px; display:block;" />
+      </span>
+      <span class="dev-badge">FOR_DEVS // v1.2.4</span>
+    </a>
+
+    <nav class="nav-links">
+      <a href="#problem">Nỗi Đau Interrupt</a>
+      <a href="#solutions">Giải Pháp Hacker</a>
+      <a href="#specs">Geeky Specs (Rust)</a>
+    </nav>
+
+    <a href="https://github.com/duongbirken2510/deskaura/releases/latest" class="btn btn-neon btn-sm">
+      ⚡ Tải Bản Native Rust
+    </a>
+  </header>
+
+  <main class="container">
+    <!-- 1. Hero Section -->
+    <section class="hero">
+      <div>
+        <div class="mono-pill">
+          <span>●</span>
+          <span>RUST_TAURI_V2 • ~10MB_BINARY • 0%_GPU_IDLE</span>
+        </div>
+
+        <h1>
+          Giữ Trọn Dòng Code.<br />
+          <span class="neon-gradient">Xoa Dịu Những Đêm OT.</span>
+        </h1>
+
+        <p>
+          Đang gỡ rối một bug khó lúc 1 giờ sáng, điều cuối cùng bạn muốn là một cái popup thô bạo nhảy ra khóa cứng màn hình. DeskAura bảo vệ <strong>Flow State</strong> của bạn, tự lùi lịch khi bạn đang tập trung cao độ và phát âm thanh mưa đêm Offline không sợ VPN.
+        </p>
+
+        <div style="display:flex; flex-wrap:wrap; gap:14px;">
+          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_aarch64.dmg" class="btn btn-neon" id="dev-primary-cta">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.33c.64-.78 1.08-1.86.96-2.94-.93.04-2.06.62-2.72 1.4-.58.68-1.1 1.79-.96 2.84 1.04.08 2.08-.52 2.72-1.3z"/></svg>
+            <span>Tải Bản Native Cho Dev (macOS .dmg)</span>
+          </a>
+          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_x64-setup.exe" class="btn btn-dark" id="dev-secondary-cta">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.557L10.35 4.5v7.09H3V5.557zm0 12.886L10.35 19.5v-7.09H3v6.033zm8.165 1.182L21 21v-8.59h-9.835v7.215zm0-15.25V11.59H21V3l-9.835 1.375z"/></svg>
+            <span>Windows x64 (.exe)</span>
+          </a>
+          <a href="https://github.com/duongbirken2510/deskaura" target="_blank" rel="noopener" class="btn btn-dark">
+            GitHub Source
+          </a>
+        </div>
+
+        <div class="terminal-snippet">
+          $ arch -arm64 DeskAura.app # Native Apple Silicon &amp; Windows x64 • Zero Electron Bloat
+        </div>
+      </div>
+
+      <div class="video-neon-frame">
+        <video id="dev-video" controls autoplay muted playsinline loop poster="../media/deskaura_social_hero.jpg">
+          <source src="../media/deskaura_tvc_intro.mp4" type="video/mp4" />
+        </video>
+        <div class="video-bar">
+          <span>// TVC_01: Night_Owl_Coder_Flow.mp4 (4K/1080p)</span>
+          <button type="button" class="btn btn-dark btn-sm" style="padding:4px 12px; font-size:0.76rem;" onclick="toggleDevSound()" id="dev-sound-btn">
+            🔊 UNMUTE_AUDIO
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. The Problem (Nỗi đau Geeks) -->
+    <section class="section" id="problem">
+      <div class="section-header">
+        <span class="mono-pill">// THE_PROBLEM: WHY_DEVS_HATE_BREAK_TIMERS</span>
+        <h2>Vì Sao Dân Dev Cài App Nhắc Nghỉ Ngơi Rồi Xóa Ngay Sau 24 Giờ?</h2>
+        <p style="color:var(--text-secondary);">
+          Các phần mềm nhắc nhở thông thường được viết bởi những người không hiểu cảm giác phải giữ hàng chục biến trạng thái trong đầu khi đang code.
+        </p>
+      </div>
+
+      <div class="problem-grid">
+        <article class="problem-card">
+          <div class="problem-metric">23 mins</div>
+          <h3>Đứt Mạch Logic (Context-Switching Cost)</h3>
+          <p>
+            Đang trace một lỗi bất đồng bộ phức tạp thì màn hình bị khóa trắng xóa bắt đứng dậy tập thể dục. Khi quay lại ghế, toàn bộ luồng suy nghĩ trong đầu đã bốc hơi.
+          </p>
+        </article>
+
+        <article class="problem-card">
+          <div class="problem-metric">300+ MB</div>
+          <h3>Bloatware Ngốn RAM Ngang Docker</h3>
+          <p>
+            Chỉ là một chiếc đồng hồ đếm ngược 20 phút nhưng đóng gói bằng Electron ngốn 300MB RAM và đốt GPU liên tục làm máy nóng ran khi đang biên dịch dự án.
+          </p>
+        </article>
+
+        <article class="problem-card">
+          <div class="problem-metric">02:00 AM</div>
+          <h3>Kiệt Sức Thầm Lặng Sau Những Đêm OT</h3>
+          <p>
+            Code xuyên đêm dưới ánh sáng xanh màn hình khiến mắt khô rát, cổ vai gáy cứng đờ và quên uống nước suốt 5 tiếng liền dẫn đến burnout kéo dài.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 3. Core Solutions (Giải pháp Hacker) -->
+    <section class="section" id="solutions">
+      <div class="section-header">
+        <span class="mono-pill">// CORE_SOLUTIONS: ENGINEERED_BY_A_BUILDER</span>
+        <h2>Giải Pháp Thiết Kế Riêng Cho Dòng Chảy Của Lập Trình Viên</h2>
+      </div>
+
+      <div class="hacker-grid">
+        <article class="hacker-card">
+          <span class="hacker-tag">01 // FLOW_STATE_PROTECTION</span>
+          <h3>Context-Aware &amp; Fullscreen Guard</h3>
+          <p>
+            Giao tiếp trực tiếp với tầng C FFI của hệ điều hành (<code>CoreGraphics</code> / <code>Win32</code>): Tự động hoãn lời nhắc khi bạn đang mở IDE toàn màn hình, đang họp trực tuyến hoặc đang trình chiếu. Tự động tạm dừng khi bạn rời bàn phím mà không sinh bất kỳ tiến trình con nào.
+          </p>
+        </article>
+
+        <article class="hacker-card">
+          <span class="hacker-tag">02 // OFFLINE_AUDIO_HUB</span>
+          <h3>Smart Sound Hub — Không Sợ VPN Chặn IP</h3>
+          <p>
+            Bật VPN nội bộ công ty hay mạng корпоративный bị chặn YouTube/Spotify/Code Radio? DeskAura tích hợp sẵn bàn trộn 8 kênh âm thanh (Mưa đêm, Lửa trại, Suối chảy, Sóng âm tập trung) chạy <strong>100% Offline trên máy</strong> với 0 MB băng thông và 0 quảng cáo.
+          </p>
+        </article>
+
+        <article class="hacker-card">
+          <span class="hacker-tag">03 // HYBRID_P2P_SYNC</span>
+          <h3>Đồng Bộ LAN UDP &lt;5ms Giữa Work PC &amp; Home Mac</h3>
+          <p>
+            Ban ngày code trên PC Windows ở văn phòng, tối về mở MacBook làm tiếp: Dữ liệu uống nước, chậu cây ảo và chuỗi Streak tự động gộp tức thì dưới 5ms qua gói tin UDP có chữ ký MAC ẩn danh hoặc qua Gmail Cloud.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 4. Geeky Specs (Thông số kỹ thuật dân Dev mê mẩn) -->
+    <section class="section" id="specs">
+      <div class="section-header">
+        <span class="mono-pill">// GEEKY_SPECS: ARCHITECTURE_BENCHMARK</span>
+        <h2>Thông Số Kỹ Thuật Mở Hộp (Zero Bloatware)</h2>
+        <p style="color:var(--text-secondary);">
+          Đã qua 5 vòng kiểm toán Hiệu năng &amp; Bảo mật cấp Doanh nghiệp trước khi xuất xưởng.
+        </p>
+      </div>
+
+      <div class="terminal-window">
+        <div class="terminal-header">
+          <div class="dots">
+            <span style="background:#ef4444;"></span>
+            <span style="background:#f59e0b;"></span>
+            <span style="background:#10b981;"></span>
+          </div>
+          <span>deskaura-benchmark --compare electron-apps</span>
+          <span>RUST 1.85 / TAURI 2.0</span>
+        </div>
+
+        <table class="specs-table">
+          <thead>
+            <tr>
+              <th>Hạng Mục Kỹ Thuật (Metric)</th>
+              <th>DeskAura (Tauri v2 + Rust)</th>
+              <th>App Nhắc Nhở Truyền Thống (Electron)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Bộ cài đặt (Installer Size)</td>
+              <td class="good">~10.2 MB (.dmg / .exe)</td>
+              <td class="bad">140 MB – 220 MB</td>
+            </tr>
+            <tr>
+              <td>Initial JS Bundle (Code-Split)</td>
+              <td class="good">127.9 KB (manualChunks + React.lazy)</td>
+              <td class="bad">1,200+ KB monolithic bundle</td>
+            </tr>
+            <tr>
+              <td>Tiêu thụ GPU khi thu xuống Tray</td>
+              <td class="good">0.0% GPU (Zero-Blur + Tray Cache Deduplication)</td>
+              <td class="bad">3% – 8% GPU liên tục</td>
+            </tr>
+            <tr>
+              <td>Cảm biến Idle (Chuột/Bàn phím)</td>
+              <td class="good">Native C FFI (0 child processes spawned)</td>
+              <td class="bad">Spawn ioreg / powershell mỗi 3 giây</td>
+            </tr>
+            <tr>
+              <td>Bảo mật lưu trữ cục bộ</td>
+              <td class="good">RAM-Only enc:v2: Hardware Vault</td>
+              <td class="bad">Plaintext JSON / localStorage</td>
+            </tr>
+            <tr>
+              <td>Cơ chế cập nhật (Silent OTA)</td>
+              <td class="good">Magic-Byte Verification + Two-Phase GC</td>
+              <td class="bad">Tải lại toàn bộ 150MB mỗi bản vá</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5. Final CTA -->
+    <section class="cta-dev">
+      <h2>Sẵn Sàng Cho Những Đêm Code Bền Bỉ Hơn?</h2>
+      <p>
+        Không đăng ký tài khoản bắt buộc. Không telemetry theo dõi. Cài đặt trong 3 giây và trải nghiệm ngay.
+      </p>
+      <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:14px;">
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_aarch64.dmg" class="btn btn-neon">
+          🍎 Tải Bản Native Cho macOS (.dmg)
+        </a>
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_x64-setup.exe" class="btn btn-dark">
+          🪟 Tải Bản Native Cho Windows (.exe)
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px;">
+      <div>
+        <span style="font-family:var(--font-mono); color:var(--neon-emerald);">DeskAura v1.2.4</span> — Engineered by <strong>Duong Birken</strong> (<a href="https://duongbirken.deta.vn" target="_blank" rel="noopener" style="color:var(--neon-cyan);">duongbirken.deta.vn</a>)
+      </div>
+      <div style="display:flex; gap:18px; font-weight:600;">
+        <a href="../index.html">Trang Chủ</a>
+        <a href="../van-phong/index.html">Chuyên Trang Văn Phòng</a>
+        <a href="./index.html">Chuyên Trang Cho Dev</a>
+        <a href="https://github.com/duongbirken2510/deskaura" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleDevSound() {
+      const v = document.getElementById('dev-video');
+      v.muted = !v.muted;
+      document.getElementById('dev-sound-btn').textContent = v.muted ? '🔊 UNMUTE_AUDIO' : '🔈 MUTE_AUDIO';
+    }
+
+    (function detectDevOS() {
+      const ua = navigator.userAgent.toLowerCase();
+      const macBtn = document.getElementById('dev-primary-cta');
+      const winBtn = document.getElementById('dev-secondary-cta');
+      if (ua.includes('win')) {
+        winBtn.classList.replace('btn-dark', 'btn-neon');
+        macBtn.classList.replace('btn-neon', 'btn-dark');
+      }
+    })();
+  </script>
+</body>
+</html>
