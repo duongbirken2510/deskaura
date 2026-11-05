@@ -233,12 +233,12 @@ export const MebiusHourlyHydrationChart: React.FC<MebiusHourlyHydrationChartProp
 
   return (
     <div className="mt-3 pt-3 border-t border-slate-100">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-          <BarChart3 className="w-3.5 h-3.5 text-sky-500" />
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1 whitespace-nowrap">
+          <BarChart3 className="w-3.5 h-3.5 text-sky-500 shrink-0" />
           {t.hourlyWaterTitle}
         </span>
-        <span className="text-[10px] font-semibold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100">
+        <span className="text-[10px] font-semibold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100 whitespace-nowrap">
           {t.hourlyWaterTarget}
         </span>
       </div>

@@ -1771,20 +1771,20 @@ export const App: React.FC = () => {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-6">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-5 py-4">
         {activeTab === 'dashboard' && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Top 3-Column Bento Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
               {/* Card 1: Stand-up & Eye Reminder (5 cols) */}
-              <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-emerald-100/90 shadow-sm flex flex-col justify-between">
+              <div className="lg:col-span-5 bg-white rounded-3xl p-5 border border-emerald-100/90 shadow-sm flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
-                      <Activity className="w-3.5 h-3.5" />
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70 whitespace-nowrap">
+                      <Activity className="w-3.5 h-3.5 shrink-0" />
                       {t.standupBadge}
                     </span>
-                    <span className="text-xs font-semibold text-slate-400">
+                    <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">
                       {t.standupCountLabel} {dailyStats.standupCompletedCount} {t.timesUnit}
                     </span>
                   </div>
@@ -1890,24 +1890,24 @@ export const App: React.FC = () => {
               </div>
 
               {/* Card 2: Smart Hydration Tracker (4 cols) */}
-              <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-sky-100/90 shadow-sm flex flex-col justify-between">
+              <div className="lg:col-span-4 bg-white rounded-3xl p-5 border border-sky-100/90 shadow-sm flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200/70">
-                      <Droplets className="w-3.5 h-3.5" />
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200/70 whitespace-nowrap">
+                      <Droplets className="w-3.5 h-3.5 shrink-0" />
                       {t.hydrationBadge}
                     </span>
                     <button
                       onClick={() => triggerVoiceReminder('water')}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 hover:text-sky-700"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 hover:text-sky-700 whitespace-nowrap"
                     >
-                      <Bell className="w-3.5 h-3.5" />
+                      <Bell className="w-3.5 h-3.5 shrink-0" />
                       {t.remindAfter} {formatMMSS(waterSecondsLeft)}
                     </button>
                   </div>
 
                   {/* Animated Water Cup / Wave Gauge */}
-                  <div className="my-5 flex items-center gap-5 bg-gradient-to-br from-sky-50/80 to-cyan-50/40 p-4 rounded-2xl border border-sky-100">
+                  <div className="my-4 flex items-center gap-4 bg-gradient-to-br from-sky-50/80 to-cyan-50/40 p-3.5 rounded-2xl border border-sky-100">
                     <div className="relative w-20 h-28 rounded-b-3xl rounded-t-xl border-4 border-sky-400 bg-white overflow-hidden shadow-inner flex-shrink-0">
                       <div
                         className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-sky-500 to-cyan-300 transition-all duration-700"
@@ -1948,10 +1948,26 @@ export const App: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* 1-Click Quick Drink Buttons */}
-                  <p className="text-xs font-bold text-slate-600 mb-2">
-                    {t.quickDrinkTitle}
-                  </p>
+                  {/* 1-Click Quick Drink Buttons + Subtle Reset Button */}
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-bold text-slate-600">
+                      {t.quickDrinkTitle}
+                    </p>
+                    {dailyStats.waterIntakeMl > 0 && (
+                      <button
+                        onClick={() =>
+                          setDailyStats((prev) => ({
+                            ...prev,
+                            waterIntakeMl: 0,
+                            waterLogs: [],
+                          }))
+                        }
+                        className="text-[11px] text-slate-400 hover:text-rose-500 inline-flex items-center gap-1 transition"
+                      >
+                        <Trash2 className="w-3 h-3" /> {t.resetBtn}
+                      </button>
+                    )}
+                  </div>
                   <div className="grid grid-cols-3 gap-2.5 mb-3">
                     {hydrationSettings.quickAmounts.map((amt, i) => (
                       <button
@@ -1986,73 +2002,34 @@ export const App: React.FC = () => {
                       </button>
                     </div>
                   )}
-
-                  {/* Mebius Hourly Hydration Pill Bar Chart */}
-                  <MebiusHourlyHydrationChart
-                    waterLogs={dailyStats.waterLogs}
-                    lang={lang}
-                  />
                 </div>
 
-                {/* Recent Drink Logs */}
-                <div className="pt-3 mt-3 border-t border-slate-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      {t.todayLogsLabel} ({dailyStats.waterLogs.length})
-                    </span>
-                    {dailyStats.waterLogs.length > 0 && (
-                      <button
-                        onClick={() =>
-                          setDailyStats((prev) => ({
-                            ...prev,
-                            waterIntakeMl: 0,
-                            waterLogs: [],
-                          }))
-                        }
-                        className="text-[11px] text-slate-400 hover:text-rose-500 inline-flex items-center gap-1"
-                      >
-                        <Trash2 className="w-3 h-3" /> {t.resetBtn}
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                    {dailyStats.waterLogs.length === 0 ? (
-                      <span className="text-xs text-slate-400 italic">
-                        {t.noWaterLogsYet}
-                      </span>
-                    ) : (
-                      dailyStats.waterLogs.slice(0, 5).map((log) => (
-                        <span
-                          key={log.id}
-                          className="px-2.5 py-1 rounded-xl bg-sky-50 text-sky-700 border border-sky-100 text-[11px] font-semibold whitespace-nowrap"
-                        >
-                          {log.timestamp} • +{log.amountMl}ml
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </div>
+                {/* Mebius Hourly Hydration Pill Bar Chart */}
+                <MebiusHourlyHydrationChart
+                  waterLogs={dailyStats.waterLogs}
+                  lang={lang}
+                />
               </div>
 
               {/* Card 3: Virtual Desk Plant & Daily Wellness Milestones (3 cols) */}
-              <div className="lg:col-span-3 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
+              <div className="lg:col-span-3 bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center justify-between gap-1">
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap ${
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${
                         plantMood === 'sleepy'
                           ? 'bg-indigo-950 text-indigo-200 border-indigo-800'
                           : 'bg-amber-50 text-amber-700 border-amber-200/70'
                       }`}
                     >
-                      <Sun className="w-3.5 h-3.5 shrink-0" />
+                      <Sun className="w-3 h-3 shrink-0" />
                       {plantMood === 'sleepy'
                         ? lang === 'en'
-                          ? '🌙 Night Owl Mode'
-                          : '🌙 Chế Độ Cú Đêm'
+                          ? '🌙 Night Owl'
+                          : '🌙 Cú Đêm'
                         : t.deskPlantBadge}
                     </span>
-                    <span className="text-[11px] font-bold text-emerald-600 whitespace-nowrap">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/70 text-[10px] font-extrabold text-emerald-700 whitespace-nowrap">
                       {lang === 'en'
                         ? `Lv ${plantStage}/4 • ${plantGrowthPct}%`
                         : `Cấp ${plantStage}/4 • ${plantGrowthPct}%`}
