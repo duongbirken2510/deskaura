@@ -84,11 +84,14 @@ Thêm thanh điều hướng gọn gàng để người dùng tự chọn đúng
 - `🏥 Chuyên Trang Dân Văn Phòng (/deskaura/van-phong)`
 - `🌙 Chuyên Trang Dev & Cú Đêm (/deskaura/for-devs)`
 
-### 2.3. Tự động nhận diện Hệ điều hành (Auto-OS Detection) cho cụm nút Tải ở Hero
+### 2.3. Tự động nhận diện Hệ điều hành (Auto-OS Detection) cho cụm nút Tải ở Hero (Windows / macOS / Linux)
 Hiện tại nút Windows đang cố định nằm trên nút Mac. Thêm đoạn script nhỏ tự động kiểm tra `navigator.userAgent`:
 - Nếu người dùng vào bằng **macOS**: Đưa nút `a[data-dl-os="mac"]` lên vị trí đầu tiên (hoặc áp style nút chính nổi bật nhất) để người dùng Mac bấm tải `.dmg` ngay lập tức.
 - Nếu người dùng vào bằng **Windows**: Giữ nút `a[data-dl-os="win"]` ở vị trí đầu tiên.
-- **Lưu ý**: Giữ nguyên thuộc tính `data-dl-os="win"` và `data-dl-os="mac"` để sự kiện mở `#post-download-modal` hoạt động bình thường.
+- Nếu người dùng vào bằng **Linux**: Nổi bật nút tải **Linux (`.AppImage` / `.deb`)** trỏ tới:
+  - `https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.AppImage`
+  - `https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.deb`
+- **Lưu ý**: Giữ nguyên thuộc tính `data-dl-os` để sự kiện mở `#post-download-modal` hoạt động bình thường.
 
 ### 2.4. Nhúng Khu Vực "Rạp Chiếu Đôi TVC Điện Ảnh & Trải Nghiệm Thực Tế" (Ngay ở cột trái Hero hoặc ngay dưới Hero)
 Thêm section trình chiếu video với 3 nút bấm chuyển tab mượt mà (hỗ trợ song ngữ `VI`/`EN` theo `data-lang` của `#deskaura-root`):
@@ -179,10 +182,10 @@ Trong script `IntersectionObserver` của trang, đổi `rootMargin: '0px 0px -4
      - `02 // SMART_SOUND_HUB`: 10 lớp âm thanh tĩnh chạy 100% Offline không sợ VPN chặn IP + Global Lofi/SoundCloud + Zing MP3 chạy ngầm tự động bỏ qua quảng cáo + Giọng nhắc tự dịu nhạc nền xuống 20%.
      - `03 // MULTI_DEVICE_SYNC`: Đồng bộ bộ đếm sức khỏe thời gian thực giữa PC ở công ty và MacBook ở nhà.
   4. **Geeky Specs (Bảng Terminal Benchmark so sánh trực diện DeskAura `Tauri v2 + Rust` với `Electron`):**
-     - Bộ cài siêu nhẹ (`3.2 MB` Windows `.exe` / `4.8 MB` macOS `.dmg` + Bản `DeskAura_Portable.exe` chạy ngay không cần cài).
+     - Bộ cài siêu nhẹ (`3.2 MB` Windows `.exe` / `4.8 MB` macOS `.dmg` / `Linux .deb & .AppImage` + Bản `DeskAura_Portable.exe` chạy ngay không cần cài).
      - Bộ nhớ RAM `~15 MB`, `0% GPU` khi thu xuống khay hệ thống.
      - Mã nguồn mở `MIT License` minh bạch 100% trên GitHub.
-  5. **Final CTA + Hộp thoại Post-Download Modal (`xattr -cr` 1-click Copy) & QR SePay 15K.**
+  5. **Final CTA (Đầy đủ 4 gói cài đặt: macOS `.dmg`, Windows `.exe`, Linux `.AppImage`, Ubuntu/Debian `.deb`) + Hộp thoại Post-Download Modal (`xattr -cr` 1-click Copy) & QR SePay 15K.**
 
 ---
 

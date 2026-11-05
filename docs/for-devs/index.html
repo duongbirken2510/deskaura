@@ -503,13 +503,16 @@
             <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.557L10.35 4.5v7.09H3V5.557zm0 12.886L10.35 19.5v-7.09H3v6.033zm8.165 1.182L21 21v-8.59h-9.835v7.215zm0-15.25V11.59H21V3l-9.835 1.375z"/></svg>
             <span>Windows x64 (.exe)</span>
           </a>
-          <a href="https://github.com/duongbirken2510/deskaura" target="_blank" rel="noopener" class="btn btn-dark">
-            GitHub Source
+          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.AppImage" class="btn btn-dark" id="dev-linux-cta">
+            <span>🐧 Linux (.AppImage)</span>
+          </a>
+          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.deb" class="btn btn-dark">
+            <span>📦 Ubuntu/Debian (.deb)</span>
           </a>
         </div>
 
         <div class="terminal-snippet">
-          $ arch -arm64 DeskAura.app # Native Apple Silicon &amp; Windows x64 • Zero Electron Bloat
+          $ sudo dpkg -i DeskAura_1.2.4_amd64.deb # macOS (.dmg) • Windows (.exe) • Linux (.deb / .AppImage)
         </div>
       </div>
 
@@ -635,7 +638,7 @@
           <tbody>
             <tr>
               <td>Bộ cài đặt (Installer Size)</td>
-              <td class="good">~10.2 MB (.dmg / .exe)</td>
+              <td class="good">~3.2 MB – 10.2 MB (.exe / .dmg / .deb / .AppImage)</td>
               <td class="bad">140 MB – 220 MB</td>
             </tr>
             <tr>
@@ -681,6 +684,12 @@
         <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_x64-setup.exe" class="btn btn-dark">
           🪟 Tải Bản Native Cho Windows (.exe)
         </a>
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.AppImage" class="btn btn-dark">
+          🐧 Linux (.AppImage)
+        </a>
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.deb" class="btn btn-dark">
+          📦 Ubuntu/Debian (.deb)
+        </a>
       </div>
     </section>
   </main>
@@ -710,8 +719,12 @@
       const ua = navigator.userAgent.toLowerCase();
       const macBtn = document.getElementById('dev-primary-cta');
       const winBtn = document.getElementById('dev-secondary-cta');
+      const linuxBtn = document.getElementById('dev-linux-cta');
       if (ua.includes('win')) {
         winBtn.classList.replace('btn-dark', 'btn-neon');
+        macBtn.classList.replace('btn-neon', 'btn-dark');
+      } else if (ua.includes('linux')) {
+        linuxBtn.classList.replace('btn-dark', 'btn-neon');
         macBtn.classList.replace('btn-neon', 'btn-dark');
       }
     })();

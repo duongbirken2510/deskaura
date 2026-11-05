@@ -1,4 +1,4 @@
-name: Build Windows Installer & Portable
+name: Build Windows & Linux Releases
 
 on:
   push:
@@ -124,4 +124,89 @@ jobs:
               gh release create $tag --title $releaseTitle @notesArgs --target main
             }
           }
+
+  build-linux:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Tauri v2 Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust build cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri Linux .deb & .AppImage Bundles
+        run: npx tauri build --bundles deb,appimage
+
+      - name: Publish Linux .deb and .AppImage to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+          echo "Packaging DeskAura Linux ${TAG} (.deb & .AppImage)..."
+
+          mkdir -p dist_linux
+          DEB_FILE=$(find src-tauri/target/release/bundle/deb -name "*.deb" | head -n 1)
+          APPIMAGE_FILE=$(find src-tauri/target/release/bundle/appimage -name "*.AppImage" | head -n 1)
+
+          ASSETS=()
+          if [ -n "$DEB_FILE" ] && [ -f "$DEB_FILE" ]; then
+            cp "$DEB_FILE" "dist_linux/DeskAura_${VERSION}_amd64.deb"
+            ASSETS+=("dist_linux/DeskAura_${VERSION}_amd64.deb")
+          fi
+          if [ -n "$APPIMAGE_FILE" ] && [ -f "$APPIMAGE_FILE" ]; then
+            cp "$APPIMAGE_FILE" "dist_linux/DeskAura_${VERSION}_amd64.AppImage"
+            chmod +x "dist_linux/DeskAura_${VERSION}_amd64.AppImage"
+            ASSETS+=("dist_linux/DeskAura_${VERSION}_amd64.AppImage")
+          fi
+
+          if [ ${#ASSETS[@]} -eq 0 ]; then
+            echo "No Linux artifacts found to upload."
+            exit 1
+          fi
+
+          RELEASE_TITLE="DeskAura ${TAG} — Silent OTA, Hardware Encryption & Bilingual Edition (VI/EN)"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Uploading Linux artifacts to existing GitHub Release ${TAG}..."
+            gh release upload "$TAG" "${ASSETS[@]}" --clobber
+          else
+            echo "Creating GitHub Release ${TAG} with Linux artifacts..."
+            if [ -f "RELEASE_NOTES.md" ]; then
+              gh release create "$TAG" "${ASSETS[@]}" --title "$RELEASE_TITLE" --notes-file RELEASE_NOTES.md --target main
+            else
+              gh release create "$TAG" "${ASSETS[@]}" --title "$RELEASE_TITLE" --notes "DeskAura ${TAG} Official Release (macOS .dmg, Windows .exe, Linux .deb & .AppImage)" --target main
+            fi
+          fi
+
 

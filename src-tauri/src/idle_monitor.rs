@@ -36,7 +36,69 @@ pub fn get_idle_seconds() -> u64 {
     0
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(target_os = "linux")]
+pub fn get_idle_seconds() -> u64 {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    static LAST_CHECK_SEC: AtomicU64 = AtomicU64::new(0);
+    static CACHED_IDLE_SEC: AtomicU64 = AtomicU64::new(0);
+
+    let now_sec = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let prev = LAST_CHECK_SEC.load(Ordering::Relaxed);
+    if now_sec.saturating_sub(prev) < 5 {
+        return CACHED_IDLE_SEC.load(Ordering::Relaxed);
+    }
+    LAST_CHECK_SEC.store(now_sec, Ordering::Relaxed);
+
+    // 1. Try `xprintidle` (lightweight X11 / XWayland idle query in ms)
+    if let Ok(out) = std::process::Command::new("xprintidle").output() {
+        if out.status.success() {
+            if let Ok(ms) = String::from_utf8_lossy(&out.stdout).trim().parse::<u64>() {
+                let secs = ms / 1000;
+                CACHED_IDLE_SEC.store(secs, Ordering::Relaxed);
+                return secs;
+            }
+        }
+    }
+
+    // 2. Try GNOME Mutter DBus IdleMonitor (Wayland & X11)
+    if let Ok(out) = std::process::Command::new("gdbus")
+        .args([
+            "call",
+            "--session",
+            "--dest",
+            "org.gnome.Mutter.IdleMonitor",
+            "--object-path",
+            "/org/gnome/Mutter/IdleMonitor/Core",
+            "--method",
+            "org.gnome.Mutter.IdleMonitor.GetIdletime",
+        ])
+        .output()
+    {
+        if out.status.success() {
+            // Output format: `(uint64 12345,)`
+            let txt = String::from_utf8_lossy(&out.stdout);
+            let digits: String = txt
+                .trim_start_matches("(uint64")
+                .chars()
+                .filter(|c| c.is_ascii_digit())
+                .collect();
+            if let Ok(ms) = digits.parse::<u64>() {
+                let secs = ms / 1000;
+                CACHED_IDLE_SEC.store(secs, Ordering::Relaxed);
+                return secs;
+            }
+        }
+    }
+
+    0
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 pub fn get_idle_seconds() -> u64 {
     0
 }
@@ -126,7 +188,51 @@ pub fn is_fullscreen_active() -> bool {
     false
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(target_os = "linux")]
+pub fn is_fullscreen_active() -> bool {
+    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    static LAST_CHECK_SEC: AtomicU64 = AtomicU64::new(0);
+    static CACHED_FULLSCREEN: AtomicBool = AtomicBool::new(false);
+
+    let now_sec = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let prev = LAST_CHECK_SEC.load(Ordering::Relaxed);
+    if now_sec.saturating_sub(prev) < 5 {
+        return CACHED_FULLSCREEN.load(Ordering::Relaxed);
+    }
+    LAST_CHECK_SEC.store(now_sec, Ordering::Relaxed);
+
+    // Check active window fullscreen state on X11/XWayland via xprop if available
+    if let Ok(root_out) = std::process::Command::new("xprop")
+        .args(["-root", "_NET_ACTIVE_WINDOW"])
+        .output()
+    {
+        if root_out.status.success() {
+            let root_txt = String::from_utf8_lossy(&root_out.stdout);
+            if let Some(win_id) = root_txt.split_whitespace().last() {
+                if win_id.starts_with("0x") && win_id != "0x0" {
+                    if let Ok(win_out) = std::process::Command::new("xprop")
+                        .args(["-id", win_id, "_NET_WM_STATE"])
+                        .output()
+                    {
+                        let state_txt = String::from_utf8_lossy(&win_out.stdout);
+                        let is_fs = state_txt.contains("_NET_WM_STATE_FULLSCREEN");
+                        CACHED_FULLSCREEN.store(is_fs, Ordering::Relaxed);
+                        return is_fs;
+                    }
+                }
+            }
+        }
+    }
+
+    false
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 pub fn is_fullscreen_active() -> bool {
     false
 }

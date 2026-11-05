@@ -698,6 +698,10 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.557L10.35 4.5v7.09H3V5.557zm0 12.886L10.35 19.5v-7.09H3v6.033zm8.165 1.182L21 21v-8.59h-9.835v7.215zm0-15.25V11.59H21V3l-9.835 1.375z"/></svg>
             <span data-i18n="cta_win">Tải cho Windows</span>
           </a>
+          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.AppImage" class="btn-download btn-secondary" id="cta-linux">
+            <span>🐧</span>
+            <span data-i18n="cta_linux">Linux (.AppImage / .deb)</span>
+          </a>
         </div>
 
         <div class="hero-micro-note" data-i18n="hero_note">
@@ -892,6 +896,10 @@
           <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.557L10.35 4.5v7.09H3V5.557zm0 12.886L10.35 19.5v-7.09H3v6.033zm8.165 1.182L21 21v-8.59h-9.835v7.215zm0-15.25V11.59H21V3l-9.835 1.375z"/></svg>
           <span data-i18n="cta_win">Tải cho Windows</span>
         </a>
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.deb" class="btn-download btn-secondary">
+          <span>🐧</span>
+          <span data-i18n="cta_linux_deb">Tải cho Linux (.deb)</span>
+        </a>
       </div>
     </section>
   </main>
@@ -955,6 +963,8 @@
         hero_sub: 'Nhắc nghỉ mắt 20-20-20, hướng dẫn giãn cơ tại ghế, uống nước nuôi cây và đồng bộ tự động trên mọi thiết bị của bạn.',
         cta_mac: 'Tải cho macOS',
         cta_win: 'Tải cho Windows',
+        cta_linux: 'Linux (.AppImage / .deb)',
+        cta_linux_deb: 'Tải cho Linux (.deb)',
         hero_note: '✨ Miễn phí 100% • Siêu nhẹ 3,2 MB • Không cần đăng nhập',
         how_title: 'Chăm Sóc Sức Khỏe Chưa Bao Giờ Nhẹ Nhàng Đến Thế',
         how_sub: 'Chỉ 3 bước đơn giản để bảo vệ đôi mắt, cột sống và duy trì thói quen uống nước mỗi ngày.',
@@ -1021,6 +1031,8 @@
         hero_sub: '20-20-20 eye resets, guided seated stretches, virtual plant hydration, and seamless sync across all your devices.',
         cta_mac: 'Download for Mac',
         cta_win: 'Download for Windows',
+        cta_linux: 'Linux (.AppImage / .deb)',
+        cta_linux_deb: 'Download Linux (.deb)',
         hero_note: '✨ 100% Free • Featherlight 3.2 MB • No Login Required',
         how_title: 'Staying Healthy At Your Desk Has Never Been Easier',
         how_sub: 'Three simple steps to protect your eyes, relieve neck stiffness, and stay hydrated all day.',
@@ -1087,6 +1099,9 @@
       const ua = navigator.userAgent.toLowerCase();
       if (ua.includes('win')) {
         document.getElementById('cta-win').classList.replace('btn-secondary', 'btn-primary');
+        document.getElementById('cta-mac').classList.replace('btn-primary', 'btn-secondary');
+      } else if (ua.includes('linux')) {
+        document.getElementById('cta-linux').classList.replace('btn-secondary', 'btn-primary');
         document.getElementById('cta-mac').classList.replace('btn-primary', 'btn-secondary');
       }
     })();

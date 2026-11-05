@@ -103,7 +103,34 @@ fn get_hardware_device_info() -> HardwareDeviceInfo {
         }
     }
 
-    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    #[cfg(target_os = "linux")]
+    {
+        let mut hardware_id = std::fs::read_to_string("/etc/machine-id")
+            .or_else(|_| std::fs::read_to_string("/var/lib/dbus/machine-id"))
+            .unwrap_or_default()
+            .trim()
+            .to_string();
+
+        let mut computer_name = std::fs::read_to_string("/etc/hostname")
+            .unwrap_or_else(|_| std::env::var("HOSTNAME").unwrap_or_default())
+            .trim()
+            .to_string();
+
+        if computer_name.is_empty() {
+            computer_name = "Linux Workstation".to_string();
+        }
+        if hardware_id.is_empty() {
+            hardware_id = format!("linux-{}", computer_name.to_lowercase().replace(' ', "-"));
+        }
+
+        HardwareDeviceInfo {
+            hardware_id,
+            device_name: format!("{} (Linux)", computer_name),
+            os: "Linux".to_string(),
+        }
+    }
+
+    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
     {
         HardwareDeviceInfo {
             hardware_id: "desktop-generic".to_string(),
@@ -689,10 +716,17 @@ fn open_in_system_browser(url: String) -> Result<(), String> {
             .spawn()
             .map_err(|e| format!("Không thể mở trình duyệt trên macOS: {e}"))?;
     }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&safe_url)
+            .spawn()
+            .map_err(|e| format!("Không thể mở trình duyệt trên Linux: {e}"))?;
+    }
     Ok(())
 }
 
-/// Verifies that a downloaded binary is a real binary (PE MZ header on Windows or non-HTML binary >500KB on macOS)
+/// Verifies that a downloaded binary is a real binary (PE MZ header on Windows, ELF header on Linux AppImage, or non-HTML binary >500KB on macOS)
 /// and not an HTML error page or corrupted transfer.
 fn is_valid_binary_payload(path: &std::path::Path, min_bytes: u64) -> bool {
     use std::io::Read;
@@ -720,23 +754,41 @@ fn is_valid_binary_payload(path: &std::path::Path, min_bytes: u64) -> bool {
             return false;
         }
     }
+    #[cfg(target_os = "linux")]
+    {
+        // Linux AppImage is an ELF binary starting with 0x7F 'E' 'L' 'F', and .deb starts with "!<arch>\n"
+        let is_elf = header.starts_with(&[0x7F, b'E', b'L', b'F']);
+        let is_deb = header.starts_with(b"!<arch>\n");
+        if !is_elf && !is_deb {
+            return false;
+        }
+    }
     true
 }
 
-/// Two-Phase Garbage Collection: Cleans up any leftover update installers, DMGs, or `.old.exe` files on startup.
+/// Two-Phase Garbage Collection: Cleans up any leftover update installers, DMGs, AppImages, or `.old.exe` files on startup.
 fn cleanup_old_update_files() {
-    // 1. Clean `.old.exe` / `.update.exe` next to current executable (Windows In-Place Swap leftovers)
+    // 1. Clean `.old.exe` / `.old.AppImage` next to current executable (In-Place Swap leftovers)
     if let Ok(current_exe) = std::env::current_exe() {
         let old_exe = current_exe.with_extension("old.exe");
         let _ = std::fs::remove_file(&old_exe);
+        let old_appimage = current_exe.with_extension("old.AppImage");
+        let _ = std::fs::remove_file(&old_appimage);
         if let Some(parent) = current_exe.parent() {
             let _ = std::fs::remove_file(parent.join("deskaura.old.exe"));
             let _ = std::fs::remove_file(parent.join("deskaura.update.exe"));
             let _ = std::fs::remove_file(parent.join("DeskAura_Portable.old.exe"));
+            let _ = std::fs::remove_file(parent.join("DeskAura.old.AppImage"));
+        }
+    }
+    if let Ok(appimage_env) = std::env::var("APPIMAGE") {
+        if !appimage_env.trim().is_empty() {
+            let old_ai = std::path::PathBuf::from(&appimage_env).with_extension("old.AppImage");
+            let _ = std::fs::remove_file(old_ai);
         }
     }
 
-    // 2. Clean temporary update installers / DMGs in OS temp directory & private OTA vault
+    // 2. Clean temporary update installers / DMGs / AppImages in OS temp directory & private OTA vault
     let temp_dir = std::env::temp_dir();
     let ota_vault = temp_dir.join("deskaura_ota_vault");
     let _ = std::fs::remove_dir_all(&ota_vault);
@@ -745,8 +797,12 @@ fn cleanup_old_update_files() {
         for entry in entries.flatten() {
             let name = entry.file_name().to_string_lossy().to_string();
             let is_deskaura_update = (name.starts_with("DeskAura_")
-                && (name.ends_with(".dmg") || name.ends_with("-setup.exe")))
-                || (name.starts_with("deskaura_staged_") && name.ends_with(".exe"));
+                && (name.ends_with(".dmg")
+                    || name.ends_with("-setup.exe")
+                    || name.ends_with(".AppImage")
+                    || name.ends_with(".deb")))
+                || (name.starts_with("deskaura_staged_")
+                    && (name.ends_with(".exe") || name.ends_with(".AppImage")));
             if is_deskaura_update {
                 let _ = std::fs::remove_file(entry.path());
             }
@@ -905,6 +961,50 @@ async fn stage_silent_update(version: String) -> Result<String, String> {
         return Err("stage_copy_failed".to_string());
     }
 
+    #[cfg(target_os = "linux")]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let temp_dir = std::env::temp_dir();
+        let staged_ai = temp_dir.join(format!("deskaura_staged_{}.AppImage", clean_ver));
+        let staged_str = staged_ai.to_string_lossy().to_string();
+        let ai_url = format!(
+            "https://github.com/duongbirken2510/deskaura/releases/download/v{0}/DeskAura_{0}_amd64.AppImage",
+            clean_ver
+        );
+
+        let dl_ok = std::process::Command::new("curl")
+            .args(["-fL", "-sS", "-o", &staged_str, &ai_url])
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false);
+
+        if dl_ok && is_valid_binary_payload(&staged_ai, 2_000_000) {
+            let _ = std::fs::set_permissions(&staged_ai, std::fs::Permissions::from_mode(0o755));
+            if let Ok(appimage_env) = std::env::var("APPIMAGE") {
+                if !appimage_env.trim().is_empty() {
+                    let target_path = std::path::PathBuf::from(&appimage_env);
+                    let old_path = target_path.with_extension("old.AppImage");
+                    let _ = std::fs::remove_file(&old_path);
+                    if std::fs::rename(&target_path, &old_path).is_ok() {
+                        if std::fs::copy(&staged_ai, &target_path).is_ok() {
+                            let _ = std::fs::set_permissions(
+                                &target_path,
+                                std::fs::Permissions::from_mode(0o755),
+                            );
+                            let _ = std::fs::remove_file(&staged_ai);
+                            return Ok("staged_linux_appimage".to_string());
+                        } else {
+                            let _ = std::fs::rename(&old_path, &target_path);
+                        }
+                    }
+                }
+            }
+            return Ok("staged_linux_temp".to_string());
+        }
+        let _ = std::fs::remove_file(&staged_ai);
+        return Err("not_ready_yet".to_string());
+    }
+
     #[allow(unreachable_code)]
     Ok("unsupported_os".to_string())
 }
@@ -991,6 +1091,40 @@ async fn download_and_install_update(app: AppHandle, version: String) -> Result<
             app_clone.exit(0);
         });
         return Ok("restarting_macos_app".to_string());
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let clean_ver = _clean_ver;
+        if let Ok(appimage_env) = std::env::var("APPIMAGE") {
+            if !appimage_env.trim().is_empty() {
+                let target_path = std::path::PathBuf::from(&appimage_env);
+                if target_path.exists() {
+                    let _ = std::process::Command::new(&target_path).spawn();
+                    let app_clone = app.clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_millis(300));
+                        app_clone.exit(0);
+                    });
+                    return Ok("restarting_linux_appimage".to_string());
+                }
+            }
+        }
+        let staged_ai = std::env::temp_dir().join(format!("deskaura_staged_{}.AppImage", clean_ver));
+        if staged_ai.exists() {
+            let _ = std::process::Command::new(&staged_ai).spawn();
+            let app_clone = app.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(300));
+                app_clone.exit(0);
+            });
+            return Ok("restarting_staged_appimage".to_string());
+        }
+        let _ = open_in_system_browser(format!(
+            "https://github.com/duongbirken2510/deskaura/releases/tag/v{}",
+            clean_ver
+        ));
+        return Ok("opened_linux_release_page".to_string());
     }
 
     #[allow(unreachable_code)]
@@ -1254,6 +1388,12 @@ fn send_tray_notification(app: AppHandle, title: String, body: String) {
         );
         let _ = std::process::Command::new("osascript")
             .args(["-e", &script])
+            .spawn();
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let _ = std::process::Command::new("notify-send")
+            .args(["--app-name=DeskAura", &title, &body])
             .spawn();
     }
 }
