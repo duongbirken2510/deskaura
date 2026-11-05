@@ -339,7 +339,12 @@ export const PLANT_WITTY_QUOTES = {
       'Nước nạp mượt mà như code chạy pass mọi test case!',
       'Cột sống vừa thả 1.000 tim cho hành động uống nước của bạn.',
       'Chăm tưới nước thế này thì KPI sức khỏe tháng này vượt chỉ tiêu rồi.',
-      'Chỉ một ngụm nước nữa là mầm non này đủ sức "múa quạt" cho sếp xem.',
+      'Mầm xanh đang vươn lá cực sung nhờ được sếp chăm tưới đều đặn.',
+    ],
+    hydratedNeedStretch: [
+      'Đã nạp đủ 100% nước hôm nay! Đứng dậy vươn vai 1 lần là cây bung hoa rực rỡ ngay sếp ơi!',
+      'Bình nước đã đầy 100% rồi! Chỉ thiếu 1 nhịp đứng dậy giãn cơ nữa là cây nở hoa hạng S.',
+      'Nước đã đủ chỉ tiêu 100%! Cột sống đang chờ sếp đứng lên vươn vai để cùng nở hoa đấy.',
     ],
     blooming: [
       'Trạng thái sức khỏe: Đã Compile thành công, 0 bug, 0 warning!',
@@ -377,7 +382,12 @@ export const PLANT_WITTY_QUOTES = {
       'Hydration flowing as smoothly as all unit tests passing on the first run!',
       'Your spine just sent 1,000 hearts for that glass of water.',
       'Keep watering like this and your wellness KPI will smash all targets.',
-      'One more sip of water and this sprout will do a victory dance for you.',
+      'Green leaves are thriving thanks to your steady hydration habit.',
+    ],
+    hydratedNeedStretch: [
+      '100% hydrated for today! Just 1 stand-up stretch and this sprout will burst into full bloom!',
+      'Water tank is 100% full! Stand up and stretch your spine once to unlock the blooming flower.',
+      'Daily hydration goal complete! One quick stand-up break is all it takes to bloom.',
     ],
     blooming: [
       'Health Status: Compiled successfully — 0 errors, 0 warnings!',

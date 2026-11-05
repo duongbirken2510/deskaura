@@ -42,12 +42,15 @@ jobs:
       - name: Build Tauri Windows NSIS Installer & Portable Binary
         run: npx tauri build --bundles nsis
 
-      - name: Update Release_Windows and push to main
+      - name: Update Release_Windows, push to main, and publish GitHub Release
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $pkg = Get-Content -Raw -Path "package.json" | ConvertFrom-Json
           $version = $pkg.version
-          Write-Host "Packaging DeskAura Windows v$version..."
+          $tag = "v$version"
+          Write-Host "Packaging DeskAura Windows $tag..."
 
           if (!(Test-Path "Release_Windows")) {
             New-Item -ItemType Directory -Force -Path "Release_Windows" | Out-Null
@@ -76,5 +79,39 @@ jobs:
             git push origin main
           } else {
             Write-Host "No changes in Release_Windows to commit."
+          }
+
+          # Publish or update official GitHub Release for $tag with Windows & macOS assets
+          $assets = @()
+          if (Test-Path "Release_Windows/DeskAura_${version}_x64-setup.exe") {
+            $assets += "Release_Windows/DeskAura_${version}_x64-setup.exe"
+          }
+          if (Test-Path "Release_Windows/DeskAura_Portable.exe") {
+            $assets += "Release_Windows/DeskAura_Portable.exe"
+          }
+          $macDmgs = Get-ChildItem -Path "Release_macOS" -Filter "*.dmg" -ErrorAction SilentlyContinue
+          foreach ($dmg in $macDmgs) {
+            $assets += $dmg.FullName
+          }
+
+          $releaseExists = $false
+          gh release view $tag 2>&1 | Out-Null
+          if ($LASTEXITCODE -eq 0) {
+            $releaseExists = $true
+          }
+
+          if ($releaseExists) {
+            Write-Host "Updating existing GitHub Release $tag..."
+            if ($assets.Count -gt 0) {
+              gh release upload $tag @assets --clobber
+            }
+          } else {
+            Write-Host "Creating new GitHub Release $tag..."
+            $notes = "DeskAura $tag Official Release (macOS Apple Silicon .dmg + Windows x64 Setup & Portable .exe)"
+            if ($assets.Count -gt 0) {
+              gh release create $tag @assets --title "DeskAura $tag" --notes $notes --target main
+            } else {
+              gh release create $tag --title "DeskAura $tag" --notes $notes --target main
+            }
           }
 

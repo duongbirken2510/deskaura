@@ -1049,7 +1049,9 @@ export const App: React.FC = () => {
       );
       const sittingMins = (totalSec - standupSecondsLeft) / 60;
       const expectedWater = hour < 10 ? 0 : hour < 14 ? 25 : hour < 17 ? 50 : 65;
-      const isThirsty = sittingMins >= 38 || (hour >= 10 && wPct < expectedWater);
+      const isThirsty =
+        wPct < 100 &&
+        (sittingMins >= 45 || (hour >= 10 && wPct < expectedWater));
 
       const pool = isNight
         ? quotesDict.nightOwl
@@ -1436,15 +1438,16 @@ export const App: React.FC = () => {
   const plantStage =
     plantGrowthPct >= 85 ? 4 : plantGrowthPct >= 55 ? 3 : plantGrowthPct >= 25 ? 2 : 1;
 
-  // Determine Plant Mood & Witty Quote (Night Owl 23h-4h, Blooming, Thirsty/Sitting long, or Growing)
+  // Determine Plant Mood & Witty Quote (Night Owl 23h-4h, Blooming, Thirsty when water < 100%, or Growing)
   const currentHour = new Date().getHours();
   const isNightOwlHour = currentHour >= 23 || currentHour <= 4;
   const sittingMinutesElapsed = (standupTotalSec - standupSecondsLeft) / 60;
   const expectedWaterPctByHour =
     currentHour < 10 ? 0 : currentHour < 14 ? 25 : currentHour < 17 ? 50 : 65;
   const isPlantThirsty =
-    sittingMinutesElapsed >= 38 ||
-    (currentHour >= 10 && waterProgressPct < expectedWaterPctByHour);
+    waterProgressPct < 100 &&
+    (sittingMinutesElapsed >= 45 ||
+      (currentHour >= 10 && waterProgressPct < expectedWaterPctByHour));
 
   const plantMood: PlantMood = isNightOwlHour
     ? 'sleepy'
@@ -1464,6 +1467,8 @@ export const App: React.FC = () => {
       ? quotesByLang.blooming
       : plantMood === 'thirsty'
       ? quotesByLang.thirsty
+      : waterProgressPct >= 100
+      ? quotesByLang.hydratedNeedStretch
       : quotesByLang.growing;
   const activePlantQuote =
     activeQuotePool[quoteSeed % activeQuotePool.length] || '';
@@ -1948,23 +1953,20 @@ export const App: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* 1-Click Quick Drink Buttons + Subtle Reset Button */}
-                  <div className="flex items-center justify-between mb-2">
+                  {/* 1-Click Quick Drink Buttons + Auto-Hiding 5s Undo Button */}
+                  <div className="flex items-center justify-between mb-2 min-h-[22px]">
                     <p className="text-xs font-bold text-slate-600">
                       {t.quickDrinkTitle}
                     </p>
-                    {dailyStats.waterIntakeMl > 0 && (
+                    {undoWaterToast && (
                       <button
-                        onClick={() =>
-                          setDailyStats((prev) => ({
-                            ...prev,
-                            waterIntakeMl: 0,
-                            waterLogs: [],
-                          }))
-                        }
-                        className="text-[11px] text-slate-400 hover:text-rose-500 inline-flex items-center gap-1 transition"
+                        onClick={handleUndoWater}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-rose-50 text-amber-800 hover:text-rose-600 border border-amber-200 hover:border-rose-200 text-[11px] font-extrabold transition shadow-2xs animate-fadeIn cursor-pointer"
                       >
-                        <Trash2 className="w-3 h-3" /> {t.resetBtn}
+                        <RotateCcw className="w-3 h-3" />
+                        {lang === 'en'
+                          ? `Undo +${undoWaterToast.amountMl}ml (${undoWaterToast.secondsLeft}s)`
+                          : `Hoàn tác +${undoWaterToast.amountMl}ml (${undoWaterToast.secondsLeft}s)`}
                       </button>
                     )}
                   </div>
@@ -1982,26 +1984,6 @@ export const App: React.FC = () => {
                       </button>
                     ))}
                   </div>
-
-                  {/* 5-Second 1-Click Water Undo Pill Toast */}
-                  {undoWaterToast && (
-                    <div className="mb-3 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-between gap-2 animate-fadeIn">
-                      <span className="text-xs font-bold text-emerald-800">
-                        {lang === 'en'
-                          ? `✓ Added +${undoWaterToast.amountMl}ml water`
-                          : `✓ Đã thêm +${undoWaterToast.amountMl}ml nước`}
-                      </span>
-                      <button
-                        onClick={handleUndoWater}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-emerald-200 hover:border-rose-200 text-[11px] font-extrabold transition shadow-xs"
-                      >
-                        <RotateCcw className="w-3 h-3" />
-                        {lang === 'en'
-                          ? `Undo (${undoWaterToast.secondsLeft}s)`
-                          : `Hoàn tác (${undoWaterToast.secondsLeft}s)`}
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 {/* Mebius Hourly Hydration Pill Bar Chart */}
@@ -2072,6 +2054,10 @@ export const App: React.FC = () => {
                         ? lang === 'en'
                           ? '🥺 Sprout is thirsty — take a sip!'
                           : '🥺 Cây đang khát nước — uống 1 ngụm nhé!'
+                        : waterProgressPct >= 100
+                        ? lang === 'en'
+                          ? '🌿 100% hydrated! Stand up to bloom'
+                          : '🌿 Đã đủ 100% nước! Đứng dậy để nở hoa nhé'
                         : plantGrowthPct >= 50
                         ? t.plantGrowing
                         : t.plantSeedling}
