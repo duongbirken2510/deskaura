@@ -6,7 +6,6 @@ on:
       - main
     paths-ignore:
       - 'Release_Windows/**'
-      - '**.md'
   workflow_dispatch:
 
 permissions:
@@ -81,7 +80,7 @@ jobs:
             Write-Host "No changes in Release_Windows to commit."
           }
 
-          # Publish or update official GitHub Release for $tag with Windows & macOS assets
+          # Publish or update official GitHub Release for $tag with Windows, macOS & Demo Video assets
           $assets = @()
           if (Test-Path "Release_Windows/DeskAura_${version}_x64-setup.exe") {
             $assets += "Release_Windows/DeskAura_${version}_x64-setup.exe"
@@ -93,6 +92,17 @@ jobs:
           foreach ($dmg in $macDmgs) {
             $assets += $dmg.FullName
           }
+          if (Test-Path "docs/media/deskaura_demo_45s.mp4") {
+            $assets += "docs/media/deskaura_demo_45s.mp4"
+          }
+
+          $releaseTitle = "DeskAura $tag — Silent OTA, Hardware Encryption & Bilingual Edition (VI/EN)"
+          $notesArgs = @()
+          if (Test-Path "RELEASE_NOTES.md") {
+            $notesArgs = @("--notes-file", "RELEASE_NOTES.md")
+          } else {
+            $notesArgs = @("--notes", "DeskAura $tag Official Release (macOS Apple Silicon .dmg + Windows x64 Setup & Portable .exe)")
+          }
 
           $releaseExists = $false
           gh release view $tag 2>&1 | Out-Null
@@ -102,16 +112,16 @@ jobs:
 
           if ($releaseExists) {
             Write-Host "Updating existing GitHub Release $tag..."
+            gh release edit $tag --title $releaseTitle @notesArgs
             if ($assets.Count -gt 0) {
               gh release upload $tag @assets --clobber
             }
           } else {
             Write-Host "Creating new GitHub Release $tag..."
-            $notes = "DeskAura $tag Official Release (macOS Apple Silicon .dmg + Windows x64 Setup & Portable .exe)"
             if ($assets.Count -gt 0) {
-              gh release create $tag @assets --title "DeskAura $tag" --notes $notes --target main
+              gh release create $tag @assets --title $releaseTitle @notesArgs --target main
             } else {
-              gh release create $tag --title "DeskAura $tag" --notes $notes --target main
+              gh release create $tag --title $releaseTitle @notesArgs --target main
             }
           }
 

@@ -15,4 +15,6 @@ src-tauri/WixTools/
 Thumbs.db
 *.log
 *.pdb
+output/
+
 
