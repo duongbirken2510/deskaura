@@ -153,13 +153,21 @@ export async function ensureHardwareIdentity(): Promise<string> {
   return cachedHardwareId;
 }
 
+export function getCachedHardwareId(): string {
+  return cachedHardwareId || localStorage.getItem(HARDWARE_ID_STORAGE_KEY) || '';
+}
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
 export function mergeConnectedDevices(
   existing: ConnectedDeviceMetadata[] | undefined,
   hardwareDeviceId: string
 ): ConnectedDeviceMetadata[] {
+  const now = Date.now();
   const byUid = new Map<string, ConnectedDeviceMetadata>();
   (existing || []).forEach((dev) => {
-    if (dev && dev.uid) {
+    // Housekeeping: automatically prune ghost devices inactive for > 7 days
+    if (dev && dev.uid && now - (dev.lastSeenAt || 0) <= SEVEN_DAYS_MS) {
       byUid.set(dev.uid, dev);
     }
   });
@@ -167,7 +175,7 @@ export function mergeConnectedDevices(
     uid: hardwareDeviceId,
     name: getDefaultDeviceName(),
     os: getDetectedOS(),
-    lastSeenAt: Date.now(),
+    lastSeenAt: now,
   });
   return Array.from(byUid.values())
     .sort((a, b) => b.lastSeenAt - a.lastSeenAt)
@@ -194,6 +202,10 @@ export function mergeStandupSettings(
   const localTs = local.timerSyncUpdatedAt || 0;
   const remoteTs = remote.timerSyncUpdatedAt || 0;
   const newer = remoteTs > localTs ? remote : local;
+  const localActiveTs = local.lastActiveAt || 0;
+  const remoteActiveTs = remote.lastActiveAt || 0;
+  const newerActive = remoteActiveTs > localActiveTs ? remote : local;
+
   const fallbackStandupAt =
     local.nextStandupAt ||
     remote.nextStandupAt ||
@@ -214,6 +226,9 @@ export function mergeStandupSettings(
     nextEyeAt: newer.nextEyeAt ?? fallbackEyeAt,
     nextWaterAt: newer.nextWaterAt ?? fallbackWaterAt,
     timerSyncUpdatedAt: Math.max(localTs, remoteTs, now),
+    lastActiveAt: newerActive.lastActiveAt ?? now,
+    lastActiveDeviceId:
+      newerActive.lastActiveDeviceId || getCachedHardwareId() || 'local',
   };
 }
 

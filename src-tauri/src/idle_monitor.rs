@@ -89,7 +89,47 @@ pub fn is_fullscreen_active() -> bool {
     }
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "macos")]
+pub fn is_fullscreen_active() -> bool {
+    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    static LAST_CHECK_SEC: AtomicU64 = AtomicU64::new(0);
+    static CACHED_FULLSCREEN: AtomicBool = AtomicBool::new(false);
+
+    let now_sec = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let prev = LAST_CHECK_SEC.load(Ordering::Relaxed);
+    if now_sec.saturating_sub(prev) < 5 {
+        return CACHED_FULLSCREEN.load(Ordering::Relaxed);
+    }
+    LAST_CHECK_SEC.store(now_sec, Ordering::Relaxed);
+
+    // Permission-free macOS check if frontmost app is in Full-Screen or Presentation Mode via lsappinfo
+    if let Ok(front_out) = std::process::Command::new("/usr/bin/lsappinfo")
+        .arg("front")
+        .output()
+    {
+        let front_asn = String::from_utf8_lossy(&front_out.stdout).trim().to_string();
+        if !front_asn.is_empty() {
+            if let Ok(info_out) = std::process::Command::new("/usr/bin/lsappinfo")
+                .args(["info", "-only", "PresentationMode", &front_asn])
+                .output()
+            {
+                let text = String::from_utf8_lossy(&info_out.stdout);
+                let is_fs = text.contains("UIPresentationMode") && !text.contains("\"Normal\"");
+                CACHED_FULLSCREEN.store(is_fs, Ordering::Relaxed);
+                return is_fs;
+            }
+        }
+    }
+
+    false
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub fn is_fullscreen_active() -> bool {
     false
 }

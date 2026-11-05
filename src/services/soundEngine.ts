@@ -24,6 +24,54 @@ class SoundEngine {
 
   // Voice prompt audio
   private voiceAudio: HTMLAudioElement | null = null;
+  private radioFadeTimer: number | null = null;
+  private voiceFadeTimer: number | null = null;
+
+  /**
+   * Time-Based Volume Matrix (Ma trận Âm lượng Ngày/Đêm):
+   * - Giờ hành chính (06:00 - 21:59): Max Volume = 80% (0.80), Fade-in = 3.0s
+   * - Giờ Cú đêm (22:00 - 05:59): Max Volume khóa cứng = 28% (0.28), Fade-in = 5.0s
+   */
+  public getTimeBasedVolumeEnvelope(requestedVolume: number): {
+    targetVolume: number;
+    fadeSeconds: number;
+    isNightMode: boolean;
+  } {
+    const hour = new Date().getHours();
+    const isNightMode = hour >= 22 || hour < 6;
+    const maxCap = isNightMode ? 0.28 : 0.8;
+    const clampedReq = Math.max(0.02, Math.min(1, requestedVolume));
+    return {
+      targetVolume: Math.min(clampedReq, maxCap),
+      fadeSeconds: isNightMode ? 5.0 : 3.0,
+      isNightMode,
+    };
+  }
+
+  /**
+   * Audio Dampening (Giảm chấn âm thanh 100ms/bước) cho thẻ <audio>
+   */
+  private fadeInHtmlAudio(
+    audio: HTMLAudioElement,
+    targetVol: number,
+    durationSec: number,
+    initialRatio: number = 0
+  ): number {
+    const clampedTarget = Math.max(0.01, Math.min(1, targetVol));
+    let currentVol = clampedTarget * initialRatio;
+    audio.volume = currentVol;
+    const steps = Math.max(4, Math.round((durationSec * 1000) / 100));
+    const stepDelta = (clampedTarget - currentVol) / steps;
+
+    return window.setInterval(() => {
+      currentVol += stepDelta;
+      if (currentVol >= clampedTarget) {
+        audio.volume = clampedTarget;
+      } else {
+        audio.volume = Math.max(0, Math.min(1, currentVol));
+      }
+    }, 100);
+  }
 
   private ensureContext(): AudioContext {
     if (!this.ctx) {
@@ -117,9 +165,13 @@ class SoundEngine {
     const ctx = this.ensureContext();
     if (!this.masterGain) return;
 
+    const env = this.getTimeBasedVolumeEnvelope(volume);
     const gainNode = ctx.createGain();
     gainNode.gain.setValueAtTime(0.001, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(Math.max(0.01, volume), ctx.currentTime + 0.4);
+    gainNode.gain.linearRampToValueAtTime(
+      Math.max(0.01, env.targetVolume),
+      ctx.currentTime + env.fadeSeconds
+    );
     gainNode.connect(this.masterGain);
 
     this.soundVolumes.set(id, volume);
@@ -421,11 +473,22 @@ class SoundEngine {
     const audio = new Audio(url);
     audio.crossOrigin = 'anonymous';
     audio.loop = true;
-    audio.volume = this.isMasterMuted ? 0 : this.radioVolume * this.masterVolume;
+
+    const env = this.getTimeBasedVolumeEnvelope(this.radioVolume * this.masterVolume);
+    audio.volume = 0;
 
     audio.onplaying = () => {
       this.isRadioPlaying = true;
       this.onRadioStateChange?.(true);
+      if (this.radioFadeTimer) window.clearInterval(this.radioFadeTimer);
+      if (!this.isMasterMuted) {
+        this.radioFadeTimer = this.fadeInHtmlAudio(
+          audio,
+          env.targetVolume,
+          env.fadeSeconds,
+          0
+        );
+      }
     };
 
     audio.onerror = () => {
@@ -441,6 +504,10 @@ class SoundEngine {
   }
 
   public stopRadio() {
+    if (this.radioFadeTimer) {
+      window.clearInterval(this.radioFadeTimer);
+      this.radioFadeTimer = null;
+    }
     if (this.radioAudio) {
       try {
         this.radioAudio.pause();
@@ -458,31 +525,36 @@ class SoundEngine {
   public setRadioVolume(vol: number) {
     this.radioVolume = Math.max(0, Math.min(1, vol));
     if (this.radioAudio && !this.isDuckedInternally) {
-      this.radioAudio.volume = this.isMasterMuted ? 0 : this.radioVolume * this.masterVolume;
+      const env = this.getTimeBasedVolumeEnvelope(this.radioVolume * this.masterVolume);
+      this.radioAudio.volume = this.isMasterMuted ? 0 : env.targetVolume;
     }
   }
 
-  // Play Gentle Healing Chime (528Hz + 660Hz)
+  // Play Gentle Healing Chime (528Hz + 660Hz) with Day/Night Volume Matrix
   public playHealingChime(volume: number = 0.6): Promise<void> {
     return new Promise((resolve) => {
       try {
         const ctx = this.ensureContext();
         const now = ctx.currentTime;
+        const env = this.getTimeBasedVolumeEnvelope(volume);
         const notes = [528, 660, 792];
         notes.forEach((freq, idx) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, now + idx * 0.16);
-          gain.gain.setValueAtTime(0.001, now + idx * 0.16);
-          gain.gain.linearRampToValueAtTime(volume * 0.25, now + idx * 0.16 + 0.04);
-          gain.gain.exponentialRampToValueAtTime(0.0005, now + idx * 0.16 + 1.2);
+          gain.gain.setValueAtTime(0.0008, now + idx * 0.16);
+          gain.gain.linearRampToValueAtTime(
+            env.targetVolume * 0.25,
+            now + idx * 0.16 + (env.isNightMode ? 0.14 : 0.08)
+          );
+          gain.gain.exponentialRampToValueAtTime(0.0005, now + idx * 0.16 + 1.25);
           osc.connect(gain);
           gain.connect(ctx.destination);
           osc.start(now + idx * 0.16);
-          osc.stop(now + idx * 0.16 + 1.25);
+          osc.stop(now + idx * 0.16 + 1.3);
         });
-        window.setTimeout(resolve, 650);
+        window.setTimeout(resolve, 680);
       } catch {
         resolve();
       }
@@ -573,16 +645,34 @@ class SoundEngine {
   private playMp3VoiceFile(path: string, volume: number): Promise<void> {
     return new Promise((resolve) => {
       try {
+        if (this.voiceFadeTimer) {
+          window.clearInterval(this.voiceFadeTimer);
+          this.voiceFadeTimer = null;
+        }
         if (this.voiceAudio) {
           this.voiceAudio.pause();
           this.voiceAudio = null;
         }
+        const env = this.getTimeBasedVolumeEnvelope(volume);
         const audio = new Audio(path);
-        audio.volume = Math.max(0.1, Math.min(1, volume));
+        audio.volume = env.targetVolume * 0.15;
         this.voiceAudio = audio;
-        audio.onended = () => resolve();
-        audio.onerror = () => resolve();
-        audio.play().catch(() => resolve());
+        this.voiceFadeTimer = this.fadeInHtmlAudio(
+          audio,
+          env.targetVolume,
+          env.isNightMode ? 1.0 : 0.7,
+          0.15
+        );
+        const cleanupAndResolve = () => {
+          if (this.voiceFadeTimer) {
+            window.clearInterval(this.voiceFadeTimer);
+            this.voiceFadeTimer = null;
+          }
+          resolve();
+        };
+        audio.onended = cleanupAndResolve;
+        audio.onerror = cleanupAndResolve;
+        audio.play().catch(cleanupAndResolve);
       } catch {
         resolve();
       }
@@ -597,9 +687,10 @@ class SoundEngine {
       }
       try {
         window.speechSynthesis.cancel();
+        const env = this.getTimeBasedVolumeEnvelope(volume);
         const utter = new SpeechSynthesisUtterance(text);
         utter.lang = 'vi-VN';
-        utter.volume = Math.max(0.1, Math.min(1, volume));
+        utter.volume = Math.max(0.08, Math.min(1, env.targetVolume));
         utter.rate = 0.96;
         const voices = window.speechSynthesis.getVoices();
         const viVoice = voices.find((v) => v.lang.toLowerCase().includes('vi'));

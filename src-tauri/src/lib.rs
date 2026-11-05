@@ -1,6 +1,7 @@
 mod audio_ducker;
 mod autostart;
 mod idle_monitor;
+mod lan_sync;
 
 use serde::Serialize;
 use tauri::{
@@ -699,7 +700,7 @@ fn hide_to_tray(app: AppHandle) {
     }
 }
 
-fn render_tray_pie_icon(progress_ratio: f32, is_eye_cue: bool) -> Vec<u8> {
+fn render_tray_pie_icon(progress_ratio: f32, is_eye_cue: bool, is_deferred_alert: bool) -> Vec<u8> {
     let size: usize = 32;
     let mut rgba = vec![0u8; size * size * 4];
     let cx = 15.5_f32;
@@ -721,7 +722,13 @@ fn render_tray_pie_icon(progress_ratio: f32, is_eye_cue: bool) -> Vec<u8> {
                 let inner_aa = (dist - (r_inner - 0.5)).clamp(0.0, 1.0);
                 let alpha_factor = outer_aa * inner_aa;
 
-                if is_eye_cue {
+                if is_deferred_alert {
+                    // Ruby Red Ring (#EF4444) when Break is Deferred due to Fullscreen / Presentation / DND
+                    rgba[idx] = 239;
+                    rgba[idx + 1] = 68;
+                    rgba[idx + 2] = 68;
+                    rgba[idx + 3] = (255.0 * alpha_factor) as u8;
+                } else if is_eye_cue {
                     // Golden Amber Ring for 20-20-20 Passive Eye Rest
                     rgba[idx] = 245;
                     rgba[idx + 1] = 158;
@@ -759,7 +766,12 @@ fn render_tray_pie_icon(progress_ratio: f32, is_eye_cue: bool) -> Vec<u8> {
             } else if dist <= 4.3 {
                 // Center indicator dot
                 let dot_aa = (4.3 - dist).clamp(0.0, 1.0);
-                if is_eye_cue {
+                if is_deferred_alert {
+                    rgba[idx] = 248;
+                    rgba[idx + 1] = 113;
+                    rgba[idx + 2] = 113;
+                    rgba[idx + 3] = (255.0 * dot_aa) as u8;
+                } else if is_eye_cue {
                     // Bright yellow-amber pupil cue for 20-20-20 eye rest
                     rgba[idx] = 251;
                     rgba[idx + 1] = 191;
@@ -783,10 +795,15 @@ fn update_tray_progress_icon(
     app: AppHandle,
     progress_ratio: f32,
     is_eye_cue: bool,
+    is_deferred_alert: Option<bool>,
     tooltip: String,
 ) {
     if let Some(tray) = app.tray_by_id("main-tray") {
-        let rgba = render_tray_pie_icon(progress_ratio, is_eye_cue);
+        let rgba = render_tray_pie_icon(
+            progress_ratio,
+            is_eye_cue,
+            is_deferred_alert.unwrap_or(false),
+        );
         let img = tauri::image::Image::new_owned(rgba, 32, 32);
         let _ = tray.set_icon(Some(img));
         #[cfg(target_os = "macos")]
@@ -797,6 +814,25 @@ fn update_tray_progress_icon(
             let _ = tray.set_tooltip(Some(&tooltip));
         }
     }
+}
+
+#[tauri::command]
+fn broadcast_lan_pulse(
+    room_key: String,
+    device_id: String,
+    device_name: String,
+    next_standup_at: Option<u64>,
+    next_eye_at: Option<u64>,
+    next_water_at: Option<u64>,
+) -> bool {
+    lan_sync::broadcast_lan_pulse(
+        room_key,
+        device_id,
+        device_name,
+        next_standup_at,
+        next_eye_at,
+        next_water_at,
+    )
 }
 
 #[tauri::command]
@@ -1080,6 +1116,8 @@ pub fn run() {
 
             let _tray = tray_builder.build(app)?;
 
+            lan_sync::start_lan_listener(app.handle().clone());
+
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -1112,6 +1150,7 @@ pub fn run() {
             set_window_always_on_top,
             hide_to_tray,
             update_tray_progress_icon,
+            broadcast_lan_pulse,
             send_tray_notification,
             set_tray_language
         ])

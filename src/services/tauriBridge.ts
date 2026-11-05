@@ -12,6 +12,17 @@ export interface HardwareDeviceInfo {
   os: string;
 }
 
+export interface LanPulsePacket {
+  app: string;
+  room_key: string;
+  device_id: string;
+  device_name: string;
+  active_at: number;
+  next_standup_at?: number;
+  next_eye_at?: number;
+  next_water_at?: number;
+}
+
 const isTauriEnv = (): boolean => {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 };
@@ -190,17 +201,42 @@ export async function setTrayLanguage(lang: 'vi' | 'en'): Promise<void> {
 export async function updateTrayProgressIcon(
   progressRatio: number,
   isEyeCue: boolean,
-  tooltip: string
+  tooltip: string,
+  isDeferredAlert: boolean = false
 ): Promise<void> {
   if (!isTauriEnv()) return;
   try {
     await invoke('update_tray_progress_icon', {
       progressRatio,
       isEyeCue,
+      isDeferredAlert,
       tooltip,
     });
   } catch {
     // ignore
+  }
+}
+
+export async function broadcastLanPulse(
+  roomKey: string,
+  deviceId: string,
+  deviceName: string,
+  nextStandupAt?: number,
+  nextEyeAt?: number,
+  nextWaterAt?: number
+): Promise<boolean> {
+  if (!isTauriEnv()) return false;
+  try {
+    return await invoke<boolean>('broadcast_lan_pulse', {
+      roomKey,
+      deviceId,
+      deviceName,
+      nextStandupAt,
+      nextEyeAt,
+      nextWaterAt,
+    });
+  } catch {
+    return false;
   }
 }
 

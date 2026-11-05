@@ -98,7 +98,7 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-gradient-to-br from-emerald-50/95 via-sky-50/95 to-white/95 backdrop-blur-xl animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-gradient-to-br from-emerald-50 via-sky-50 to-white animate-fadeIn">
       <div className="relative w-full max-w-2xl bg-white rounded-3xl border border-emerald-100 shadow-2xl shadow-emerald-500/10 p-8 overflow-hidden">
         {/* Top Progress Bar */}
         <div className="absolute top-0 left-0 right-0 h-2 bg-slate-100">

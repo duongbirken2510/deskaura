@@ -6,7 +6,7 @@ export interface StandupSettings {
   eyeBreakEnabled: boolean;           // Quy tắc 20-20-20 (Nhắc thụ động qua Icon Tray)
   eyeBreakIntervalMinutes: number;    // Mặc định: 20 phút
   eyeBreakDurationSeconds: number;    // Mặc định: 20 giây
-  autoResetIdleSeconds: number;       // Mặc định: 300 giây (5 phút rời máy tự reset chu kỳ)
+  autoResetIdleSeconds: number;       // Mặc định v1.2: 180 giây (3 phút rời máy tự reset chu kỳ)
   pauseOnFullscreen: boolean;         // Không làm phiền khi đang họp/Fullscreen
   reminderMode: 'overlay' | 'gentle'; // Toàn màn hình hoặc Thẻ nhắc nhẹ nhàng
   holdToSkip: boolean;                // Nhấn giữ 2 giây để bỏ qua (chống bấm vô thức)
@@ -14,6 +14,8 @@ export interface StandupSettings {
   nextEyeAt?: number;                 // Mốc timestamp (ms) đồng bộ đếm ngược Nghỉ mắt 20-20-20
   nextWaterAt?: number;               // Mốc timestamp (ms) đồng bộ đếm ngược Uống nước
   timerSyncUpdatedAt?: number;        // Thời điểm cập nhật mốc đếm ngược gần nhất
+  lastActiveAt?: number;              // Tín hiệu sống gần nhất ("Last Active Wins" - Throttled 120s)
+  lastActiveDeviceId?: string;        // ID phần cứng của thiết bị vừa thao tác gần nhất
 }
 
 export interface WaterLogEntry {

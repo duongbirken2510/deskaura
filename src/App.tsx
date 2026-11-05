@@ -26,11 +26,13 @@ import {
   ConnectedDeviceMetadata,
   SyncConnectionStatus,
   firebaseSyncService,
+  getCachedHardwareId,
+  getDefaultDeviceName,
   mergeDailyStats,
   mergeWeeklyHistory,
 } from './services/firebaseSync';
 import { BreakOverlayModal } from './components/BreakOverlayModal';
-import { VirtualDeskPlant } from './components/ExerciseIllustration';
+import { PlantMood, VirtualDeskPlant } from './components/ExerciseIllustration';
 import {
   MebiusAnalyticsRow,
   MebiusDualActivityRings,
@@ -40,10 +42,13 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { SoundMixerPanel } from './components/SoundMixerPanel';
 import {
   AMBIENT_SOUNDS,
+  PLANT_WITTY_QUOTES,
   SOUND_PRESETS,
 } from './data/wellnessCatalog';
 import { soundEngine } from './services/soundEngine';
 import {
+  LanPulsePacket,
+  broadcastLanPulse,
   closeWebMusicPlayer,
   getAutostartStatus,
   getSystemContext,
@@ -75,6 +80,7 @@ const STORAGE_KEYS = {
   WEEKLY_HISTORY: 'deskaura_weekly_history_v1',
   LANGUAGE: 'deskaura_lang_v1',
   V12_COMBO_MIGRATED: 'deskaura_v12_combo_migrated',
+  V12_IDLE180_MIGRATED: 'deskaura_v12_idle180_migrated',
 };
 
 const getTodayString = (): string => {
@@ -92,9 +98,10 @@ export const App: React.FC = () => {
   });
   const t = TRANSLATIONS[lang];
 
-  // 1. Settings States (v1.2 Default: 60-minute Unified Combo Cycle + 5-min Natural Idle Reset)
+  // 1. Settings States (v1.2 Default: 60-minute Unified Combo Cycle + 3-min Natural Idle Reset)
   const [standupSettings, setStandupSettings] = useState<StandupSettings>(() => {
     const isV12Migrated = localStorage.getItem(STORAGE_KEYS.V12_COMBO_MIGRATED) === '1';
+    const isIdle180Migrated = localStorage.getItem(STORAGE_KEYS.V12_IDLE180_MIGRATED) === '1';
     const saved = localStorage.getItem(STORAGE_KEYS.STANDUP);
     if (saved) {
       try {
@@ -102,11 +109,16 @@ export const App: React.FC = () => {
         if (!isV12Migrated && parsed.standupIntervalMinutes === 45) {
           parsed.standupIntervalMinutes = 60;
         }
+        if (!isIdle180Migrated && (!parsed.autoResetIdleSeconds || parsed.autoResetIdleSeconds === 300)) {
+          parsed.autoResetIdleSeconds = 180;
+          localStorage.setItem(STORAGE_KEYS.V12_IDLE180_MIGRATED, '1');
+        }
         return parsed;
       } catch {
         // fallback
       }
     }
+    localStorage.setItem(STORAGE_KEYS.V12_IDLE180_MIGRATED, '1');
     const now = Date.now();
     return {
       standupIntervalMinutes: 60,
@@ -114,7 +126,7 @@ export const App: React.FC = () => {
       eyeBreakEnabled: true,
       eyeBreakIntervalMinutes: 20,
       eyeBreakDurationSeconds: 20,
-      autoResetIdleSeconds: 300,
+      autoResetIdleSeconds: 180,
       pauseOnFullscreen: true,
       reminderMode: 'overlay',
       holdToSkip: true,
@@ -122,6 +134,7 @@ export const App: React.FC = () => {
       nextEyeAt: now + 20 * 60 * 1000,
       nextWaterAt: now + 60 * 60 * 1000,
       timerSyncUpdatedAt: now,
+      lastActiveAt: now,
     };
   });
 
@@ -229,32 +242,18 @@ export const App: React.FC = () => {
   const [waterToastVisible, setWaterToastVisible] = useState<boolean>(false);
   const [gentleBreakBanner, setGentleBreakBanner] = useState<BreakType | null>(null);
   const [passiveEyeCueSec, setPassiveEyeCueSec] = useState<number>(0);
-  const wasIdleResetRef = useRef<boolean>(false);
+  const [isDeferredByFullscreen, setIsDeferredByFullscreen] = useState<boolean>(false);
+  const [undoWaterToast, setUndoWaterToast] = useState<{
+    logId: string;
+    amountMl: number;
+    secondsLeft: number;
+  } | null>(null);
 
-  const syncTimerTargets = useCallback(
-    (
-      nextStandupSec?: number,
-      nextEyeSec?: number,
-      nextWaterSec?: number
-    ) => {
-      const now = Date.now();
-      setStandupSettings((prev) => ({
-        ...prev,
-        nextStandupAt:
-          nextStandupSec !== undefined
-            ? now + nextStandupSec * 1000
-            : prev.nextStandupAt,
-        nextEyeAt:
-          nextEyeSec !== undefined ? now + nextEyeSec * 1000 : prev.nextEyeAt,
-        nextWaterAt:
-          nextWaterSec !== undefined
-            ? now + nextWaterSec * 1000
-            : prev.nextWaterAt,
-        timerSyncUpdatedAt: now,
-      }));
-    },
-    []
-  );
+  const wasIdleResetRef = useRef<boolean>(false);
+  const lastPeerActiveAtRef = useRef<number>(0);
+  const lastLanPulseSeenAtRef = useRef<number>(0);
+  const lastCloudHeartbeatSentAtRef = useRef<number>(0);
+  const lastWallClockMsRef = useRef<number>(Date.now());
 
   // System Context & Audio Ducking Status
   const [systemIdleSec, setSystemIdleSec] = useState<number>(0);
@@ -281,6 +280,52 @@ export const App: React.FC = () => {
     firebaseSyncService.isConfigured()
   );
   const isApplyingRemoteRef = useRef<boolean>(false);
+
+  const syncTimerTargets = useCallback(
+    (
+      nextStandupSec?: number,
+      nextEyeSec?: number,
+      nextWaterSec?: number
+    ) => {
+      const now = Date.now();
+      const myHwId = getCachedHardwareId();
+      setStandupSettings((prev) => {
+        const nextStandupAt =
+          nextStandupSec !== undefined
+            ? now + nextStandupSec * 1000
+            : prev.nextStandupAt;
+        const nextEyeAt =
+          nextEyeSec !== undefined ? now + nextEyeSec * 1000 : prev.nextEyeAt;
+        const nextWaterAt =
+          nextWaterSec !== undefined
+            ? now + nextWaterSec * 1000
+            : prev.nextWaterAt;
+
+        const roomKey = (userEmail || activeSyncCode || '').trim().toLowerCase();
+        if (roomKey && myHwId) {
+          broadcastLanPulse(
+            roomKey,
+            myHwId,
+            getDefaultDeviceName(),
+            nextStandupAt,
+            nextEyeAt,
+            nextWaterAt
+          );
+        }
+
+        return {
+          ...prev,
+          nextStandupAt,
+          nextEyeAt,
+          nextWaterAt,
+          timerSyncUpdatedAt: now,
+          lastActiveAt: now,
+          lastActiveDeviceId: myHwId || prev.lastActiveDeviceId,
+        };
+      });
+    },
+    [activeSyncCode, userEmail]
+  );
 
   // 4. Sound Mixer States
   const [activeSounds, setActiveSounds] = useState<Record<SoundId, boolean>>({
@@ -359,6 +404,20 @@ export const App: React.FC = () => {
     if (docData.standupSettings) {
       const now = Date.now();
       const remoteStandup = docData.standupSettings;
+      const myHwId = getCachedHardwareId();
+
+      // "Last Active Wins": Record peer activity timestamp from Cloud Fallback
+      if (
+        remoteStandup.lastActiveAt &&
+        remoteStandup.lastActiveDeviceId &&
+        remoteStandup.lastActiveDeviceId !== myHwId
+      ) {
+        lastPeerActiveAtRef.current = Math.max(
+          lastPeerActiveAtRef.current,
+          remoteStandup.lastActiveAt
+        );
+      }
+
       if (remoteStandup.nextStandupAt && remoteStandup.nextStandupAt > now) {
         const remSec = Math.round((remoteStandup.nextStandupAt - now) / 1000);
         const maxSec = (remoteStandup.standupIntervalMinutes || 60) * 60;
@@ -749,13 +808,14 @@ export const App: React.FC = () => {
     waterSecondsLeft,
   ]);
 
-  // Add Water Intake
+  // Add Water Intake (with 5-second 1-click Undo protection)
   const handleAddWater = useCallback(
     (amountMl: number) => {
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(
         now.getMinutes()
       ).padStart(2, '0')}`;
+      const logId = `${Date.now()}-${Math.random()}`;
 
       setDailyStats((prev) => {
         const nextTotal = prev.waterIntakeMl + amountMl;
@@ -780,7 +840,7 @@ export const App: React.FC = () => {
           waterIntakeMl: nextTotal,
           waterLogs: [
             {
-              id: `${Date.now()}-${Math.random()}`,
+              id: logId,
               timestamp: timeStr,
               amountMl,
             },
@@ -788,6 +848,8 @@ export const App: React.FC = () => {
           ],
         };
       });
+
+      setUndoWaterToast({ logId, amountMl, secondsLeft: 5 });
 
       // Reset water reminder timer on drink & synchronize across linked devices
       const nextWaterSec = hydrationSettings.intervalMinutes * 60;
@@ -804,7 +866,19 @@ export const App: React.FC = () => {
     ]
   );
 
-  // Listen to System Tray Menu Events from Rust Backend
+  // Undo accidental 1-click water log within 5 seconds
+  const handleUndoWater = useCallback(() => {
+    if (!undoWaterToast) return;
+    const { logId, amountMl } = undoWaterToast;
+    setDailyStats((prev) => ({
+      ...prev,
+      waterIntakeMl: Math.max(0, prev.waterIntakeMl - amountMl),
+      waterLogs: prev.waterLogs.filter((l) => l.id !== logId),
+    }));
+    setUndoWaterToast(null);
+  }, [undoWaterToast]);
+
+  // Listen to System Tray Menu & Local LAN UDP Events from Rust Backend
   useEffect(() => {
     const unlisteners: (() => void)[] = [];
 
@@ -814,6 +888,43 @@ export const App: React.FC = () => {
 
     onTauriEvent<string>('tray-trigger-break', () => {
       startBreakSession('combo', true);
+    }).then((unlisten) => unlisteners.push(unlisten));
+
+    onTauriEvent<LanPulsePacket>('deskaura://lan-pulse', (packet) => {
+      const myRoom = (userEmail || activeSyncCode || '').trim().toLowerCase();
+      const myHwId = getCachedHardwareId();
+      if (!myRoom || packet.room_key !== myRoom || packet.device_id === myHwId) {
+        return;
+      }
+      const now = Date.now();
+      lastLanPulseSeenAtRef.current = now;
+      lastPeerActiveAtRef.current = Math.max(
+        lastPeerActiveAtRef.current,
+        packet.active_at || now
+      );
+
+      if (packet.next_standup_at && packet.next_standup_at > now) {
+        const remSec = Math.round((packet.next_standup_at - now) / 1000);
+        const maxSec = (standupSettings.standupIntervalMinutes || 60) * 60;
+        const clampedSec = Math.min(maxSec, Math.max(5, remSec));
+        setStandupSecondsLeft(clampedSec);
+        if (clampedSec > 90) {
+          setIsBreakModalOpen(false);
+          setGentleBreakBanner(null);
+        }
+      }
+      if (packet.next_eye_at && packet.next_eye_at > now) {
+        const remEye = Math.round((packet.next_eye_at - now) / 1000);
+        const maxEye = (standupSettings.eyeBreakIntervalMinutes || 20) * 60;
+        setEyeSecondsLeft(Math.min(maxEye, Math.max(5, remEye)));
+      }
+      if (packet.next_water_at && packet.next_water_at > now) {
+        const remWater = Math.round((packet.next_water_at - now) / 1000);
+        setWaterSecondsLeft(Math.max(5, remWater));
+        if (remWater > 90) {
+          setWaterToastVisible(false);
+        }
+      }
     }).then((unlisten) => unlisteners.push(unlisten));
 
     onTauriEvent<boolean>('tray-toggle-music', (hasZingWindow) => {
@@ -861,9 +972,18 @@ export const App: React.FC = () => {
     return () => {
       unlisteners.forEach((fn) => fn());
     };
-  }, [handleAddWater, startBreakSession]);
+  }, [
+    activeSyncCode,
+    handleAddWater,
+    standupSettings.eyeBreakIntervalMinutes,
+    standupSettings.standupIntervalMinutes,
+    startBreakSession,
+    userEmail,
+  ]);
 
-  // Pillar 3: Dynamic System Tray Pie/Ring Progress Indicator
+  // Pillar 3: Dynamic System Tray Pie/Ring Progress Indicator (with Ruby Red Fullscreen Deferral & Witty Quotes)
+  const [quoteSeed, setQuoteSeed] = useState<number>(0);
+
   useEffect(() => {
     const totalSec = Math.max(60, standupSettings.standupIntervalMinutes * 60);
     const ratio = Math.min(
@@ -873,20 +993,54 @@ export const App: React.FC = () => {
     const isEyeCue = passiveEyeCueSec > 0;
     const minsLeft = Math.ceil(standupSecondsLeft / 60);
 
-    // Update tray icon immediately on passive eye cue state changes, or every 5 seconds of normal countdown
-    if (isEyeCue || standupSecondsLeft % 5 === 0) {
-      const tooltip = isEyeCue
+    // Update tray icon immediately on passive eye cue / fullscreen deferral, or every 5s of normal countdown
+    if (isDeferredByFullscreen || isEyeCue || standupSecondsLeft % 5 === 0) {
+      const quotesDict = PLANT_WITTY_QUOTES[lang] || PLANT_WITTY_QUOTES.vi;
+      const eyeQuotes = quotesDict.eyeCue;
+      const eyeQuote = eyeQuotes[quoteSeed % eyeQuotes.length];
+
+      const hour = new Date().getHours();
+      const isNight = hour >= 23 || hour <= 4;
+      const wPct = Math.min(
+        100,
+        Math.round((dailyStats.waterIntakeMl / hydrationSettings.dailyGoalMl) * 100)
+      );
+      const gPct = Math.min(
+        100,
+        Math.round(wPct * 0.75 + Math.min(25, dailyStats.standupCompletedCount * 6.25))
+      );
+      const sittingMins = (totalSec - standupSecondsLeft) / 60;
+      const expectedWater = hour < 10 ? 0 : hour < 14 ? 25 : hour < 17 ? 50 : 65;
+      const isThirsty = sittingMins >= 38 || (hour >= 10 && wPct < expectedWater);
+
+      const pool = isNight
+        ? quotesDict.nightOwl
+        : gPct >= 85
+        ? quotesDict.blooming
+        : isThirsty
+        ? quotesDict.thirsty
+        : quotesDict.growing;
+      const statusQuote = pool[(quoteSeed + Math.floor(minsLeft / 10)) % pool.length];
+
+      const tooltip = isDeferredByFullscreen
         ? lang === 'en'
-          ? `👀 DeskAura 20-20-20 — Blink & look 20ft away (${passiveEyeCueSec}s)`
-          : `👀 DeskAura 20-20-20 — Hãy chớp mắt & nhìn xa 6m (${passiveEyeCueSec}s)`
+          ? '🔴 DeskAura — Break deferred while in Full-Screen / Presentation mode'
+          : '🔴 DeskAura — Đang hoãn nhắc nghỉ vì bạn đang Toàn màn hình / Thuyết trình'
+        : isEyeCue
+        ? `👀 (${passiveEyeCueSec}s) ${eyeQuote}`
         : lang === 'en'
-        ? `🌱 DeskAura v1.2 — Combo Cycle: ${Math.round(ratio * 100)}% (${minsLeft}m left)`
-        : `🌱 DeskAura v1.2 — Chu kỳ Combo: ${Math.round(ratio * 100)}% (Còn ${minsLeft} phút)`;
-      updateTrayProgressIcon(ratio, isEyeCue, tooltip);
+        ? `🌱 DeskAura (${minsLeft}m left) — ${statusQuote}`
+        : `🌱 DeskAura (Còn ${minsLeft}p) — ${statusQuote}`;
+      updateTrayProgressIcon(ratio, isEyeCue, tooltip, isDeferredByFullscreen);
     }
   }, [
+    dailyStats.standupCompletedCount,
+    dailyStats.waterIntakeMl,
+    hydrationSettings.dailyGoalMl,
+    isDeferredByFullscreen,
     lang,
     passiveEyeCueSec,
+    quoteSeed,
     standupSecondsLeft,
     standupSettings.standupIntervalMinutes,
   ]);
@@ -897,6 +1051,16 @@ export const App: React.FC = () => {
   useEffect(() => {
     const timer = window.setInterval(async () => {
       tickCounterRef.current += 1;
+      const now = Date.now();
+      const wallJumpSec = Math.floor((now - lastWallClockMsRef.current) / 1000);
+      lastWallClockMsRef.current = now;
+
+      // Count down 5-second Undo Water Toast
+      setUndoWaterToast((prev) => {
+        if (!prev) return null;
+        if (prev.secondsLeft <= 1) return null;
+        return { ...prev, secondsLeft: prev.secondsLeft - 1 };
+      });
 
       // Count down Passive 20-20-20 Eye Cue (20s golden tray indicator, zero interruption)
       setPassiveEyeCueSec((prev) => {
@@ -911,15 +1075,112 @@ export const App: React.FC = () => {
         return 0;
       });
 
+      const peerIdleSec =
+        lastPeerActiveAtRef.current > 0
+          ? Math.max(0, Math.floor((now - lastPeerActiveAtRef.current) / 1000))
+          : Number.POSITIVE_INFINITY;
+
+      // OS Sleep / Hibernate ("Hội chứng Bóng đè") Guard:
+      // If wall-clock jumped >= 8 seconds between 1s ticks, the OS just woke from Sleep/Hibernation!
+      if (wallJumpSec >= 8) {
+        if (
+          wallJumpSec >= standupSettings.autoResetIdleSeconds &&
+          peerIdleSec >= standupSettings.autoResetIdleSeconds
+        ) {
+          // Machine slept >= 3 minutes (and no other device was active) -> Natural Break Reset!
+          const fullStand = standupSettings.standupIntervalMinutes * 60;
+          const fullEye = standupSettings.eyeBreakIntervalMinutes * 60;
+          const fullWater = hydrationSettings.intervalMinutes * 60;
+          setIsBreakModalOpen(false);
+          setGentleBreakBanner(null);
+          setIsDeferredByFullscreen(false);
+          setStandupSecondsLeft(fullStand);
+          setEyeSecondsLeft(fullEye);
+          setWaterSecondsLeft(fullWater);
+          syncTimerTargets(fullStand, fullEye, fullWater);
+          return;
+        } else if (standupSettings.nextStandupAt && standupSettings.nextStandupAt > now) {
+          // Short sleep (< 3 minutes): recompute remaining seconds from Absolute Target Time
+          setStandupSecondsLeft(
+            Math.max(5, Math.round((standupSettings.nextStandupAt - now) / 1000))
+          );
+          if (standupSettings.nextEyeAt && standupSettings.nextEyeAt > now) {
+            setEyeSecondsLeft(
+              Math.max(5, Math.round((standupSettings.nextEyeAt - now) / 1000))
+            );
+          }
+          if (standupSettings.nextWaterAt && standupSettings.nextWaterAt > now) {
+            setWaterSecondsLeft(
+              Math.max(5, Math.round((standupSettings.nextWaterAt - now) / 1000))
+            );
+          }
+        }
+      }
+
       // Pillar 1: Poll OS Mouse/Keyboard Idle & Fullscreen every 3 seconds
       if (tickCounterRef.current % 3 === 0) {
         const ctx = await getSystemContext();
         setSystemIdleSec(ctx.idle_seconds);
         setIsFullscreenApp(ctx.is_fullscreen);
 
-        // Auto-reset entire 60-minute Combo cycle if user steps away >= threshold (default 5 mins)
+        // If a break was deferred by Fullscreen/Presentation and the user just exited Fullscreen, trigger it now!
+        if (!ctx.is_fullscreen && isDeferredByFullscreen) {
+          setIsDeferredByFullscreen(false);
+          const fullStand = standupSettings.standupIntervalMinutes * 60;
+          const fullEye = standupSettings.eyeBreakIntervalMinutes * 60;
+          const fullWater = hydrationSettings.intervalMinutes * 60;
+          setStandupSecondsLeft(fullStand);
+          setEyeSecondsLeft(fullEye);
+          setWaterSecondsLeft(fullWater);
+          syncTimerTargets(fullStand, fullEye, fullWater);
+          startBreakSession('combo');
+          return;
+        }
+
+        // The Kill Switch: Only emit cross-device heartbeats when >= 2 devices are registered
+        const myHwId = getCachedHardwareId();
+        const isMultiDevice = connectedDevices.length >= 2;
+        if (isMultiDevice && ctx.idle_seconds < 15) {
+          const roomKey = (userEmail || activeSyncCode || '').trim().toLowerCase();
+          // 1. Local LAN UDP Broadcast (0 Cloud cost, <1ms latency) every 6 seconds while active
+          if (roomKey && myHwId && tickCounterRef.current % 6 === 0) {
+            broadcastLanPulse(
+              roomKey,
+              myHwId,
+              getDefaultDeviceName(),
+              standupSettings.nextStandupAt,
+              standupSettings.nextEyeAt,
+              standupSettings.nextWaterAt
+            );
+          }
+
+          // 2. Cloud Fallback Heartbeat (Throttled to 120s ONLY when no LAN peer seen & peer was active within 2 hours)
+          const hasRecentLanPeer = now - lastLanPulseSeenAtRef.current < 90_000;
+          const hasPeerOnlineWithin2h = connectedDevices.some(
+            (d) => d.uid !== myHwId && now - (d.lastSeenAt || 0) < 2 * 3600 * 1000
+          );
+          if (
+            !hasRecentLanPeer &&
+            hasPeerOnlineWithin2h &&
+            now - lastCloudHeartbeatSentAtRef.current >= 120_000
+          ) {
+            lastCloudHeartbeatSentAtRef.current = now;
+            setStandupSettings((prev) => ({
+              ...prev,
+              lastActiveAt: now,
+              lastActiveDeviceId: myHwId || prev.lastActiveDeviceId,
+            }));
+          }
+        }
+
+        // "Last Active Wins": Effective ecosystem idle is the minimum of local OS idle and peer idle!
+        const effectiveIdleSec = isMultiDevice
+          ? Math.min(ctx.idle_seconds, peerIdleSec)
+          : ctx.idle_seconds;
+
+        // Auto-reset entire 60-minute Combo cycle ONLY when ALL devices are idle >= threshold (default 3 mins / 180s)
         if (
-          ctx.idle_seconds >= standupSettings.autoResetIdleSeconds &&
+          effectiveIdleSec >= standupSettings.autoResetIdleSeconds &&
           !isBreakModalOpen
         ) {
           const fullStand = standupSettings.standupIntervalMinutes * 60;
@@ -928,6 +1189,7 @@ export const App: React.FC = () => {
           setStandupSecondsLeft(fullStand);
           setEyeSecondsLeft(fullEye);
           setWaterSecondsLeft(fullWater);
+          setIsDeferredByFullscreen(false);
           if (!wasIdleResetRef.current) {
             wasIdleResetRef.current = true;
             syncTimerTargets(fullStand, fullEye, fullWater);
@@ -969,8 +1231,11 @@ export const App: React.FC = () => {
       setStandupSecondsLeft((prev) => {
         if (prev <= 1) {
           if (standupSettings.pauseOnFullscreen && isFullscreenApp) {
-            return 120;
+            // Defer popup & turn System Tray icon Ruby Red until user exits Fullscreen/Presentation
+            setIsDeferredByFullscreen(true);
+            return 5;
           }
+          setIsDeferredByFullscreen(false);
           const fullStand = standupSettings.standupIntervalMinutes * 60;
           const fullEye = standupSettings.eyeBreakIntervalMinutes * 60;
           const fullWater = hydrationSettings.intervalMinutes * 60;
@@ -988,7 +1253,7 @@ export const App: React.FC = () => {
         setEyeSecondsLeft((prev) => {
           if (prev <= 1) {
             if (standupSettings.pauseOnFullscreen && isFullscreenApp) {
-              return 120;
+              return 60;
             }
             if (standupSecondsLeft > 90) {
               setPassiveEyeCueSec(standupSettings.eyeBreakDurationSeconds || 20);
@@ -1125,20 +1390,54 @@ export const App: React.FC = () => {
     Math.round((dailyStats.waterIntakeMl / hydrationSettings.dailyGoalMl) * 100)
   );
 
-  // Desk Plant Growth combines Water Goal % and Standup Sessions
+  // Desk Plant Growth combines Water Goal % (75%) and Standup Sessions (25%)
   const plantGrowthPct = Math.min(
     100,
-    Math.round(waterProgressPct * 0.6 + Math.min(40, dailyStats.standupCompletedCount * 10))
+    Math.round(waterProgressPct * 0.75 + Math.min(25, dailyStats.standupCompletedCount * 10))
   );
+  const plantStage =
+    plantGrowthPct >= 85 ? 4 : plantGrowthPct >= 55 ? 3 : plantGrowthPct >= 25 ? 2 : 1;
+
+  // Determine Plant Mood & Witty Quote (Night Owl 23h-4h, Blooming, Thirsty/Sitting long, or Growing)
+  const currentHour = new Date().getHours();
+  const isNightOwlHour = currentHour >= 23 || currentHour <= 4;
+  const sittingMinutesElapsed = (standupTotalSec - standupSecondsLeft) / 60;
+  const expectedWaterPctByHour =
+    currentHour < 10 ? 0 : currentHour < 14 ? 25 : currentHour < 17 ? 50 : 65;
+  const isPlantThirsty =
+    sittingMinutesElapsed >= 38 ||
+    (currentHour >= 10 && waterProgressPct < expectedWaterPctByHour);
+
+  const plantMood: PlantMood = isNightOwlHour
+    ? 'sleepy'
+    : plantGrowthPct >= 85
+    ? 'blooming'
+    : isPlantThirsty
+    ? 'thirsty'
+    : 'growing';
+
+  const quotesByLang = PLANT_WITTY_QUOTES[lang] || PLANT_WITTY_QUOTES.vi;
+  const activeQuotePool =
+    passiveEyeCueSec > 0
+      ? quotesByLang.eyeCue
+      : plantMood === 'sleepy'
+      ? quotesByLang.nightOwl
+      : plantMood === 'blooming'
+      ? quotesByLang.blooming
+      : plantMood === 'thirsty'
+      ? quotesByLang.thirsty
+      : quotesByLang.growing;
+  const activePlantQuote =
+    activeQuotePool[quoteSeed % activeQuotePool.length] || '';
 
   const anySoundActive =
     Object.values(activeSounds).some(Boolean) || isRadioPlaying;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50/70 via-slate-50 to-sky-50/80 text-slate-800 flex flex-col">
-      {/* Top Minimalist Daylight Navigation Bar */}
-      <header className="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-slate-200/70 px-5 py-2.5">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      {/* Top Minimalist Daylight Navigation Bar (Zero Blur for 0% GPU overhead) */}
+      <header className="sticky top-0 z-30 bg-white border-b border-slate-200/80 px-5 py-2.5">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 whitespace-nowrap">
           {/* Brand Logo */}
           <div className="flex items-center gap-2.5">
             <img
@@ -1151,7 +1450,7 @@ export const App: React.FC = () => {
                 DeskAura
               </h1>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                v1.2
+                v1.2.1
               </span>
             </div>
           </div>
@@ -1564,7 +1863,7 @@ export const App: React.FC = () => {
                   <p className="text-xs font-bold text-slate-600 mb-2">
                     {t.quickDrinkTitle}
                   </p>
-                  <div className="grid grid-cols-3 gap-2.5 mb-4">
+                  <div className="grid grid-cols-3 gap-2.5 mb-3">
                     {hydrationSettings.quickAmounts.map((amt, i) => (
                       <button
                         key={amt}
@@ -1578,6 +1877,27 @@ export const App: React.FC = () => {
                       </button>
                     ))}
                   </div>
+
+                  {/* 5-Second 1-Click Water Undo Pill Toast */}
+                  {undoWaterToast && (
+                    <div className="mb-3 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-between gap-2 animate-fadeIn">
+                      <span className="text-xs font-bold text-emerald-800">
+                        {lang === 'en'
+                          ? `✓ Added +${undoWaterToast.amountMl}ml water`
+                          : `✓ Đã thêm +${undoWaterToast.amountMl}ml nước`}
+                      </span>
+                      <button
+                        onClick={handleUndoWater}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-emerald-200 hover:border-rose-200 text-[11px] font-extrabold transition shadow-xs"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        {lang === 'en'
+                          ? `Undo (${undoWaterToast.secondsLeft}s)`
+                          : `Hoàn tác (${undoWaterToast.secondsLeft}s)`}
+                      </button>
+                    </div>
+                  )}
+
                   {/* Mebius Hourly Hydration Pill Bar Chart */}
                   <MebiusHourlyHydrationChart
                     waterLogs={dailyStats.waterLogs}
@@ -1628,25 +1948,83 @@ export const App: React.FC = () => {
               {/* Card 3: Virtual Desk Plant & Daily Wellness Milestones (3 cols) */}
               <div className="lg:col-span-3 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/70">
-                      <Sun className="w-3.5 h-3.5" />
-                      {t.deskPlantBadge}
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap ${
+                        plantMood === 'sleepy'
+                          ? 'bg-indigo-950 text-indigo-200 border-indigo-800'
+                          : 'bg-amber-50 text-amber-700 border-amber-200/70'
+                      }`}
+                    >
+                      <Sun className="w-3.5 h-3.5 shrink-0" />
+                      {plantMood === 'sleepy'
+                        ? lang === 'en'
+                          ? '🌙 Night Owl Mode'
+                          : '🌙 Chế Độ Cú Đêm'
+                        : t.deskPlantBadge}
                     </span>
-                    <span className="text-xs font-bold text-emerald-600">
-                      {plantGrowthPct}%
+                    <span className="text-[11px] font-bold text-emerald-600 whitespace-nowrap">
+                      {lang === 'en'
+                        ? `Lv ${plantStage}/4 • ${plantGrowthPct}%`
+                        : `Cấp ${plantStage}/4 • ${plantGrowthPct}%`}
                     </span>
                   </div>
 
-                  <div className="my-3 bg-gradient-to-b from-emerald-50/50 to-amber-50/30 rounded-2xl p-3 border border-emerald-100/60 text-center">
-                    <VirtualDeskPlant growthPercent={plantGrowthPct} />
-                    <p className="text-xs font-bold text-slate-700 mt-1">
-                      {plantGrowthPct >= 85
+                  <div
+                    onClick={() => setQuoteSeed((s) => s + 1)}
+                    onMouseEnter={() => setQuoteSeed((s) => s + 1)}
+                    className={`my-3 rounded-2xl p-3 border text-center cursor-pointer transition-all ${
+                      plantMood === 'sleepy'
+                        ? 'bg-gradient-to-b from-indigo-950 via-slate-900 to-indigo-900 border-indigo-800 text-indigo-100'
+                        : plantMood === 'thirsty'
+                        ? 'bg-gradient-to-b from-amber-50/80 to-orange-50/40 border-amber-200/80'
+                        : 'bg-gradient-to-b from-emerald-50/50 to-amber-50/30 border-emerald-100/60'
+                    }`}
+                  >
+                    <VirtualDeskPlant
+                      growthPercent={plantGrowthPct}
+                      mood={plantMood}
+                      quote={activePlantQuote}
+                      onPokePlant={() => setQuoteSeed((s) => s + 1)}
+                    />
+                    <p
+                      className={`text-xs font-bold mt-1 ${
+                        plantMood === 'sleepy'
+                          ? 'text-indigo-200'
+                          : plantMood === 'thirsty'
+                          ? 'text-amber-800'
+                          : 'text-slate-700'
+                      }`}
+                    >
+                      {plantMood === 'sleepy'
+                        ? lang === 'en'
+                          ? '💤 Sprout is sleepy (Late Night OT)'
+                          : '💤 Cây đang buồn ngủ (Làm việc khuya)'
+                        : plantGrowthPct >= 85
                         ? t.plantBlooming
+                        : plantMood === 'thirsty'
+                        ? lang === 'en'
+                          ? '🥺 Sprout is thirsty — take a sip!'
+                          : '🥺 Cây đang khát nước — uống 1 ngụm nhé!'
                         : plantGrowthPct >= 50
                         ? t.plantGrowing
                         : t.plantSeedling}
                     </p>
+
+                    {/* Interactive Witty Speech Bubble (Click or Hover to cycle quotes) */}
+                    <div
+                      className={`mt-2.5 p-2.5 rounded-xl text-[11px] font-semibold leading-snug border transition-all ${
+                        passiveEyeCueSec > 0
+                          ? 'bg-amber-100/90 text-amber-900 border-amber-300 shadow-xs'
+                          : plantMood === 'sleepy'
+                          ? 'bg-indigo-900/80 text-indigo-100 border-indigo-700/80'
+                          : plantMood === 'thirsty'
+                          ? 'bg-white/90 text-amber-900 border-amber-200'
+                          : 'bg-white/90 text-emerald-900 border-emerald-100'
+                      }`}
+                    >
+                      “{activePlantQuote}”
+                    </div>
                   </div>
 
                   {/* Daily Wellness Growth Breakdown */}

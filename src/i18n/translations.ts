@@ -41,7 +41,7 @@ export const TRANSLATIONS = {
     todayLogsLabel: 'Nhật ký hôm nay',
     resetBtn: 'Đặt lại',
     noWaterLogsYet: 'Chưa có lần uống nước nào được ghi nhận hôm nay',
-    deskPlantBadge: 'Chậu Cây Bàn Làm Việc',
+    deskPlantBadge: 'Chậu Cây Hôm Nay',
     plantBlooming: '🌸 Cây đang nở hoa rực rỡ!',
     plantGrowing: '🌿 Cây đang vươn lá xanh tươi',
     plantSeedling: '🌱 Hãy uống nước & đứng dậy để cây lớn nhé',

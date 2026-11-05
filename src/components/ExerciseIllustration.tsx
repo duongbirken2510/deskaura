@@ -698,49 +698,116 @@ export const ExerciseIllustration: React.FC<ExerciseSvgProps> = ({
   );
 };
 
+export type PlantMood = 'thirsty' | 'growing' | 'blooming' | 'sleepy';
+
 interface DeskPlantProps {
   growthPercent: number; // 0 -> 100
+  mood?: PlantMood;
+  quote?: string;
+  onPokePlant?: () => void;
 }
 
-export const VirtualDeskPlant: React.FC<DeskPlantProps> = ({ growthPercent }) => {
+export const VirtualDeskPlant: React.FC<DeskPlantProps> = ({
+  growthPercent,
+  mood = 'growing',
+  quote,
+  onPokePlant,
+}) => {
   const stage =
     growthPercent >= 85 ? 4 : growthPercent >= 55 ? 3 : growthPercent >= 25 ? 2 : 1;
 
+  const isSleepy = mood === 'sleepy';
+  const isThirsty = mood === 'thirsty';
+
   return (
-    <div className="relative flex flex-col items-center justify-center">
-      <svg aria-hidden="true" viewBox="0 0 140 140" className="w-28 h-28 overflow-visible">
+    <div
+      onClick={onPokePlant}
+      title={quote}
+      className="relative flex flex-col items-center justify-center cursor-pointer group select-none"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 140 140"
+        className="w-28 h-28 overflow-visible transition-transform duration-300 group-hover:scale-105 group-active:scale-95"
+      >
         <defs>
           <linearGradient id="potGrad" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#FDBA74" />
             <stop offset="100%" stopColor="#EA580C" />
           </linearGradient>
           <linearGradient id="sproutGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#34D399" />
-            <stop offset="100%" stopColor="#059669" />
+            <stop offset="0%" stopColor={isThirsty ? '#A3E635' : '#34D399'} />
+            <stop offset="100%" stopColor={isThirsty ? '#65A30D' : '#059669'} />
           </linearGradient>
         </defs>
 
-        {/* Soft Sun Halo */}
-        <circle cx="70" cy="62" r="48" fill="#ECFDF5" />
+        {/* Background Halo (Daylight vs. Thirsty Amber vs. Midnight Indigo) */}
+        <circle
+          cx="70"
+          cy="62"
+          r="48"
+          fill={isSleepy ? '#1E1B4B' : isThirsty ? '#FEF3C7' : '#ECFDF5'}
+          opacity={isSleepy ? 0.9 : 1}
+        />
+
+        {/* Crescent Moon & Twinkling Stars in Sleepy Night-Owl Mode */}
+        {isSleepy && (
+          <g>
+            <path
+              d="M96 24 A10 10 0 1 1 86 38 A8 8 0 1 0 96 24 Z"
+              fill="#FDE047"
+            />
+            <circle cx="42" cy="30" r="1.5" fill="#FEF08A" className="animate-pulse" />
+            <circle cx="52" cy="20" r="1.2" fill="#E0E7FF" />
+            <circle cx="102" cy="48" r="1.4" fill="#FEF08A" className="animate-pulse" />
+          </g>
+        )}
 
         {/* Stem */}
         <path
-          d={stage >= 3 ? 'M70 92 Q68 62 70 38' : 'M70 92 Q69 74 70 58'}
-          stroke="#059669"
+          d={
+            isSleepy || isThirsty
+              ? stage >= 3
+                ? 'M70 92 Q75 64 74 42'
+                : 'M70 92 Q74 75 73 60'
+              : stage >= 3
+              ? 'M70 92 Q68 62 70 38'
+              : 'M70 92 Q69 74 70 58'
+          }
+          stroke={isThirsty ? '#65A30D' : '#059669'}
           strokeWidth="5"
           strokeLinecap="round"
           fill="none"
         />
 
         {/* Stage 1+: Base pair of leaves */}
-        <g className="origin-center animate-float">
+        <g
+          className={`origin-center ${
+            isSleepy ? 'opacity-90' : 'animate-float'
+          }`}
+          transform={
+            isSleepy
+              ? 'rotate(6 70 76)'
+              : isThirsty
+              ? 'rotate(8 70 76) translate(0, 3)'
+              : undefined
+          }
+        >
           <path
-            d="M70 76 C52 74, 42 58, 56 50 C66 52, 70 66, 70 76 Z"
+            d={
+              isThirsty || isSleepy
+                ? 'M70 76 C50 80, 40 68, 54 58 C64 58, 69 68, 70 76 Z'
+                : 'M70 76 C52 74, 42 58, 56 50 C66 52, 70 66, 70 76 Z'
+            }
             fill="url(#sproutGrad)"
           />
           <path
-            d="M70 72 C88 70, 98 54, 84 46 C74 48, 70 62, 70 72 Z"
-            fill="#10B981"
+            d={
+              isThirsty || isSleepy
+                ? 'M70 72 C90 76, 100 64, 86 54 C76 54, 71 64, 70 72 Z'
+                : 'M70 72 C88 70, 98 54, 84 46 C74 48, 70 62, 70 72 Z'
+            }
+            fill={isThirsty ? '#84CC16' : '#10B981'}
           />
 
           {/* Stage 2+: Upper lush leaves */}
@@ -748,7 +815,7 @@ export const VirtualDeskPlant: React.FC<DeskPlantProps> = ({ growthPercent }) =>
             <>
               <path
                 d="M70 56 C48 52, 38 34, 54 28 C66 32, 70 46, 70 56 Z"
-                fill="#34D399"
+                fill={isThirsty ? '#A3E635' : '#34D399'}
               />
               <path
                 d="M70 54 C92 50, 102 32, 86 26 C74 30, 70 44, 70 54 Z"
@@ -779,22 +846,96 @@ export const VirtualDeskPlant: React.FC<DeskPlantProps> = ({ growthPercent }) =>
           )}
         </g>
 
+        {/* Floating Zzz Bubbles in Sleepy Night-Owl Mode */}
+        {isSleepy && (
+          <g className="animate-bounce">
+            <text
+              x="92"
+              y="74"
+              fill="#A5B4FC"
+              fontSize="10"
+              fontWeight="bold"
+              fontFamily="sans-serif"
+            >
+              z
+            </text>
+            <text
+              x="100"
+              y="62"
+              fill="#C7D2FE"
+              fontSize="13"
+              fontWeight="bold"
+              fontFamily="sans-serif"
+            >
+              Z
+            </text>
+            <text x="108" y="48" fontSize="13">
+              💤
+            </text>
+          </g>
+        )}
+
         {/* Minimalist Ceramic Pot */}
         <rect x="44" y="88" width="52" height="10" rx="4" fill="#FB923C" />
         <path
           d="M48 98 L92 98 L85 126 C84 129, 82 130, 79 130 L61 130 C58 130, 56 129, 55 126 Z"
           fill="url(#potGrad)"
         />
-        {/* Happy Face on Pot */}
-        <circle cx="63" cy="111" r="2" fill="#FFF7ED" />
-        <circle cx="77" cy="111" r="2" fill="#FFF7ED" />
-        <path
-          d="M66 116 Q70 120 74 116"
-          stroke="#FFF7ED"
-          strokeWidth="2"
-          fill="none"
-          strokeLinecap="round"
-        />
+
+        {/* Dynamic Facial Expression on Pot */}
+        {isSleepy ? (
+          <>
+            {/* Sleeping Closed Eyes (︶ ︶) */}
+            <path
+              d="M59 111 Q63 115 67 111"
+              stroke="#FFF7ED"
+              strokeWidth="2"
+              fill="none"
+              strokeLinecap="round"
+            />
+            <path
+              d="M73 111 Q77 115 81 111"
+              stroke="#FFF7ED"
+              strokeWidth="2"
+              fill="none"
+              strokeLinecap="round"
+            />
+            <circle cx="70" cy="118" r="2.2" fill="#FFF7ED" />
+          </>
+        ) : isThirsty ? (
+          <>
+            {/* Thirsty / Pleading Face + Sweat Drop */}
+            <circle cx="63" cy="111" r="2.2" fill="#FFF7ED" />
+            <circle cx="77" cy="111" r="2.2" fill="#FFF7ED" />
+            <path
+              d="M66 119 Q70 115 74 119"
+              stroke="#FFF7ED"
+              strokeWidth="2"
+              fill="none"
+              strokeLinecap="round"
+            />
+            {/* Blue Sweat Drop */}
+            <path
+              d="M84 103 C84 103, 88 108, 86 111 C84 113, 81 111, 82 108 Z"
+              fill="#38BDF8"
+            />
+          </>
+        ) : (
+          <>
+            {/* Happy / Blooming Face on Pot */}
+            <circle cx="63" cy="111" r="2.2" fill="#FFF7ED" />
+            <circle cx="77" cy="111" r="2.2" fill="#FFF7ED" />
+            <circle cx="58" cy="115" r="2.5" fill="#FDA4AF" opacity="0.65" />
+            <circle cx="82" cy="115" r="2.5" fill="#FDA4AF" opacity="0.65" />
+            <path
+              d="M65 116 Q70 121 75 116"
+              stroke="#FFF7ED"
+              strokeWidth="2.2"
+              fill="none"
+              strokeLinecap="round"
+            />
+          </>
+        )}
       </svg>
     </div>
   );

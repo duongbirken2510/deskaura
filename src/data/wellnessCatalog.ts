@@ -291,3 +291,81 @@ export const DESK_EXERCISES: ExerciseItem[] = [
   },
 ];
 
+export const PLANT_WITTY_QUOTES = {
+  vi: {
+    thirsty: [
+      'Lỗi 404: Không tìm thấy H2O trong hệ thống. Vui lòng nạp nước gấp!',
+      'Cột sống đang soạn đơn xin nghỉ việc. Đứng dậy vươn vai để xé đơn đi sếp!',
+      'Cây đang khát khô như cách sếp khát deadline vậy. Cho xin ngụm nước đi!',
+      'Sa mạc Sahara đang thu nhỏ vừa bằng chậu cây này rồi. Cứu!',
+      'Đĩa đệm gửi tín hiệu SOS! Đứng lên 2 phút không làm bug đẻ thêm đâu.',
+    ],
+    growing: [
+      'Nước nạp mượt mà như code chạy pass mọi test case!',
+      'Cột sống vừa thả 1.000 tim cho hành động uống nước của bạn.',
+      'Chăm tưới nước thế này thì KPI sức khỏe tháng này vượt chỉ tiêu rồi.',
+      'Chỉ một ngụm nước nữa là mầm non này đủ sức "múa quạt" cho sếp xem.',
+    ],
+    blooming: [
+      'Trạng thái sức khỏe: Đã Compile thành công, 0 bug, 0 warning!',
+      'Cây nở hoa, cột sống thăng hoa. Sếp chuẩn bị tắt máy đi về được rồi đấy.',
+      'Nhiệm vụ sinh tồn chốn công sở hôm nay: Đạt hạng S!',
+      'Đủ nước, đủ giãn cơ. Giờ chỉ chờ lương về nữa là một ngày hoàn hảo.',
+    ],
+    eyeCue: [
+      'Đừng nhìn màn hình đắm đuối thế, nó không yêu sếp đâu. Nhìn ra xa 20 giây nào!',
+      'Mắt sếp sắp mở khóa thành tựu "Tăng độ" rồi kìa, chớp mắt liền đi!',
+      'Đang tải dữ liệu phong cảnh thực tế... Vui lòng nhìn ra cửa sổ 20 giây.',
+    ],
+    nightOwl: [
+      'Buồn ngủ ríu cả mắt rồi sếp ơi, sập nguồn tới nơi rồi!',
+      'Cây cũng cần đi ngủ, sếp tha cho cây đi!',
+      'Giờ này chỉ có bug sinh sôi thôi, tắt máy đi ngủ sếp ạ!',
+      'Mắt sếp díp lại rồi kìa, code giờ này sáng mai lại phải ngồi fix đấy.',
+      'Làm việc khuya vất vả rồi. Uống một ngụm nước ấm rồi nghỉ ngơi nhé.',
+      'Đã qua ngày mới rồi. Deadline có thể đợi ngày mai, nhưng sức khỏe thì không.',
+      'Không gian tĩnh lặng quá, sếp bật tí nhạc Lo-fi nghe cho đỡ căng thẳng nhé.',
+      'Server còn có lịch bảo trì, sếp định chạy 24/7 luôn sao?',
+      'Đĩa đệm và giác mạc đang gửi yêu cầu đình công khẩn cấp lúc nửa đêm!',
+      'Năng suất giờ này giảm 50% rồi, sếp đi ngủ đi, mai bộ não sẽ cảm ơn sếp đấy.',
+    ],
+  },
+  en: {
+    thirsty: [
+      'Error 404: H2O not found in system. Please hydrate immediately!',
+      'Your spine is drafting its resignation letter. Stand up and stretch to tear it up!',
+      'This plant is as dry as a Monday morning stand-up. Sip some water, boss!',
+      'The Sahara Desert just shrank to fit inside this pot. Send water!',
+      'Lumbar discs sending SOS! Standing up for 2 minutes won’t spawn new bugs.',
+    ],
+    growing: [
+      'Hydration flowing as smoothly as all unit tests passing on the first run!',
+      'Your spine just sent 1,000 hearts for that glass of water.',
+      'Keep watering like this and your wellness KPI will smash all targets.',
+      'One more sip of water and this sprout will do a victory dance for you.',
+    ],
+    blooming: [
+      'Health Status: Compiled successfully — 0 errors, 0 warnings!',
+      'Plant in full bloom, spine in pure bliss. Ready to wrap up for the day, boss!',
+      'Office survival mission today: S-Rank achieved!',
+      'Hydrated and stretched. Now just waiting for payday for a 10/10 day.',
+    ],
+    eyeCue: [
+      'Stop staring so deeply at the screen, it won’t love you back. Look 20ft away!',
+      'Your eyes are about to unlock a stronger prescription — blink and look away!',
+      'Rendering real-world scenery... Please look out the window for 20 seconds.',
+    ],
+    nightOwl: [
+      'Eyes closing on their own, boss — system shutdown is imminent!',
+      'Even plants need sleep! Spare the little sprout and head to bed!',
+      'Only bugs multiply at this hour. Close the laptop and get some rest!',
+      'Coding at midnight just writes tomorrow morning’s bug tickets.',
+      'You’ve worked hard tonight. Take a sip of warm water and call it a night.',
+      'It’s already a new day. Deadlines can wait till morning, your health cannot.',
+      'Even production servers have maintenance windows — are you running 24/7?',
+      'Your spine and corneas just filed an emergency midnight strike notice!',
+    ],
+  },
+};
+
+
