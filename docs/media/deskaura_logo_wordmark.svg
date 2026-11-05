@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 520" width="1800" height="520">
+  <defs>
+    <linearGradient id="iconBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="50%" stop-color="#064E3B" />
+      <stop offset="100%" stop-color="#0C4A6E" />
+    </linearGradient>
+    <linearGradient id="iconRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="50%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+    <linearGradient id="dropGrad" x1="20%" y1="10%" x2="80%" y2="95%">
+      <stop offset="0%" stop-color="#7DD3FC" />
+      <stop offset="45%" stop-color="#0EA5E9" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+    <linearGradient id="sproutLeaf" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6EE7B7" />
+      <stop offset="50%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="wordmarkAura" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="50%" stop-color="#0D9488" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="135%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#064E3B" flood-opacity="0.22" />
+    </filter>
+  </defs>
+
+  <!-- Left App Icon Squircle (420x420) -->
+  <g transform="translate(50, 50)">
+    <rect
+      x="0"
+      y="0"
+      width="420"
+      height="420"
+      rx="100"
+      fill="url(#iconBg)"
+      stroke="url(#iconRing)"
+      stroke-width="4"
+      filter="url(#softShadow)"
+    />
+    <circle cx="210" cy="210" r="165" fill="none" stroke="#1E293B" stroke-width="12" opacity="0.55" />
+    <circle
+      cx="210"
+      cy="210"
+      r="165"
+      fill="none"
+      stroke="url(#iconRing)"
+      stroke-width="12"
+      stroke-dasharray="790 1036"
+      stroke-linecap="round"
+      transform="rotate(-90 210 210)"
+    />
+    <!-- Water Droplet -->
+    <path
+      d="M210 76
+         C210 76, 310 190, 310 260
+         C310 316, 265 360, 210 360
+         C155 360, 110 316, 110 260
+         C110 190, 210 76, 210 76 Z"
+      fill="url(#dropGrad)"
+    />
+    <path
+      d="M144 222 C134 254, 144 296, 170 318"
+      fill="none"
+      stroke="#E0F2FE"
+      stroke-width="11"
+      stroke-linecap="round"
+      opacity="0.72"
+    />
+    <!-- Sprout -->
+    <g transform="translate(210, 238)">
+      <path d="M0 62 Q-2 16, 0 -30" fill="none" stroke="#ECFDF5" stroke-width="10" stroke-linecap="round" />
+      <path d="M0 10 C-55 5, -74 -37, -34 -55 C-5 -45, 0 -13, 0 10 Z" fill="url(#sproutLeaf)" stroke="#ECFDF5" stroke-width="3.5" />
+      <path d="M0 -3 C55 -8, 74 -50, 34 -68 C5 -58, 0 -26, 0 -3 Z" fill="#34D399" stroke="#ECFDF5" stroke-width="3.5" />
+      <circle cx="0" cy="-47" r="9" fill="#FDE047" />
+    </g>
+  </g>
+
+  <!-- Right Wordmark: DeskAura -->
+  <g transform="translate(530, 295)">
+    <text
+      x="0"
+      y="0"
+      font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif"
+      font-size="220"
+      font-weight="900"
+      letter-spacing="-5"
+    >
+      <tspan fill="#0F172A">Desk</tspan><tspan fill="url(#wordmarkAura)">Aura</tspan>
+    </text>
+    <text
+      x="8"
+      y="72"
+      font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif"
+      font-size="34"
+      font-weight="700"
+      fill="#059669"
+      letter-spacing="5"
+    >
+      SMART OFFICE WELLNESS &amp; AMBIENT FOCUS
+    </text>
+  </g>
+</svg>
