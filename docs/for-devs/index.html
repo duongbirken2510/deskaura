@@ -287,7 +287,7 @@
       margin-bottom: 12px;
     }
 
-    /* 2. The Problem (Nỗi đau Geeks) */
+    /* 2. The Problem (Nỗi đau Geeks - Visual First) */
     .problem-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -297,22 +297,38 @@
     .problem-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 28px;
+      border-radius: var(--radius-lg);
+      padding: 34px 26px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .dev-icon-giant {
+      width: 88px;
+      height: 88px;
+      border-radius: 26px;
+      display: grid;
+      place-items: center;
+      font-size: 2.7rem;
+      margin-bottom: 16px;
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.24);
     }
 
     .problem-metric {
       font-family: var(--font-mono);
-      font-size: 1.9rem;
+      font-size: 2.1rem;
       font-weight: 700;
       color: #f87171;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
-    .problem-card h3 { font-size: 1.2rem; margin-bottom: 10px; }
-    .problem-card p { font-size: 0.93rem; color: var(--text-secondary); }
+    .problem-card h3 { font-size: 1.24rem; margin-bottom: 8px; }
+    .problem-card p { font-size: 0.94rem; color: var(--text-secondary); max-width: 290px; }
 
-    /* 3. Core Solutions (Giải pháp Hacker) */
+    /* 3. Core Solutions (Giải pháp Hacker - Visual First) */
     .hacker-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -322,21 +338,37 @@
     .hacker-card {
       background: linear-gradient(180deg, var(--bg-surface) 0%, #0b1324 100%);
       border: 1px solid var(--border-neon);
-      border-radius: var(--radius-md);
-      padding: 30px;
+      border-radius: var(--radius-lg);
+      padding: 34px 26px;
       box-shadow: var(--shadow-neon);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hacker-icon-giant {
+      width: 92px;
+      height: 92px;
+      border-radius: 28px;
+      display: grid;
+      place-items: center;
+      font-size: 2.8rem;
+      margin-bottom: 16px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid var(--border-neon);
     }
 
     .hacker-tag {
       font-family: var(--font-mono);
       font-size: 0.76rem;
       color: var(--neon-cyan);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       display: block;
     }
 
-    .hacker-card h3 { font-size: 1.28rem; margin-bottom: 12px; }
-    .hacker-card p { font-size: 0.94rem; color: var(--text-secondary); }
+    .hacker-card h3 { font-size: 1.28rem; margin-bottom: 8px; }
+    .hacker-card p { font-size: 0.95rem; color: var(--text-secondary); max-width: 300px; }
 
     /* 4. Geeky Specs Table (Terminal Benchmark) */
     .terminal-window {
@@ -459,7 +491,7 @@
         </h1>
 
         <p>
-          Đang gỡ rối một bug khó lúc 1 giờ sáng, điều cuối cùng bạn muốn là một cái popup thô bạo nhảy ra khóa cứng màn hình. DeskAura bảo vệ <strong>Flow State</strong> của bạn, tự lùi lịch khi bạn đang tập trung cao độ và phát âm thanh mưa đêm Offline không sợ VPN.
+          Bảo vệ <strong>Flow State</strong> không popup gián đoạn, phát âm thanh mưa đêm 100% Offline không sợ VPN và đồng bộ đa thiết bị tức thì.
         </p>
 
         <div style="display:flex; flex-wrap:wrap; gap:14px;">
@@ -506,32 +538,35 @@
 
       <div class="problem-grid">
         <article class="problem-card">
+          <div class="dev-icon-giant">💥</div>
           <div class="problem-metric">23 mins</div>
-          <h3>Đứt Mạch Logic (Context-Switching Cost)</h3>
+          <h3>Đứt Mạch Logic</h3>
           <p>
-            Đang trace một lỗi bất đồng bộ phức tạp thì màn hình bị khóa trắng xóa bắt đứng dậy tập thể dục. Khi quay lại ghế, toàn bộ luồng suy nghĩ trong đầu đã bốc hơi.
+            Popup khóa cứng màn hình giữa lúc debug làm bốc hơi toàn bộ biến trạng thái trong đầu.
           </p>
         </article>
 
         <article class="problem-card">
+          <div class="dev-icon-giant">🔥</div>
           <div class="problem-metric">300+ MB</div>
-          <h3>Bloatware Ngốn RAM Ngang Docker</h3>
+          <h3>Electron Bloatware</h3>
           <p>
-            Chỉ là một chiếc đồng hồ đếm ngược 20 phút nhưng đóng gói bằng Electron ngốn 300MB RAM và đốt GPU liên tục làm máy nóng ran khi đang biên dịch dự án.
+            Một chiếc đồng hồ đếm ngược 20 phút nhưng ngốn RAM và đốt GPU ngang container Docker.
           </p>
         </article>
 
         <article class="problem-card">
+          <div class="dev-icon-giant">🌙</div>
           <div class="problem-metric">02:00 AM</div>
-          <h3>Kiệt Sức Thầm Lặng Sau Những Đêm OT</h3>
+          <h3>Burnout Đêm OT</h3>
           <p>
-            Code xuyên đêm dưới ánh sáng xanh màn hình khiến mắt khô rát, cổ vai gáy cứng đờ và quên uống nước suốt 5 tiếng liền dẫn đến burnout kéo dài.
+            Code xuyên đêm khô rát mắt, cứng gáy và quên uống nước suốt 5 tiếng liền.
           </p>
         </article>
       </div>
     </section>
 
-    <!-- 3. Core Solutions (Giải pháp Hacker) -->
+    <!-- 3. Core Solutions (Giải pháp Hacker - Visual First) -->
     <section class="section" id="solutions">
       <div class="section-header">
         <span class="mono-pill">// CORE_SOLUTIONS: ENGINEERED_BY_A_BUILDER</span>
@@ -540,26 +575,29 @@
 
       <div class="hacker-grid">
         <article class="hacker-card">
+          <div class="hacker-icon-giant">🛡️</div>
           <span class="hacker-tag">01 // FLOW_STATE_PROTECTION</span>
-          <h3>Context-Aware &amp; Fullscreen Guard</h3>
+          <h3>Fullscreen &amp; Idle Guard</h3>
           <p>
-            Giao tiếp trực tiếp với tầng C FFI của hệ điều hành (<code>CoreGraphics</code> / <code>Win32</code>): Tự động hoãn lời nhắc khi bạn đang mở IDE toàn màn hình, đang họp trực tuyến hoặc đang trình chiếu. Tự động tạm dừng khi bạn rời bàn phím mà không sinh bất kỳ tiến trình con nào.
+            Tự hoãn nhắc khi đang mở IDE/họp toàn màn hình và tự tạm dừng khi rời máy qua Native C FFI.
           </p>
         </article>
 
         <article class="hacker-card">
+          <div class="hacker-icon-giant">🎧</div>
           <span class="hacker-tag">02 // OFFLINE_AUDIO_HUB</span>
-          <h3>Smart Sound Hub — Không Sợ VPN Chặn IP</h3>
+          <h3>Âm Thanh Offline (0 VPN Block)</h3>
           <p>
-            Bật VPN nội bộ công ty hay mạng корпоративный bị chặn YouTube/Spotify/Code Radio? DeskAura tích hợp sẵn bàn trộn 8 kênh âm thanh (Mưa đêm, Lửa trại, Suối chảy, Sóng âm tập trung) chạy <strong>100% Offline trên máy</strong> với 0 MB băng thông và 0 quảng cáo.
+            10 lớp âm thanh mưa đêm, lửa trại chạy 100% Offline kèm Lofi/Zing MP3 tự giảm âm lượng khi có lời nhắc.
           </p>
         </article>
 
         <article class="hacker-card">
-          <span class="hacker-tag">03 // HYBRID_P2P_SYNC</span>
-          <h3>Đồng Bộ LAN UDP &lt;5ms Giữa Work PC &amp; Home Mac</h3>
+          <div class="hacker-icon-giant">🔄</div>
+          <span class="hacker-tag">03 // ALL_YOUR_DEVICES</span>
+          <h3>Đồng Bộ Work PC ⇄ Home Mac</h3>
           <p>
-            Ban ngày code trên PC Windows ở văn phòng, tối về mở MacBook làm tiếp: Dữ liệu uống nước, chậu cây ảo và chuỗi Streak tự động gộp tức thì dưới 5ms qua gói tin UDP có chữ ký MAC ẩn danh hoặc qua Gmail Cloud.
+            Ban ngày code trên PC công ty, tối mở MacBook hoặc iPhone ở nhà — chuỗi Streak và lượng nước tự đồng bộ tức thì.
           </p>
         </article>
       </div>

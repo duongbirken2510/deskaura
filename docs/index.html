@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DeskAura — Bạn Cứ Tập Trung Chạy Deadline. Sức Khỏe Hãy Để DeskAura Lo.</title>
-  <meta name="description" content="Người bạn đồng hành tĩnh lặng trên bàn làm việc: Bảo vệ mắt 20-20-20, nhắc đổi tư thế cột sống, nuôi cây cấp nước và âm thanh tập trung. Lõi Rust siêu nhẹ ~10MB cho macOS & Windows." />
+  <meta name="description" content="Trợ lý sức khỏe bàn làm việc tĩnh lặng: Nghỉ mắt 20-20-20, giãn cơ tại ghế, uống nước nuôi cây và đồng bộ xuyên suốt mọi thiết bị." />
   <meta name="author" content="Duong Birken" />
 
   <!-- OpenGraph / Social Media Sharing -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content="DeskAura — Bạn Cứ Tập Trung Chạy Deadline. Sức Khỏe Hãy Để DeskAura Lo." />
-  <meta property="og:description" content="Không popup thô bạo, không réo chuông giật mình. Chăm sóc cột sống, đôi mắt 20-20-20, nuôi cây xanh & âm thanh tập trung trên macOS và Windows." />
+  <meta property="og:description" content="Nghỉ mắt 20-20-20, giãn cơ cổ vai gáy, uống nước nuôi cây & đồng bộ đa thiết bị. Miễn phí 100% cho Windows & macOS." />
   <meta property="og:image" content="media/deskaura_brand_banner.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="media/deskaura_brand_banner.png" />
@@ -25,57 +25,38 @@
       /* Opt-in globally for intrinsic keyword interpolation (modern-web-guidance: animate-to-intrinsic-sizes) */
       interpolate-size: allow-keywords;
 
-      --bg-primary: #f7fbf8;
-      --bg-secondary: #ffffff;
-      --bg-sunlit: #fefcf6;
-      --bg-mint-soft: #eaf7f1;
-      --bg-cyan-soft: #e8f6fc;
-      --text-primary: #0f2922;
-      --text-secondary: #436158;
-      --text-muted: #6e8b82;
+      --bg-page: #f8fbfa;
+      --bg-card: #ffffff;
+      --bg-dark-showcase: #060d0b;
+      --text-primary: #0b211b;
+      --text-secondary: #4a665d;
+      --text-muted: #759289;
       --brand-emerald: #10b981;
       --brand-emerald-dark: #059669;
       --brand-cyan: #0ea5e9;
       --brand-teal: #0d9488;
-      --brand-warm: #f59e0b;
-      --border-subtle: rgba(16, 185, 129, 0.16);
-      --border-strong: rgba(15, 41, 34, 0.1);
-      --shadow-sm: 0 4px 16px rgba(15, 41, 34, 0.04);
-      --shadow-md: 0 14px 36px rgba(15, 41, 34, 0.07);
-      --shadow-lg: 0 24px 60px rgba(16, 185, 129, 0.14);
-      --radius-sm: 12px;
-      --radius-md: 20px;
-      --radius-lg: 28px;
+      --radius-md: 24px;
+      --radius-lg: 36px;
       --radius-pill: 999px;
+      --shadow-soft: 0 20px 50px rgba(11, 33, 27, 0.05);
+      --shadow-elevated: 0 28px 70px rgba(16, 185, 129, 0.12);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html {
       scroll-behavior: smooth;
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       color: var(--text-primary);
-      background-color: var(--bg-primary);
-      line-height: 1.6;
-    }
-
-    body {
-      overflow-x: hidden;
-      background-image:
-        radial-gradient(circle at 80% 6%, rgba(251, 191, 36, 0.12) 0%, transparent 36%),
-        radial-gradient(circle at 12% 10%, rgba(16, 185, 129, 0.11) 0%, transparent 40%),
-        radial-gradient(circle at 50% 60%, rgba(14, 165, 233, 0.07) 0%, transparent 50%);
+      background-color: var(--bg-page);
+      line-height: 1.55;
     }
 
     /* Targeted typography wrapping rules (modern-web-guidance: improve-text-layout-and-legibility) */
     h1, h2, h3, h4 {
       text-wrap: balance;
-      line-height: 1.2;
-      letter-spacing: -0.025em;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
       color: var(--text-primary);
     }
 
@@ -83,22 +64,19 @@
       text-wrap: pretty;
     }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+    a { color: inherit; text-decoration: none; }
 
     .container {
-      width: min(1220px, 92vw);
+      width: min(1240px, 92vw);
       margin-inline: auto;
     }
 
-    /* Niche Funnel Switcher Topbar */
+    /* Top Niche Bar */
     .funnel-bar {
-      background: linear-gradient(90deg, #0f2922, #134e4a, #0c4a6e);
-      color: rgba(255, 255, 255, 0.9);
+      background: #0b211b;
+      color: rgba(255, 255, 255, 0.88);
       font-size: 0.82rem;
-      padding: 8px 16px;
+      padding: 9px 16px;
       text-align: center;
     }
 
@@ -107,16 +85,13 @@
       flex-wrap: wrap;
       align-items: center;
       justify-content: center;
-      gap: 10px 18px;
+      gap: 8px 16px;
     }
 
     .funnel-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 12px;
+      padding: 4px 13px;
       border-radius: var(--radius-pill);
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.1);
       color: #ffffff;
       font-weight: 700;
       transition: background 0.2s ease;
@@ -124,595 +99,513 @@
 
     .funnel-pill:hover, .funnel-pill.active {
       background: var(--brand-emerald);
-      color: #ffffff;
     }
 
-    /* Sticky Navbar */
+    /* Minimal Clean Navbar (WaterMinder style) */
     .navbar {
       position: sticky;
-      top: 14px;
+      top: 0;
       z-index: 100;
-      width: min(1220px, 94vw);
-      margin: 14px auto 0;
-      padding: 12px 22px;
-      border-radius: var(--radius-pill);
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--border-subtle);
-      box-shadow: var(--shadow-sm);
+      background: rgba(248, 251, 250, 0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      padding: 18px 0;
+    }
+
+    .navbar-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 20px;
     }
 
-    .brand-logo img {
-      height: 38px;
-      width: auto;
-      display: block;
-    }
+    .brand-logo img { height: 40px; display: block; }
 
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 18px;
-      font-size: 0.88rem;
+      gap: 28px;
+      font-size: 0.94rem;
       font-weight: 600;
       color: var(--text-secondary);
       white-space: nowrap;
     }
 
+    .nav-links a:hover { color: var(--brand-emerald-dark); }
+
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       white-space: nowrap;
     }
 
     .lang-switch {
       display: inline-flex;
-      align-items: center;
-      background: var(--bg-mint-soft);
-      border: 1px solid var(--border-subtle);
+      background: #e6f4ef;
       border-radius: var(--radius-pill);
       padding: 3px;
-      font-size: 0.82rem;
-      font-weight: 700;
     }
 
     .lang-btn {
       border: none;
       background: transparent;
       color: var(--text-secondary);
-      padding: 5px 11px;
+      padding: 5px 12px;
       border-radius: var(--radius-pill);
       cursor: pointer;
       font-weight: 700;
-      transition: all 0.2s ease;
+      font-size: 0.82rem;
     }
 
     .lang-btn.active {
-      background: var(--bg-secondary);
+      background: #ffffff;
       color: var(--brand-emerald-dark);
-      box-shadow: 0 2px 6px rgba(15, 41, 34, 0.08);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
     }
 
-    .btn {
+    /* Store-Style Big Download Buttons */
+    .btn-download {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 13px 24px;
-      border-radius: var(--radius-pill);
-      font-weight: 700;
-      font-size: 0.96rem;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-      border: none;
+      gap: 12px;
+      padding: 15px 28px;
+      border-radius: 18px;
+      font-weight: 800;
+      font-size: 1rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .btn:hover {
-      transform: translateY(-2px);
-    }
+    .btn-download:hover { transform: translateY(-3px); }
 
     .btn-primary {
-      background: linear-gradient(135deg, var(--brand-emerald) 0%, var(--brand-teal) 55%, var(--brand-cyan) 100%);
+      background: linear-gradient(135deg, var(--brand-emerald) 0%, var(--brand-teal) 100%);
       color: #ffffff;
-      box-shadow: 0 10px 26px rgba(16, 185, 129, 0.28);
+      box-shadow: 0 14px 32px rgba(16, 185, 129, 0.28);
     }
 
     .btn-secondary {
-      background: var(--bg-secondary);
+      background: #ffffff;
       color: var(--text-primary);
-      border: 1px solid var(--border-strong);
-      box-shadow: var(--shadow-sm);
+      box-shadow: var(--shadow-soft);
     }
 
-    .btn-secondary:hover {
-      border-color: var(--brand-emerald);
-      color: var(--brand-emerald-dark);
-    }
-
-    .btn-sm {
-      padding: 9px 18px;
-      font-size: 0.86rem;
-    }
-
-    /* 1. Hero Section (Sunlit Desk Vibe) */
+    /* 1. HERO SECTION (2-Column WaterMinder Layout: Big Visual Left + Short Copy Right) */
     .hero {
-      padding: 58px 0 48px;
-      text-align: center;
-    }
-
-    .hero-badge {
-      display: inline-flex;
+      padding: 44px 0 88px;
+      display: grid;
+      grid-template-columns: 1.12fr 0.88fr;
+      gap: 56px;
       align-items: center;
-      gap: 8px;
-      padding: 7px 16px;
-      border-radius: var(--radius-pill);
-      background: linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(16, 185, 129, 0.14));
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      color: var(--brand-emerald-dark);
-      font-size: 0.86rem;
-      font-weight: 700;
-      margin-bottom: 20px;
     }
 
-    .hero h1 {
-      font-size: clamp(2.1rem, 4.3vw, 3.65rem);
-      font-weight: 800;
-      max-width: 1080px;
-      margin: 0 auto 18px;
-    }
-
-    .gradient-text {
-      background: linear-gradient(135deg, #059669 0%, #0d9488 50%, #0284c7 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .hero-subtitle {
-      font-size: clamp(1.05rem, 1.8vw, 1.22rem);
-      color: var(--text-secondary);
-      max-width: 780px;
-      margin: 0 auto 30px;
-    }
-
-    .hero-cta-group {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      margin-bottom: 24px;
-    }
-
-    /* Niche Path Selector Cards right under Hero CTA */
-    .niche-entry-row {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 14px;
-      margin-bottom: 40px;
-    }
-
-    .niche-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 18px;
-      border-radius: var(--radius-pill);
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-subtle);
-      box-shadow: var(--shadow-sm);
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      transition: all 0.2s ease;
-    }
-
-    .niche-chip:hover {
-      border-color: var(--brand-emerald);
-      color: var(--brand-emerald-dark);
-      transform: translateY(-2px);
-    }
-
-    /* Cinema Showcase */
-    .cinema-wrapper {
-      background: var(--bg-secondary);
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      border: 1px solid var(--border-subtle);
-      box-shadow: var(--shadow-lg);
-      max-width: 1040px;
-      margin: 0 auto;
-    }
-
-    .cinema-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 16px;
-    }
-
-    .cinema-tab {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 18px;
-      border-radius: var(--radius-pill);
-      border: 1px solid var(--border-strong);
-      background: var(--bg-primary);
-      color: var(--text-secondary);
-      font-size: 0.88rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .cinema-tab.active {
-      background: linear-gradient(135deg, var(--brand-emerald) 0%, var(--brand-teal) 100%);
-      color: #ffffff;
-      border-color: transparent;
-      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
-    }
-
-    .video-stage {
+    .hero-visual-stage {
       position: relative;
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      background: #0b1714;
-      aspect-ratio: 16 / 9;
+      background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.18) 0%, rgba(14, 165, 233, 0.08) 55%, transparent 75%);
+      padding: 18px;
+      border-radius: var(--radius-lg);
     }
 
-    .video-stage video {
+    .video-card {
+      background: #07120f;
+      border-radius: 26px;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(11, 33, 27, 0.18);
+      aspect-ratio: 16 / 9;
+      position: relative;
+    }
+
+    .video-card video {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
     }
 
-    .cinema-caption-bar {
+    .video-switcher-pills {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .v-pill {
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      border: none;
+      background: #ffffff;
+      color: var(--text-secondary);
+      font-weight: 700;
+      font-size: 0.84rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+    }
+
+    .v-pill.active {
+      background: var(--text-primary);
+      color: #ffffff;
+    }
+
+    .hero-eyebrow {
+      color: var(--brand-emerald-dark);
+      font-weight: 800;
+      font-size: 0.92rem;
+      letter-spacing: 0.02em;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .hero-copy h1 {
+      font-size: clamp(2.4rem, 4.2vw, 3.6rem);
+      font-weight: 800;
+      margin-bottom: 20px;
+    }
+
+    .hero-copy p {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      max-width: 500px;
+    }
+
+    .hero-cta-row {
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 14px 8px 4px;
-      text-align: left;
-      font-size: 0.9rem;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .hero-micro-note {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Generic Section Spacing (Generous Whitespace like WaterMinder) */
+    .section {
+      padding: 96px 0;
+    }
+
+    .section-head {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 60px;
+    }
+
+    .section-head h2 {
+      font-size: clamp(2rem, 3.6vw, 2.85rem);
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .section-head p {
+      font-size: 1.12rem;
       color: var(--text-secondary);
     }
 
-    .sound-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: var(--radius-pill);
-      background: var(--bg-mint-soft);
-      color: var(--brand-emerald-dark);
-      font-weight: 700;
-      font-size: 0.82rem;
-      cursor: pointer;
-      border: 1px solid var(--border-subtle);
+    /* 2. HOW IT WORKS 1-2-3 (3 Steps with Huge Visuals & 1 Short Sentence) */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
     }
 
-    /* Section Generic */
-    .section {
-      padding: 80px 0;
-    }
-
-    .section-header {
+    .step-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 40px 32px;
       text-align: center;
-      max-width: 780px;
-      margin: 0 auto 48px;
+      box-shadow: var(--shadow-soft);
     }
 
-    .section-eyebrow {
+    .step-visual-circle {
+      width: 108px;
+      height: 108px;
+      border-radius: 32px;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      background: linear-gradient(135deg, #e6f7f0 0%, #e0f2fe 100%);
+    }
+
+    .step-num {
       display: inline-block;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--brand-emerald-dark);
-      background: var(--bg-mint-soft);
-      padding: 6px 14px;
-      border-radius: var(--radius-pill);
-      margin-bottom: 14px;
-    }
-
-    .section-header h2 {
-      font-size: clamp(1.85rem, 3.4vw, 2.65rem);
-      font-weight: 800;
-      margin-bottom: 14px;
-    }
-
-    .section-header p {
-      color: var(--text-secondary);
-      font-size: 1.05rem;
-    }
-
-    /* 2. The Vibe Section (Philosophy of Silence) */
-    .vibe-box {
-      background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 60%, #e0f2fe 100%);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      padding: 48px;
-      box-shadow: var(--shadow-md);
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 36px;
-      align-items: center;
-    }
-
-    .vibe-quote {
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 16px;
-      border-left: 4px solid var(--brand-emerald);
-      padding-left: 18px;
-    }
-
-    .vibe-pillars {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-top: 24px;
-    }
-
-    .vibe-mini-card {
-      background: rgba(255, 255, 255, 0.85);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 16px;
-    }
-
-    .vibe-mini-card strong {
-      display: block;
-      font-size: 0.94rem;
-      margin-bottom: 4px;
-      color: var(--brand-emerald-dark);
-    }
-
-    .vibe-mini-card span {
-      font-size: 0.84rem;
-      color: var(--text-secondary);
-    }
-
-    /* 3. Features (Bento Showcase) */
-    .bento-grid {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 22px;
-    }
-
-    .bento-card {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      padding: 32px;
-      box-shadow: var(--shadow-md);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .bento-span-7 { grid-column: span 7; }
-    .bento-span-5 { grid-column: span 5; }
-    .bento-span-6 { grid-column: span 6; }
-
-    .pillar-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      margin-bottom: 18px;
-      background: var(--bg-mint-soft);
-    }
-
-    .bento-card h3 {
-      font-size: 1.38rem;
-      margin-bottom: 10px;
-    }
-
-    .bento-card p {
-      color: var(--text-secondary);
-      font-size: 0.96rem;
-      margin-bottom: 22px;
-    }
-
-    .interactive-widget {
-      background: var(--bg-primary);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 18px 20px;
-      margin-top: auto;
-    }
-
-    .timer-circle {
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: var(--brand-emerald-dark);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .progress-track {
-      height: 10px;
-      border-radius: var(--radius-pill);
-      background: rgba(16, 185, 129, 0.14);
-      overflow: hidden;
-      margin: 10px 0;
-    }
-
-    .progress-fill {
-      height: 100%;
-      border-radius: var(--radius-pill);
-      background: linear-gradient(90deg, var(--brand-emerald), var(--brand-cyan));
-      transition: width 0.35s ease;
-    }
-
-    .sound-bars {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-    }
-
-    .sound-chip {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      padding: 10px;
-      text-align: center;
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-    }
-
-    .sound-chip.active {
-      background: var(--bg-mint-soft);
-      border-color: var(--brand-emerald);
-      color: var(--brand-emerald-dark);
-    }
-
-    /* 4. Tech Flex Section */
-    .tech-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-    }
-
-    .tech-card {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 28px;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .tech-metric {
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--brand-emerald-dark);
-      margin-bottom: 6px;
-    }
-
-    .tech-card h4 {
-      font-size: 1.12rem;
       margin-bottom: 8px;
     }
 
-    .tech-card p {
-      font-size: 0.92rem;
+    .step-card h3 {
+      font-size: 1.4rem;
+      margin-bottom: 10px;
+    }
+
+    .step-card p {
+      font-size: 0.98rem;
       color: var(--text-secondary);
     }
 
-    /* 5. Social Proof & FAQ */
-    .faq-list {
-      max-width: 820px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .faq-item {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
+    /* 3. ALL YOUR DEVICES SHOWCASE (WaterMinder-style Dark Full-Bleed Multi-Device Family) */
+    .devices-showcase {
+      background: var(--bg-dark-showcase);
+      background-image:
+        radial-gradient(circle at 50% 25%, rgba(16, 185, 129, 0.22) 0%, transparent 55%),
+        radial-gradient(circle at 80% 70%, rgba(14, 165, 233, 0.16) 0%, transparent 50%);
+      color: #ffffff;
+      border-radius: 40px;
+      padding: 84px 40px 72px;
+      text-align: center;
+      box-shadow: 0 36px 90px rgba(6, 13, 11, 0.35);
       overflow: hidden;
-      box-shadow: var(--shadow-sm);
     }
 
-    .faq-trigger {
-      width: 100%;
-      padding: 20px 24px;
-      background: transparent;
-      border: none;
+    .devices-showcase h2 {
+      color: #ffffff;
+      font-size: clamp(2.2rem, 4vw, 3.2rem);
+      margin-bottom: 14px;
+    }
+
+    .devices-showcase .sub {
+      color: rgba(255, 255, 255, 0.76);
+      font-size: 1.15rem;
+      max-width: 680px;
+      margin: 0 auto 56px;
+    }
+
+    /* 4-Device Family Stage (Watch/Tray + iPhone + MacBook Air + iPad) */
+    .device-family-stage {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      text-align: left;
-      font-size: 1.02rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      cursor: pointer;
-      font-family: inherit;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 24px;
+      max-width: 1120px;
+      margin: 0 auto 40px;
+      flex-wrap: wrap;
     }
 
-    .faq-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--bg-mint-soft);
-      color: var(--brand-emerald-dark);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      transition: transform 0.3s ease;
+    /* Device 1: Menu Bar / Watch Mini Widget */
+    .mockup-watch {
+      width: 128px;
+      background: #111c18;
+      border: 3px solid #2d443c;
+      border-radius: 30px;
+      padding: 16px 12px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+      text-align: center;
       flex-shrink: 0;
     }
 
-    .faq-item.is-expanded .faq-icon {
-      transform: rotate(45deg);
+    .watch-ring {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 6px solid var(--brand-emerald);
+      border-top-color: var(--brand-cyan);
+      margin: 8px auto 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
     }
 
-    .faq-panel {
-      block-size: 0;
-      overflow: hidden;
-      transition: block-size 0.35s ease-out, opacity 0.3s ease;
-      opacity: 0;
-    }
-
-    .faq-item.is-expanded .faq-panel {
-      block-size: auto;
-      block-size: calc-size(auto, size);
-      opacity: 1;
-    }
-
-    .faq-panel-inner {
-      padding: 0 24px 20px;
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-    }
-
-    /* 6. Final CTA */
-    .cta-banner {
-      background: linear-gradient(135deg, #0f2922 0%, #114237 55%, #0c4a6e 100%);
-      color: #ffffff;
-      border-radius: var(--radius-lg);
-      padding: 56px 36px;
+    /* Device 2: iPhone Mockup */
+    .mockup-phone {
+      width: 185px;
+      background: #0d1714;
+      border: 5px solid #334e45;
+      border-radius: 36px;
+      padding: 16px 14px 18px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
       text-align: center;
-      box-shadow: var(--shadow-lg);
-      margin-bottom: 64px;
+      flex-shrink: 0;
+    }
+
+    .phone-island {
+      width: 54px;
+      height: 12px;
+      background: #000;
+      border-radius: 99px;
+      margin: 0 auto 14px;
+    }
+
+    /* Device 3: MacBook Air Centerpiece */
+    .mockup-laptop {
+      width: min(460px, 86vw);
+      flex-shrink: 0;
+    }
+
+    .laptop-screen {
+      background: #0d1714;
+      border: 8px solid #263832;
+      border-radius: 22px 22px 0 0;
+      overflow: hidden;
+      box-shadow: 0 28px 75px rgba(0, 0, 0, 0.7);
+      position: relative;
+    }
+
+    .laptop-screen img {
+      width: 100%;
+      display: block;
+    }
+
+    .laptop-base {
+      height: 16px;
+      background: linear-gradient(90deg, #475569, #94a3b8, #475569);
+      border-radius: 0 0 16px 16px;
+      margin-inline: -16px;
+      font-size: 0.62rem;
+      color: #0f172a;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Device 4: iPad Tablet Mockup */
+    .mockup-tablet {
+      width: 240px;
+      background: #0d1714;
+      border: 6px solid #334e45;
+      border-radius: 26px;
+      padding: 12px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+      flex-shrink: 0;
+    }
+
+    .mockup-tablet img {
+      width: 100%;
+      border-radius: 14px;
+      display: block;
+    }
+
+    .sync-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      border-radius: var(--radius-pill);
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    /* 4. CORE FEATURES (4 Visual Cards: Giant Graphic + Short Title + 1 Sentence) */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 44px 38px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .feature-big-icon {
+      width: 88px;
+      height: 88px;
+      border-radius: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.8rem;
+      background: linear-gradient(135deg, #e6f7f0 0%, #e0f2fe 100%);
+    }
+
+    .feature-card h3 {
+      font-size: 1.6rem;
+    }
+
+    .feature-card p {
+      font-size: 1.04rem;
+      color: var(--text-secondary);
+    }
+
+    /* 5. SMALL DETAILS THAT MAKE THE HABIT STICK (WaterMinder 8-Tile Icon Grid) */
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .detail-tile {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: 32px 22px;
+      text-align: center;
+      box-shadow: var(--shadow-soft);
+      transition: transform 0.2s ease;
+    }
+
+    .detail-tile:hover {
+      transform: translateY(-4px);
+    }
+
+    .detail-emoji {
+      width: 76px;
+      height: 76px;
+      border-radius: 22px;
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.3rem;
+      background: #f0fdf8;
+    }
+
+    .detail-tile h4 {
+      font-size: 1.12rem;
+      margin-bottom: 6px;
+    }
+
+    .detail-tile span {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      display: block;
+    }
+
+    /* 6. FINAL CTA BANNER */
+    .cta-banner {
+      background: linear-gradient(135deg, #0b211b 0%, #0f4c3a 60%, #0c4a6e 100%);
+      color: #ffffff;
+      border-radius: 40px;
+      padding: 72px 36px;
+      text-align: center;
+      margin-bottom: 72px;
+      box-shadow: var(--shadow-elevated);
     }
 
     .cta-banner h2 {
       color: #ffffff;
-      font-size: clamp(1.9rem, 3.5vw, 2.7rem);
+      font-size: clamp(2rem, 3.8vw, 3rem);
       margin-bottom: 14px;
     }
 
     .cta-banner p {
       color: rgba(255, 255, 255, 0.82);
-      max-width: 640px;
-      margin: 0 auto 28px;
-      font-size: 1.05rem;
+      font-size: 1.12rem;
+      margin-bottom: 32px;
     }
 
     footer {
-      border-top: 1px solid var(--border-subtle);
-      padding: 36px 0 48px;
+      padding: 36px 0 52px;
       color: var(--text-secondary);
-      font-size: 0.9rem;
+      font-size: 0.92rem;
     }
 
     .footer-inner {
@@ -723,350 +616,281 @@
       gap: 20px;
     }
 
-    @media (max-width: 920px) {
-      .bento-span-7, .bento-span-5, .bento-span-6 { grid-column: span 12; }
-      .vibe-box { grid-template-columns: 1fr; padding: 28px; }
-      .vibe-pillars { grid-template-columns: 1fr; }
+    @media (max-width: 960px) {
+      .hero, .steps-grid, .features-grid { grid-template-columns: 1fr; }
+      .details-grid { grid-template-columns: repeat(2, 1fr); }
       .nav-links { display: none; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .faq-panel, .btn, .progress-fill { transition: none !important; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Niche Funnel Switcher -->
+  <!-- Top Niche Switcher -->
   <div class="funnel-bar">
     <div class="funnel-bar-inner">
-      <span data-i18n="bar_label">Chọn giao diện theo nhu cầu của bạn:</span>
-      <a href="./index.html" class="funnel-pill active" data-i18n="bar_home">☀️ Trang Chủ Tổng Quan (Brand Hub)</a>
-      <a href="./van-phong/index.html" class="funnel-pill" data-i18n="bar_office">🏥 Chuyên Trang Dân Văn Phòng (/van-phong)</a>
-      <a href="./for-devs/index.html" class="funnel-pill" data-i18n="bar_dev">🌙 Chuyên Trang Dev &amp; Cú Đêm (/for-devs)</a>
+      <span data-i18n="bar_label">Chọn giao diện:</span>
+      <a href="./index.html" class="funnel-pill active" data-i18n="bar_home">☀️ Trang Chủ</a>
+      <a href="./van-phong/index.html" class="funnel-pill" data-i18n="bar_office">🏥 Dân Văn Phòng (/van-phong)</a>
+      <a href="./for-devs/index.html" class="funnel-pill" data-i18n="bar_dev">🌙 Lập Trình Viên (/for-devs)</a>
     </div>
   </div>
 
-  <!-- Sticky Navigation -->
+  <!-- Minimal Clean Navbar -->
   <header class="navbar">
-    <a href="./index.html" class="brand-logo" aria-label="DeskAura Home">
-      <img src="media/deskaura_logo_wordmark.svg" alt="DeskAura Logo" />
-    </a>
-
-    <nav class="nav-links">
-      <a href="#vibe" data-i18n="nav_vibe">Triết Lý Tĩnh Lặng</a>
-      <a href="#features" data-i18n="nav_features">Bento 4 Trụ Cột</a>
-      <a href="#tech" data-i18n="nav_tech">Công Nghệ Rust</a>
-      <a href="#faq" data-i18n="nav_faq">Bảo Mật &amp; FAQ</a>
-      <a href="./van-phong/index.html" style="color:var(--brand-emerald-dark); font-weight:700;" data-i18n="nav_office_link">Dân Văn Phòng ↗</a>
-      <a href="./for-devs/index.html" style="color:#0284c7; font-weight:700;" data-i18n="nav_dev_link">Dành Cho Dev ↗</a>
-    </nav>
-
-    <div class="nav-actions">
-      <div class="lang-switch" role="group" aria-label="Language Switcher">
-        <button type="button" class="lang-btn active" id="btn-lang-vi" onclick="setLanguage('vi')">VI</button>
-        <button type="button" class="lang-btn" id="btn-lang-en" onclick="setLanguage('en')">EN</button>
-      </div>
-      <a href="https://github.com/duongbirken2510/deskaura/releases/latest" class="btn btn-primary btn-sm" data-i18n="nav_download">
-        Tải Miễn Phí v1.2.4
+    <div class="container navbar-inner">
+      <a href="./index.html" class="brand-logo" aria-label="DeskAura">
+        <img src="media/deskaura_logo_wordmark.svg" alt="DeskAura" />
       </a>
+
+      <nav class="nav-links">
+        <a href="#how-it-works" data-i18n="nav_how">Cách Hoạt Động</a>
+        <a href="#all-devices" data-i18n="nav_devices">Mọi Thiết Bị</a>
+        <a href="#features" data-i18n="nav_features">Tính Năng</a>
+        <a href="#details" data-i18n="nav_details">Tinh Chỉnh Nhỏ</a>
+        <a href="./van-phong/index.html" style="color:var(--brand-emerald-dark);" data-i18n="nav_office">Văn Phòng ↗</a>
+        <a href="./for-devs/index.html" style="color:var(--brand-cyan);" data-i18n="nav_dev">Cho Dev ↗</a>
+      </nav>
+
+      <div class="nav-actions">
+        <div class="lang-switch">
+          <button type="button" class="lang-btn active" id="btn-lang-vi" onclick="setLanguage('vi')">VI</button>
+          <button type="button" class="lang-btn" id="btn-lang-en" onclick="setLanguage('en')">EN</button>
+        </div>
+      </div>
     </div>
   </header>
 
   <main class="container">
-    <!-- 1. Hero Section (Sunlit Desk Vibe) -->
+    <!-- 1. HERO SECTION (2-Column WaterMinder Visual-First Layout) -->
     <section class="hero">
-      <div class="hero-badge">
-        <span>☀️</span>
-        <span data-i18n="hero_badge">Người Bạn Đồng Hành Tĩnh Lặng • Lõi Rust Siêu Nhẹ ~10MB • Miễn Phí 100%</span>
-      </div>
-
-      <h1 data-i18n="hero_title">
-        Bạn Cứ Tập Trung Chạy Deadline.<br />
-        <span class="gradient-text">Sức Khỏe Hãy Để DeskAura Lo.</span>
-      </h1>
-
-      <p class="hero-subtitle" data-i18n="hero_subtitle">
-        Không popup thô bạo cắt ngang suy nghĩ, không tiếng chuông báo thức làm giật mình. DeskAura lặng lẽ bảo vệ cột sống, nhắc nghỉ mắt 20-20-20, nuôi cây xanh cấp nước và phát nhạc tập trung trên bàn làm việc của bạn.
-      </p>
-
-      <div class="hero-cta-group">
-        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_aarch64.dmg" class="btn btn-primary" id="cta-mac">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.33c.64-.78 1.08-1.86.96-2.94-.93.04-2.06.62-2.72 1.4-.58.68-1.1 1.79-.96 2.84 1.04.08 2.08-.52 2.72-1.3z"/></svg>
-          <span data-i18n="cta_mac">Tải cho macOS (.dmg)</span>
-        </a>
-        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_x64-setup.exe" class="btn btn-secondary" id="cta-win">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.557L10.35 4.5v7.09H3V5.557zm0 12.886L10.35 19.5v-7.09H3v6.033zm8.165 1.182L21 21v-8.59h-9.835v7.215zm0-15.25V11.59H21V3l-9.835 1.375z"/></svg>
-          <span data-i18n="cta_win">Tải cho Windows (.exe)</span>
-        </a>
-      </div>
-
-      <!-- Niche Funnel Quick Entry -->
-      <div class="niche-entry-row">
-        <a href="./van-phong/index.html" class="niche-chip" data-i18n="niche_btn_office">
-          👩‍💼 Bạn là Dân Văn Phòng hay mỏi mắt, đau vai gáy? Xem Đơn Kê Sức Khỏe &rarr;
-        </a>
-        <a href="./for-devs/index.html" class="niche-chip" data-i18n="niche_btn_dev">
-          👨‍💻 Bạn là Lập Trình Viên / Cú Đêm hay OT? Vào Giao Diện Dark Mode Cho Dev &rarr;
-        </a>
-      </div>
-
-      <!-- Cinema Showcase -->
-      <div class="cinema-wrapper" id="cinema">
-        <div class="cinema-tabs" role="tablist">
-          <button type="button" class="cinema-tab active" onclick="switchCinema(0)" id="tab-video-0" data-i18n="tvc_tab_1">
-            👁️ TVC Dân Văn Phòng: Đôi Mắt &amp; Cột Sống (20s)
-          </button>
-          <button type="button" class="cinema-tab" onclick="switchCinema(1)" id="tab-video-1" data-i18n="tvc_tab_2">
-            🎬 TVC Lập Trình Viên: Xoa Dịu Đêm OT (18s)
-          </button>
-          <button type="button" class="cinema-tab" onclick="switchCinema(2)" id="tab-video-2" data-i18n="tvc_tab_3">
-            💻 Trải Nghiệm Giao Diện Thực Tế (45s)
-          </button>
-        </div>
-
-        <div class="video-stage">
+      <!-- Left: Big Visual Stage -->
+      <div class="hero-visual-stage">
+        <div class="video-card">
           <video id="main-cinema-video" controls autoplay muted playsinline loop poster="media/deskaura_social_hero.jpg">
             <source src="media/deskaura_tvc_eyecare.mp4" type="video/mp4" />
           </video>
         </div>
+        <div class="video-switcher-pills">
+          <button type="button" class="v-pill active" id="v-tab-0" onclick="switchVideo(0)" data-i18n="v_tab_0">👁️ TVC Văn Phòng (20s)</button>
+          <button type="button" class="v-pill" id="v-tab-1" onclick="switchVideo(1)" data-i18n="v_tab_1">🎬 TVC Cú Đêm IT (18s)</button>
+          <button type="button" class="v-pill" id="v-tab-2" onclick="switchVideo(2)" data-i18n="v_tab_2">💻 Giao Diện Thật (45s)</button>
+          <button type="button" class="v-pill" id="v-sound" onclick="toggleSound()">🔊 Bật tiếng</button>
+        </div>
+      </div>
 
-        <div class="cinema-caption-bar">
-          <span id="cinema-caption-text" data-i18n="tvc_caption_0">
-            ☀️ Cảnh bàn làm việc gọn gàng ngập nắng: DeskAura nhắc nghỉ mắt 20 giây chuẩn khoa học, trả lại độ ẩm và sự tinh anh cho đôi mắt.
-          </span>
-          <button type="button" class="sound-pill" onclick="toggleVideoSound()" id="sound-toggle-btn">
-            🔊 <span data-i18n="btn_unmute">Bật âm thanh TVC</span>
-          </button>
+      <!-- Right: Clean Short Copy & Big Store Buttons -->
+      <div class="hero-copy">
+        <span class="hero-eyebrow" data-i18n="hero_eyebrow">TRỢ LÝ SỨC KHỎE BÀN LÀM VIỆC TĨNH LẶNG</span>
+        <h1 data-i18n="hero_title">
+          Bạn Cứ Tập Trung Chạy Deadline.<br />
+          Sức Khỏe Để DeskAura Lo.
+        </h1>
+        <p data-i18n="hero_sub">
+          Nhắc nghỉ mắt 20-20-20, hướng dẫn giãn cơ tại ghế, uống nước nuôi cây và đồng bộ tự động trên mọi thiết bị của bạn.
+        </p>
+
+        <div class="hero-cta-row">
+          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_aarch64.dmg" class="btn-download btn-primary" id="cta-mac">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.33c.64-.78 1.08-1.86.96-2.94-.93.04-2.06.62-2.72 1.4-.58.68-1.1 1.79-.96 2.84 1.04.08 2.08-.52 2.72-1.3z"/></svg>
+            <span data-i18n="cta_mac">Tải cho macOS</span>
+          </a>
+          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_x64-setup.exe" class="btn-download btn-secondary" id="cta-win">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.557L10.35 4.5v7.09H3V5.557zm0 12.886L10.35 19.5v-7.09H3v6.033zm8.165 1.182L21 21v-8.59h-9.835v7.215zm0-15.25V11.59H21V3l-9.835 1.375z"/></svg>
+            <span data-i18n="cta_win">Tải cho Windows</span>
+          </a>
+        </div>
+
+        <div class="hero-micro-note" data-i18n="hero_note">
+          ✨ Miễn phí 100% • Siêu nhẹ 3,2 MB • Không cần đăng nhập
         </div>
       </div>
     </section>
 
-    <!-- 2. The Vibe (Triết lý "Sự Tĩnh Lặng") -->
-    <section class="section" id="vibe">
-      <div class="vibe-box">
-        <div>
-          <span class="section-eyebrow" data-i18n="vibe_eyebrow">The Vibe • Triết Lý Tĩnh Lặng</span>
-          <h2 style="font-size: clamp(1.75rem, 3vw, 2.4rem); margin-bottom:16px;" data-i18n="vibe_title">
-            Chăm Sóc Sức Khỏe Trong Sự Tĩnh Lặng Tuyệt Đối
-          </h2>
-          <blockquote class="vibe-quote" data-i18n="vibe_quote">
-            “Một trợ lý tốt không bao giờ hét vào mặt bạn khi bạn đang tập trung cao độ.”
-          </blockquote>
-          <p style="color:var(--text-secondary);" data-i18n="vibe_desc">
-            Hầu hết người dùng xóa các ứng dụng nhắc nhở sức khỏe sau 3 ngày vì chúng bật popup thô bạo và réo chuông đúng lúc đang họp hoặc đang viết dở dòng suy nghĩ. DeskAura được thiết kế ngược lại hoàn toàn:
-          </p>
+    <!-- 2. HOW IT WORKS 1-2-3 (Big Visual Icons + Minimal Text) -->
+    <section class="section" id="how-it-works">
+      <div class="section-head">
+        <h2 data-i18n="how_title">Chăm Sóc Sức Khỏe Chưa Bao Giờ Nhẹ Nhàng Đến Thế</h2>
+        <p data-i18n="how_sub">Chỉ 3 bước đơn giản để bảo vệ đôi mắt, cột sống và duy trì thói quen uống nước mỗi ngày.</p>
+      </div>
 
-          <div class="vibe-pillars">
-            <div class="vibe-mini-card">
-              <strong data-i18n="v1_t">🔕 Không Réo Chuông</strong>
-              <span data-i18n="v1_d">Nhắc nhở êm dịu như hơi thở, không gây giật mình nơi công sở.</span>
+      <div class="steps-grid">
+        <article class="step-card">
+          <div class="step-visual-circle">🎯</div>
+          <span class="step-num" data-i18n="s1_num">Bước 1</span>
+          <h3 data-i18n="s1_title">Đặt Nhịp Độ Riêng</h3>
+          <p data-i18n="s1_desc">Chọn mục tiêu nước uống và chu kỳ nghỉ mắt phù hợp với lịch làm việc của bạn.</p>
+        </article>
+
+        <article class="step-card">
+          <div class="step-visual-circle">🌿</div>
+          <span class="step-num" data-i18n="s2_num">Bước 2</span>
+          <h3 data-i18n="s2_title">Nhắc Nhở Tĩnh Lặng</h3>
+          <p data-i18n="s2_desc">Lời nhắc dịu dàng tự động nhỏ nhạc nền và tự lùi lịch khi bạn đang họp.</p>
+        </article>
+
+        <article class="step-card">
+          <div class="step-visual-circle">🌸</div>
+          <span class="step-num" data-i18n="s3_num">Bước 3</span>
+          <h3 data-i18n="s3_title">Chạm Nhẹ &amp; Nở Hoa</h3>
+          <p data-i18n="s3_desc">Ghi nhận ly nước chỉ bằng 1 cú nhấp chuột và ngắm chậu cây nở hoa mỗi ngày.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 3. ALL YOUR DEVICES (WaterMinder-Inspired Multi-Device Continuity Showcase) -->
+    <section class="section" id="all-devices">
+      <div class="devices-showcase">
+        <h2 data-i18n="dev_title">Mọi Thiết Bị Của Bạn</h2>
+        <p class="sub" data-i18n="dev_sub">
+          Kết nối xuyên suốt giữa PC Văn phòng, MacBook ở nhà, iPad và iPhone. Tiến độ của bạn tự động đồng bộ ở mọi nơi, để bạn chăm sóc sức khỏe bất cứ lúc nào.
+        </p>
+
+        <div class="device-family-stage">
+          <!-- 1. Tray / Watch Widget -->
+          <div class="mockup-watch">
+            <div style="font-size:0.7rem; color:#94a3b8; font-weight:700;">MENU BAR / WATCH</div>
+            <div class="watch-ring">💧</div>
+            <div style="font-weight:800; font-size:0.9rem; color:#34d399;">1,600 ml • 80%</div>
+            <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">👁️ 20-20-20: 14:20</div>
+          </div>
+
+          <!-- 2. iPhone Companion -->
+          <div class="mockup-phone">
+            <div class="phone-island"></div>
+            <div style="font-size:3.2rem; margin: 10px 0;">🌸</div>
+            <div style="font-weight:800; font-size:0.92rem; color:#f8fafc;" data-i18n="phone_plant">Cây Đã Nở Hoa</div>
+            <div style="font-size:0.76rem; color:#38bdf8; font-weight:700; margin:6px 0 12px;">1,600 / 2,000 ml (80%)</div>
+            <div style="height:8px; background:rgba(255,255,255,0.12); border-radius:99px; overflow:hidden; margin-bottom:14px;">
+              <div style="width:80%; height:100%; background:linear-gradient(90deg,#10b981,#0ea5e9);"></div>
             </div>
-            <div class="vibe-mini-card">
-              <strong data-i18n="v2_t">🛡️ Tự Ẩn Khi Họp</strong>
-              <span data-i18n="v2_d">Tự động lùi lịch khi phát hiện bạn đang mở Zoom/Slide toàn màn hình.</span>
+            <div style="background:#10b981; color:#042f2e; font-weight:800; font-size:0.78rem; padding:7px; border-radius:99px;">+250 ml 💧</div>
+          </div>
+
+          <!-- 3. MacBook Air / PC Centerpiece -->
+          <div class="mockup-laptop">
+            <div class="laptop-screen">
+              <img src="screenshots/01-dashboard-vi.png" id="mockup-laptop-img" alt="DeskAura on MacBook and Windows PC" />
             </div>
-            <div class="vibe-mini-card">
-              <strong data-i18n="v3_t">💤 Tự Nghỉ Khi Rời Ghế</strong>
-              <span data-i18n="v3_d">Cảm biến phần cứng tự tạm dừng đồng hồ khi bạn đứng dậy pha trà.</span>
-            </div>
+            <div class="laptop-base">MacBook Air &amp; Windows PC</div>
+          </div>
+
+          <!-- 4. iPad / Secondary Display -->
+          <div class="mockup-tablet">
+            <img src="screenshots/02-sound-studio.png" id="mockup-tablet-img" alt="DeskAura on iPad" />
+            <div style="font-size:0.74rem; color:#94a3b8; font-weight:700; margin-top:8px;">iPad • 1,600 ml (80%) Synced</div>
           </div>
         </div>
 
-        <div>
-          <img src="screenshots/01-dashboard-vi.png" id="vibe-preview-img" alt="DeskAura Calm Interface" style="width:100%; border-radius:var(--radius-md); box-shadow:var(--shadow-lg);" />
+        <div class="sync-status-pill" data-i18n="sync_pill">
+          ⚡ Đồng bộ tức thì &lt;5ms qua Wi-Fi/LAN nội bộ &amp; tự động gộp qua Google Cloud
         </div>
       </div>
     </section>
 
-    <!-- 3. Features (Bento Showcase: Cột sống, Đôi mắt, Nuôi cây, Nhạc Lofi/Ambient) -->
+    <!-- 4. CORE FEATURES (4 Giant-Icon Cards + Concise Copy) -->
     <section class="section" id="features">
-      <div class="section-header">
-        <span class="section-eyebrow" data-i18n="feat_eyebrow">Bento Showcase • 4 Trụ Cột</span>
-        <h2 data-i18n="feat_title">Trọn Vẹn Hệ Sinh Thái Chăm Sóc Bàn Làm Việc</h2>
-        <p data-i18n="feat_sub">
-          Mọi công cụ bạn cần để làm việc bền bỉ suốt 8–12 tiếng mỗi ngày mà đôi mắt vẫn sáng khỏe, cột sống dẻo dai và tâm trí thư thái.
-        </p>
+      <div class="section-head">
+        <h2 data-i18n="feat_title">Mọi Thứ Bạn Cần Để Khỏe Lâu Dài</h2>
+        <p data-i18n="feat_sub">Kết hợp khoa học nhãn khoa, vận động tại chỗ và âm thanh chữa lành trong một ứng dụng duy nhất.</p>
       </div>
 
-      <div class="bento-grid">
-        <!-- Đôi mắt 20-20-20 -->
-        <article class="bento-card bento-span-7">
-          <div>
-            <div class="pillar-icon">👁️</div>
-            <h3 data-i18n="p1_title">1. Đôi Mắt Tinh Anh — Chuẩn Quy Tắc Nhãn Khoa 20-20-20</h3>
-            <p data-i18n="p1_desc">
-              Sau mỗi 20 phút nhìn màn hình, DeskAura mở tấm rèm nghỉ ngơi dịu mắt trong 20 giây để cơ điều tiết mắt được thả lỏng và bù lại màng ẩm tự nhiên, ngăn ngừa khô rát và tăng độ cận.
-            </p>
-          </div>
-          <div class="interactive-widget" style="display:flex; align-items:center; justify-content:space-between; gap:14px;">
-            <div>
-              <div style="font-weight:700; font-size:0.9rem;" data-i18n="p1_w_title">Đồng hồ nghỉ mắt 20 giây trực tiếp</div>
-              <div style="font-size:0.82rem; color:var(--text-muted);" data-i18n="p1_w_sub">Bấm thử để cảm nhận 20 giây thư giãn mắt:</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:12px;">
-              <span class="timer-circle" id="demo-eye-timer">00:20</span>
-              <button type="button" class="btn btn-primary btn-sm" onclick="startDemoEyeTimer()" data-i18n="p1_w_btn">Thử 20s</button>
-            </div>
-          </div>
+      <div class="features-grid">
+        <article class="feature-card">
+          <div class="feature-big-icon">👁️</div>
+          <h3 data-i18n="f1_t">Nghỉ Mắt 20-20-20</h3>
+          <p data-i18n="f1_d">Sau mỗi 20 phút làm việc, nhắc bạn phóng tầm mắt xa 6 mét trong 20 giây để mắt luôn ẩm mượt.</p>
         </article>
 
-        <!-- Nuôi cây cấp nước -->
-        <article class="bento-card bento-span-5">
-          <div>
-            <div class="pillar-icon">🌱</div>
-            <h3 data-i18n="p2_title">2. Nuôi Cây Cấp Nước 5 Cấp Độ</h3>
-            <p data-i18n="p2_desc">
-              Mỗi lần bạn uống nước, chậu cây ảo trên bàn làm việc sẽ lớn dần từ Hạt mầm đến Đơm hoa. Có nút Hoàn tác (Undo) trong 5 giây nếu lỡ tay bấm nhầm.
-            </p>
-          </div>
-          <div class="interactive-widget">
-            <div style="display:flex; justify-content:space-between; font-weight:700; font-size:0.9rem;">
-              <span id="demo-plant-stage">🌿 Cấp 3: Cây Xanh Tươi Tốt</span>
-              <span style="color:var(--brand-cyan);" id="demo-water-ml">1,250 / 2,000 ml</span>
-            </div>
-            <div class="progress-track">
-              <div class="progress-fill" id="demo-water-bar" style="width: 62.5%;"></div>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:0.8rem; color:var(--text-muted);" data-i18n="p2_w_hint">Tưới thử một cốc nước:</span>
-              <button type="button" class="btn btn-secondary btn-sm" onclick="addDemoWater()">+250 ml 💧</button>
-            </div>
-          </div>
+        <article class="feature-card">
+          <div class="feature-big-icon">🧘</div>
+          <h3 data-i18n="f2_t">Giãn Cơ Tại Ghế</h3>
+          <p data-i18n="f2_d">Hình vẽ chuyển động dẫn nhịp từng bước giúp bạn thả lỏng cổ, bả vai và cổ tay ngay tại chỗ ngồi.</p>
         </article>
 
-        <!-- Cột sống & Giãn cơ -->
-        <article class="bento-card bento-span-6">
-          <div>
-            <div class="pillar-icon">🧘</div>
-            <h3 data-i18n="p3_title">3. Bảo Vệ Cột Sống &amp; 12 Bài Tập Giãn Cơ Tại Bàn</h3>
-            <p data-i18n="p3_desc">
-              Hướng dẫn trực quan bằng hình động SVG cho các kỳ nghỉ dài: xoay giãn đốt sống cổ, mở vai chống gù lưng, duỗi cổ tay chống tê bì và hít thở 4-7-8 giảm căng thẳng.
-            </p>
-          </div>
-          <div class="interactive-widget" style="display:flex; flex-wrap:wrap; gap:8px;">
-            <span class="sound-chip active" data-i18n="ex_1">🔄 Giãn đốt sống cổ</span>
-            <span class="sound-chip active" data-i18n="ex_2">🙌 Mở vai &amp; cột sống ngực</span>
-            <span class="sound-chip active" data-i18n="ex_3">🤲 Giải phóng ống cổ tay</span>
-            <span class="sound-chip active" data-i18n="ex_4">🌬️ Hít thở 4-7-8</span>
-          </div>
+        <article class="feature-card">
+          <div class="feature-big-icon">🌱</div>
+          <h3 data-i18n="f3_t">Uống Nước Nuôi Cây</h3>
+          <p data-i18n="f3_d">Mỗi ngụm nước bạn uống giúp chậu cây nhỏ trên màn hình lớn dần từ hạt mầm đến đơm hoa.</p>
         </article>
 
-        <!-- Nhạc Lofi / Ambient Focus -->
-        <article class="bento-card bento-span-6">
-          <div>
-            <div class="pillar-icon">🎧</div>
-            <h3 data-i18n="p4_title">4. Không Gian Âm Thanh Lofi &amp; Ambient Focus 8 Kênh</h3>
-            <p data-i18n="p4_desc">
-              Tự pha trộn Tiếng mưa đêm, Quán cà phê, Suối rừng, Lửa trại và Sóng âm tập trung ngay trong ứng dụng — hoạt động 100% Offline, không tốn RAM mở trình duyệt và không bao giờ bị quảng cáo cắt ngang.
-            </p>
-          </div>
-          <div class="interactive-widget">
-            <div class="sound-bars">
-              <div class="sound-chip active">🌧️ Mưa đêm 65%</div>
-              <div class="sound-chip active">☕ Cafe 30%</div>
-              <div class="sound-chip">🔥 Lửa trại 45%</div>
-              <div class="sound-chip">🌊 Suối rừng 50%</div>
-            </div>
-          </div>
+        <article class="feature-card">
+          <div class="feature-big-icon">🎧</div>
+          <h3 data-i18n="f4_t">Phòng Thu Âm Thanh Tĩnh</h3>
+          <p data-i18n="f4_d">Hoà âm tiếng mưa rơi, suối rừng, sóng não cùng kho nhạc Lofi &amp; Zing MP3 không quảng cáo.</p>
         </article>
       </div>
     </section>
 
-    <!-- 4. Tech Flex (Khoe công nghệ: Lõi Rust siêu nhẹ & Tự động đồng bộ) -->
-    <section class="section" id="tech">
-      <div class="section-header">
-        <span class="section-eyebrow" data-i18n="tech_eyebrow">Tech Flex • Công Nghệ Cốt Lõi</span>
-        <h2 data-i18n="tech_title">Mạnh Mẽ Với Lõi Rust — Nhẹ Tựa Lông Hồng</h2>
-        <p data-i18n="tech_sub">
-          Dành cho những người yêu cầu sự hoàn hảo: Không làm chậm máy, không hao pin laptop và tự động đồng bộ xuyên suốt giữa mọi thiết bị.
-        </p>
+    <!-- 5. SMALL DETAILS THAT MAKE THE HABIT STICK (WaterMinder 8-Tile Grid) -->
+    <section class="section" id="details">
+      <div class="section-head">
+        <h2 data-i18n="det_title">Những Chi Tiết Nhỏ Giữ Thói Quen Bền Vững</h2>
+        <p data-i18n="det_sub">Từng tinh chỉnh tinh tế giúp việc chăm sóc bản thân diễn ra tự nhiên mà không cần cố gắng.</p>
       </div>
 
-      <div class="tech-grid">
-        <div class="tech-card">
-          <div class="tech-metric">~10 MB</div>
-          <h4 data-i18n="t1_t">Lõi Rust &amp; Tauri 2.0 Siêu Nhẹ</h4>
-          <p data-i18n="t1_d">Nhẹ gấp 15 lần các ứng dụng Electron truyền thống. Cài đặt trong 3 giây, khởi động tức thì cùng hệ điều hành.</p>
-        </div>
-        <div class="tech-card">
-          <div class="tech-metric">0% GPU</div>
-          <h4 data-i18n="t2_t">Ngủ Đông Đồ Họa Khi Thu Nhỏ</h4>
-          <p data-i18n="t2_d">Khi thu xuống khay Menu Bar / System Tray, toàn bộ hiệu ứng đồ họa tự động đóng băng để bảo toàn 100% pin và hiệu năng máy.</p>
-        </div>
-        <div class="tech-card">
-          <div class="tech-metric">&lt; 5 ms</div>
-          <h4 data-i18n="t3_t">Tự Động Đồng Bộ Đa Thiết Bị</h4>
-          <p data-i18n="t3_d">Đồng bộ tiến độ uống nước và nghỉ mắt giữa máy Mac và Windows tức thì qua mạng LAN nội bộ và tài khoản Google (Gmail).</p>
-        </div>
-        <div class="tech-card">
-          <div class="tech-metric">100%</div>
-          <h4 data-i18n="t4_t">Local-First &amp; Mã Hóa Phần Cứng</h4>
-          <p data-i18n="t4_d">Mọi dữ liệu sức khỏe được mã hóa chuẩn enc:v2: ngay trên máy của bạn. Không theo dõi, không bán dữ liệu cho bên thứ ba.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 5. Social Proof & FAQ -->
-    <section class="section" id="faq">
-      <div class="section-header">
-        <span class="section-eyebrow" data-i18n="faq_eyebrow">An Tâm Tuyệt Đối</span>
-        <h2 data-i18n="faq_title">Câu Hỏi Thường Gặp Về Bảo Mật &amp; Sử Dụng</h2>
-      </div>
-
-      <div class="faq-list">
-        <div class="faq-item is-expanded">
-          <button type="button" class="faq-trigger" aria-expanded="true" onclick="toggleFaq(this)">
-            <span data-i18n="faq_q1">1. Dữ liệu sức khỏe của tôi có được bảo mật 100% trên máy không?</span>
-            <span class="faq-icon">+</span>
-          </button>
-          <div class="faq-panel">
-            <div class="faq-panel-inner" data-i18n="faq_a1">
-              Hoàn toàn bảo mật! DeskAura hoạt động theo kiến trúc 100% Local-First: toàn bộ dữ liệu được mã hóa bằng khóa phần cứng (enc:v2:) lưu trên RAM. Ngay cả khi bạn không bật mạng Internet, ứng dụng vẫn hoạt động đầy đủ 100% tính năng.
-            </div>
-          </div>
+      <div class="details-grid">
+        <div class="detail-tile">
+          <div class="detail-emoji">🔉</div>
+          <h4 data-i18n="d1_t">Tự Dịu Nhạc 20%</h4>
+          <span data-i18n="d1_s">Nhỏ nhạc êm ái khi nhắc</span>
         </div>
 
-        <div class="faq-item">
-          <button type="button" class="faq-trigger" aria-expanded="false" onclick="toggleFaq(this)">
-            <span data-i18n="faq_q2">2. Ứng dụng có làm nặng máy hay tốn pin khi chạy ngầm cả ngày không?</span>
-            <span class="faq-icon">+</span>
-          </button>
-          <div class="faq-panel" hidden>
-            <div class="faq-panel-inner" data-i18n="faq_a2">
-              Không hề. Nhờ viết bằng ngôn ngữ hệ thống Rust (Tauri 2.0) và giao tiếp trực tiếp với C FFI của macOS/Windows (không sinh tiến trình con), DeskAura tiêu thụ 0% GPU khi nằm ở khay hệ thống và bộ cài chỉ nặng khoảng 10 MB.
-            </div>
-          </div>
+        <div class="detail-tile">
+          <div class="detail-emoji">🛡️</div>
+          <h4 data-i18n="d2_t">Tự Hoãn Khi Họp</h4>
+          <span data-i18n="d2_s">Không làm phiền lúc trình chiếu</span>
         </div>
 
-        <div class="faq-item">
-          <button type="button" class="faq-trigger" aria-expanded="false" onclick="toggleFaq(this)">
-            <span data-i18n="faq_q3">3. DeskAura có thu phí thuê bao tháng hay chèn quảng cáo không?</span>
-            <span class="faq-icon">+</span>
-          </button>
-          <div class="faq-panel" hidden>
-            <div class="faq-panel-inner" data-i18n="faq_a3">
-              DeskAura hoàn toàn miễn phí 100%, mã nguồn mở minh bạch và cam kết không bao giờ chèn quảng cáo làm phiền không gian làm việc của bạn.
-            </div>
-          </div>
+        <div class="detail-tile">
+          <div class="detail-emoji">💧</div>
+          <h4 data-i18n="d3_t">Icon Khay Hệ Thống</h4>
+          <span data-i18n="d3_s">Xem nhanh tiến độ ở Taskbar</span>
+        </div>
+
+        <div class="detail-tile">
+          <div class="detail-emoji">🚶</div>
+          <h4 data-i18n="d4_t">Cảm Biến Rời Bàn</h4>
+          <span data-i18n="d4_s">Tự đặt lại sau 5 phút vắng mặt</span>
+        </div>
+
+        <div class="detail-tile">
+          <div class="detail-emoji">↩️</div>
+          <h4 data-i18n="d5_t">Hoàn Tác 5 Giây</h4>
+          <span data-i18n="d5_s">Sửa ngay nếu lỡ bấm nhầm</span>
+        </div>
+
+        <div class="detail-tile">
+          <div class="detail-emoji">⭕</div>
+          <h4 data-i18n="d6_t">Vòng Tròn Kép Mebius</h4>
+          <span data-i18n="d6_s">Thống kê trực quan 7 ngày</span>
+        </div>
+
+        <div class="detail-tile">
+          <div class="detail-emoji">🌗</div>
+          <h4 data-i18n="d7_t">Giao Diện Sáng &amp; Tối</h4>
+          <span data-i18n="d7_s">Dịu mắt cả ngày lẫn đêm</span>
+        </div>
+
+        <div class="detail-tile">
+          <div class="detail-emoji">🪶</div>
+          <h4 data-i18n="d8_t">Siêu Nhẹ 3,2 MB</h4>
+          <span data-i18n="d8_s">Lõi Rust 0% GPU khi thu nhỏ</span>
         </div>
       </div>
     </section>
 
-    <!-- 6. Final CTA -->
+    <!-- 6. FINAL CTA -->
     <section class="cta-banner">
-      <h2 data-i18n="bottom_title">Bạn Cứ Tập Trung Chạy Deadline. Sức Khỏe Hãy Để DeskAura Lo.</h2>
-      <p data-i18n="bottom_sub">
-        Tải ngay người bạn đồng hành tĩnh lặng cho bàn làm việc của bạn — Miễn phí 100% cho cả macOS &amp; Windows.
-      </p>
-      <div class="hero-cta-group" style="margin-bottom:0;">
-        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_aarch64.dmg" class="btn btn-primary">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.33c.64-.78 1.08-1.86.96-2.94-.93.04-2.06.62-2.72 1.4-.58.68-1.1 1.79-.96 2.84 1.04.08 2.08-.52 2.72-1.3z"/></svg>
-          <span data-i18n="cta_mac">Tải cho macOS (.dmg)</span>
+      <h2 data-i18n="cta_title">Bắt Đầu Thói Quen Khỏe Mạnh Ngay Hôm Nay</h2>
+      <p data-i18n="cta_sub">Tải miễn phí DeskAura v1.2.4 — Chỉ mất vài giây cài đặt cho cả Windows và macOS.</p>
+      <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:14px;">
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_aarch64.dmg" class="btn-download btn-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.33c.64-.78 1.08-1.86.96-2.94-.93.04-2.06.62-2.72 1.4-.58.68-1.1 1.79-.96 2.84 1.04.08 2.08-.52 2.72-1.3z"/></svg>
+          <span data-i18n="cta_mac">Tải cho macOS</span>
         </a>
-        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_x64-setup.exe" class="btn btn-secondary">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.557L10.35 4.5v7.09H3V5.557zm0 12.886L10.35 19.5v-7.09H3v6.033zm8.165 1.182L21 21v-8.59h-9.835v7.215zm0-15.25V11.59H21V3l-9.835 1.375z"/></svg>
-          <span data-i18n="cta_win">Tải cho Windows (.exe)</span>
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_x64-setup.exe" class="btn-download btn-secondary">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.557L10.35 4.5v7.09H3V5.557zm0 12.886L10.35 19.5v-7.09H3v6.033zm8.165 1.182L21 21v-8.59h-9.835v7.215zm0-15.25V11.59H21V3l-9.835 1.375z"/></svg>
+          <span data-i18n="cta_win">Tải cho Windows</span>
         </a>
       </div>
     </section>
@@ -1075,307 +899,197 @@
   <footer>
     <div class="container footer-inner">
       <div style="display:flex; align-items:center; gap:12px;">
-        <img src="media/deskaura_logo_wordmark.svg" alt="DeskAura" style="height:30px;" />
+        <img src="media/deskaura_logo_wordmark.svg" alt="DeskAura" style="height:28px;" />
         <span>© 2026 <strong>Duong Birken</strong> (<a href="https://duongbirken.deta.vn" target="_blank" rel="noopener" style="color:var(--brand-emerald-dark); font-weight:700;">duongbirken.deta.vn</a>)</span>
       </div>
-      <div style="display:flex; flex-wrap:wrap; gap:18px; font-weight:600;">
+      <div style="display:flex; gap:20px; font-weight:600;">
         <a href="./index.html">Trang Chủ</a>
-        <a href="./van-phong/index.html">Chuyên Trang Văn Phòng</a>
-        <a href="./for-devs/index.html">Chuyên Trang Cho Dev</a>
+        <a href="./van-phong/index.html">Dân Văn Phòng</a>
+        <a href="./for-devs/index.html">Cho Dev</a>
         <a href="https://github.com/duongbirken2510/deskaura" target="_blank" rel="noopener">GitHub</a>
       </div>
     </div>
   </footer>
 
   <script>
-    let currentLang = localStorage.getItem('deskaura_lp_lang') || 'vi';
-    let currentVideoIdx = 0;
-
-    const cinemaSources = [
-      {
-        src: 'media/deskaura_tvc_eyecare.mp4',
-        vi: '☀️ Cảnh bàn làm việc gọn gàng ngập nắng: DeskAura nhắc nghỉ mắt 20 giây chuẩn khoa học, trả lại độ ẩm và sự tinh anh cho đôi mắt.',
-        en: '☀️ Sunlit modern workspace: DeskAura prompts a 20-second scientific eye reset, restoring natural moisture and visual clarity.'
-      },
-      {
-        src: 'media/deskaura_tvc_intro.mp4',
-        vi: '🌙 Câu chuyện đêm OT: Khi đang tập trung chạy code, DeskAura nhẹ nhàng nhắc đổi tư thế và uống nước đúng lúc.',
-        en: '🌙 Late-night focus: While deep in code, DeskAura gently reminds you to stretch your neck and hydrate at the right moment.'
-      },
-      {
-        src: 'media/deskaura_demo_45s.mp4',
-        vi: '💻 Trải nghiệm trực tiếp 45 giây: Giao diện Bento Mebius, nuôi cây xanh, giãn cơ văn phòng và bàn trộn âm thanh 8 kênh.',
-        en: '💻 45-second real-time tour: Mebius Bento interface, virtual desk plant, guided stretches, and 8-channel sound studio.'
-      }
+    const videos = [
+      'media/deskaura_tvc_eyecare.mp4',
+      'media/deskaura_tvc_intro.mp4',
+      'media/deskaura_demo_45s.mp4'
     ];
 
-    const i18nDict = {
+    function switchVideo(idx) {
+      for (let i = 0; i < 3; i++) {
+        document.getElementById('v-tab-' + i).classList.toggle('active', i === idx);
+      }
+      const v = document.getElementById('main-cinema-video');
+      const muted = v.muted;
+      v.src = videos[idx];
+      v.muted = muted;
+      v.play().catch(() => {});
+    }
+
+    function toggleSound() {
+      const v = document.getElementById('main-cinema-video');
+      v.muted = !v.muted;
+      document.getElementById('v-sound').textContent = v.muted ? '🔊 Bật tiếng' : '🔈 Tắt tiếng';
+    }
+
+    const dict = {
       vi: {
-        bar_label: 'Chọn giao diện theo nhu cầu của bạn:',
-        bar_home: '☀️ Trang Chủ Tổng Quan (Brand Hub)',
-        bar_office: '🏥 Chuyên Trang Dân Văn Phòng (/van-phong)',
-        bar_dev: '🌙 Chuyên Trang Dev & Cú Đêm (/for-devs)',
-        nav_vibe: 'Triết Lý Tĩnh Lặng',
-        nav_features: 'Bento 4 Trụ Cột',
-        nav_tech: 'Công Nghệ Rust',
-        nav_faq: 'Bảo Mật & FAQ',
-        nav_office_link: 'Dân Văn Phòng ↗',
-        nav_dev_link: 'Dành Cho Dev ↗',
-        nav_download: 'Tải Miễn Phí v1.2.4',
-        hero_badge: 'Người Bạn Đồng Hành Tĩnh Lặng • Lõi Rust Siêu Nhẹ ~10MB • Miễn Phí 100%',
-        hero_title: 'Bạn Cứ Tập Trung Chạy Deadline.<br /><span class="gradient-text">Sức Khỏe Hãy Để DeskAura Lo.</span>',
-        hero_subtitle: 'Không popup thô bạo cắt ngang suy nghĩ, không tiếng chuông báo thức làm giật mình. DeskAura lặng lẽ bảo vệ cột sống, nhắc nghỉ mắt 20-20-20, nuôi cây xanh cấp nước và phát nhạc tập trung trên bàn làm việc của bạn.',
-        cta_mac: 'Tải cho macOS (.dmg)',
-        cta_win: 'Tải cho Windows (.exe)',
-        niche_btn_office: '👩‍💼 Bạn là Dân Văn Phòng hay mỏi mắt, đau vai gáy? Xem Đơn Kê Sức Khỏe →',
-        niche_btn_dev: '👨‍💻 Bạn là Lập Trình Viên / Cú Đêm hay OT? Vào Giao Diện Dark Mode Cho Dev →',
-        tvc_tab_1: '👁️ TVC Dân Văn Phòng: Đôi Mắt & Cột Sống (20s)',
-        tvc_tab_2: '🎬 TVC Lập Trình Viên: Xoa Dịu Đêm OT (18s)',
-        tvc_tab_3: '💻 Trải Nghiệm Giao Diện Thực Tế (45s)',
-        btn_unmute: 'Bật âm thanh TVC',
-        vibe_eyebrow: 'The Vibe • Triết Lý Tĩnh Lặng',
-        vibe_title: 'Chăm Sóc Sức Khỏe Trong Sự Tĩnh Lặng Tuyệt Đối',
-        vibe_quote: '“Một trợ lý tốt không bao giờ hét vào mặt bạn khi bạn đang tập trung cao độ.”',
-        vibe_desc: 'Hầu hết người dùng xóa các ứng dụng nhắc nhở sức khỏe sau 3 ngày vì chúng bật popup thô bạo và réo chuông đúng lúc đang họp hoặc đang viết dở dòng suy nghĩ. DeskAura được thiết kế ngược lại hoàn toàn:',
-        v1_t: '🔕 Không Réo Chuông',
-        v1_d: 'Nhắc nhở êm dịu như hơi thở, không gây giật mình nơi công sở.',
-        v2_t: '🛡️ Tự Ẩn Khi Họp',
-        v2_d: 'Tự động lùi lịch khi phát hiện bạn đang mở Zoom/Slide toàn màn hình.',
-        v3_t: '💤 Tự Nghỉ Khi Rời Ghế',
-        v3_d: 'Cảm biến phần cứng tự tạm dừng đồng hồ khi bạn đứng dậy pha trà.',
-        feat_eyebrow: 'Bento Showcase • 4 Trụ Cột',
-        feat_title: 'Trọn Vẹn Hệ Sinh Thái Chăm Sóc Bàn Làm Việc',
-        feat_sub: 'Mọi công cụ bạn cần để làm việc bền bỉ suốt 8–12 tiếng mỗi ngày mà đôi mắt vẫn sáng khỏe, cột sống dẻo dai và tâm trí thư thái.',
-        p1_title: '1. Đôi Mắt Tinh Anh — Chuẩn Quy Tắc Nhãn Khoa 20-20-20',
-        p1_desc: 'Sau mỗi 20 phút nhìn màn hình, DeskAura mở tấm rèm nghỉ ngơi dịu mắt trong 20 giây để cơ điều tiết mắt được thả lỏng và bù lại màng ẩm tự nhiên, ngăn ngừa khô rát và tăng độ cận.',
-        p1_w_title: 'Đồng hồ nghỉ mắt 20 giây trực tiếp',
-        p1_w_sub: 'Bấm thử để cảm nhận 20 giây thư giãn mắt:',
-        p1_w_btn: 'Thử 20s',
-        p2_title: '2. Nuôi Cây Cấp Nước 5 Cấp Độ',
-        p2_desc: 'Mỗi lần bạn uống nước, chậu cây ảo trên bàn làm việc sẽ lớn dần từ Hạt mầm đến Đơm hoa. Có nút Hoàn tác (Undo) trong 5 giây nếu lỡ tay bấm nhầm.',
-        p2_w_hint: 'Tưới thử một cốc nước:',
-        p3_title: '3. Bảo Vệ Cột Sống & 12 Bài Tập Giãn Cơ Tại Bàn',
-        p3_desc: 'Hướng dẫn trực quan bằng hình động SVG cho các kỳ nghỉ dài: xoay giãn đốt sống cổ, mở vai chống gù lưng, duỗi cổ tay chống tê bì và hít thở 4-7-8 giảm căng thẳng.',
-        ex_1: '🔄 Giãn đốt sống cổ',
-        ex_2: '🙌 Mở vai & cột sống ngực',
-        ex_3: '🤲 Giải phóng ống cổ tay',
-        ex_4: '🌬️ Hít thở 4-7-8',
-        p4_title: '4. Không Gian Âm Thanh Lofi & Ambient Focus 8 Kênh',
-        p4_desc: 'Tự pha trộn Tiếng mưa đêm, Quán cà phê, Suối rừng, Lửa trại và Sóng âm tập trung ngay trong ứng dụng — hoạt động 100% Offline, không tốn RAM mở trình duyệt và không bao giờ bị quảng cáo cắt ngang.',
-        tech_eyebrow: 'Tech Flex • Công Nghệ Cốt Lõi',
-        tech_title: 'Mạnh Mẽ Với Lõi Rust — Nhẹ Tựa Lông Hồng',
-        tech_sub: 'Dành cho những người yêu cầu sự hoàn hảo: Không làm chậm máy, không hao pin laptop và tự động đồng bộ xuyên suốt giữa mọi thiết bị.',
-        t1_t: 'Lõi Rust & Tauri 2.0 Siêu Nhẹ',
-        t1_d: 'Nhẹ gấp 15 lần các ứng dụng Electron truyền thống. Cài đặt trong 3 giây, khởi động tức thì cùng hệ điều hành.',
-        t2_t: 'Ngủ Đông Đồ Họa Khi Thu Nhỏ',
-        t2_d: 'Khi thu xuống khay Menu Bar / System Tray, toàn bộ hiệu ứng đồ họa tự động đóng băng để bảo toàn 100% pin và hiệu năng máy.',
-        t3_t: 'Tự Động Đồng Bộ Đa Thiết Bị',
-        t3_d: 'Đồng bộ tiến độ uống nước và nghỉ mắt giữa máy Mac và Windows tức thì qua mạng LAN nội bộ và tài khoản Google (Gmail).',
-        t4_t: 'Local-First & Mã Hóa Phần Cứng',
-        t4_d: 'Mọi dữ liệu sức khỏe được mã hóa chuẩn enc:v2: ngay trên máy của bạn. Không theo dõi, không bán dữ liệu cho bên thứ ba.',
-        faq_eyebrow: 'An Tâm Tuyệt Đối',
-        faq_title: 'Câu Hỏi Thường Gặp Về Bảo Mật & Sử Dụng',
-        faq_q1: '1. Dữ liệu sức khỏe của tôi có được bảo mật 100% trên máy không?',
-        faq_a1: 'Hoàn toàn bảo mật! DeskAura hoạt động theo kiến trúc 100% Local-First: toàn bộ dữ liệu được mã hóa bằng khóa phần cứng (enc:v2:) lưu trên RAM. Ngay cả khi bạn không bật mạng Internet, ứng dụng vẫn hoạt động đầy đủ 100% tính năng.',
-        faq_q2: '2. Ứng dụng có làm nặng máy hay tốn pin khi chạy ngầm cả ngày không?',
-        faq_a2: 'Không hề. Nhờ viết bằng ngôn ngữ hệ thống Rust (Tauri 2.0) và giao tiếp trực tiếp với C FFI của macOS/Windows (không sinh tiến trình con), DeskAura tiêu thụ 0% GPU khi nằm ở khay hệ thống và bộ cài chỉ nặng khoảng 10 MB.',
-        faq_q3: '3. DeskAura có thu phí thuê bao tháng hay chèn quảng cáo không?',
-        faq_a3: 'DeskAura hoàn toàn miễn phí 100%, mã nguồn mở minh bạch và cam kết không bao giờ chèn quảng cáo làm phiền không gian làm việc của bạn.',
-        bottom_title: 'Bạn Cứ Tập Trung Chạy Deadline. Sức Khỏe Hãy Để DeskAura Lo.',
-        bottom_sub: 'Tải ngay người bạn đồng hành tĩnh lặng cho bàn làm việc của bạn — Miễn phí 100% cho cả macOS & Windows.'
+        bar_label: 'Chọn giao diện:',
+        bar_home: '☀️ Trang Chủ',
+        bar_office: '🏥 Dân Văn Phòng (/van-phong)',
+        bar_dev: '🌙 Lập Trình Viên (/for-devs)',
+        nav_how: 'Cách Hoạt Động',
+        nav_devices: 'Mọi Thiết Bị',
+        nav_features: 'Tính Năng',
+        nav_details: 'Tinh Chỉnh Nhỏ',
+        nav_office: 'Văn Phòng ↗',
+        nav_dev: 'Cho Dev ↗',
+        v_tab_0: '👁️ TVC Văn Phòng (20s)',
+        v_tab_1: '🎬 TVC Cú Đêm IT (18s)',
+        v_tab_2: '💻 Giao Diện Thật (45s)',
+        hero_eyebrow: 'TRỢ LÝ SỨC KHỎE BÀN LÀM VIỆC TĨNH LẶNG',
+        hero_title: 'Bạn Cứ Tập Trung Chạy Deadline.<br />Sức Khỏe Để DeskAura Lo.',
+        hero_sub: 'Nhắc nghỉ mắt 20-20-20, hướng dẫn giãn cơ tại ghế, uống nước nuôi cây và đồng bộ tự động trên mọi thiết bị của bạn.',
+        cta_mac: 'Tải cho macOS',
+        cta_win: 'Tải cho Windows',
+        hero_note: '✨ Miễn phí 100% • Siêu nhẹ 3,2 MB • Không cần đăng nhập',
+        how_title: 'Chăm Sóc Sức Khỏe Chưa Bao Giờ Nhẹ Nhàng Đến Thế',
+        how_sub: 'Chỉ 3 bước đơn giản để bảo vệ đôi mắt, cột sống và duy trì thói quen uống nước mỗi ngày.',
+        s1_num: 'Bước 1',
+        s1_title: 'Đặt Nhịp Độ Riêng',
+        s1_desc: 'Chọn mục tiêu nước uống và chu kỳ nghỉ mắt phù hợp với lịch làm việc của bạn.',
+        s2_num: 'Bước 2',
+        s2_title: 'Nhắc Nhở Tĩnh Lặng',
+        s2_desc: 'Lời nhắc dịu dàng tự động nhỏ nhạc nền và tự lùi lịch khi bạn đang họp.',
+        s3_num: 'Bước 3',
+        s3_title: 'Chạm Nhẹ & Nở Hoa',
+        s3_desc: 'Ghi nhận ly nước chỉ bằng 1 cú nhấp chuột và ngắm chậu cây nở hoa mỗi ngày.',
+        dev_title: 'Mọi Thiết Bị Của Bạn',
+        dev_sub: 'Kết nối xuyên suốt giữa PC Văn phòng, MacBook ở nhà, iPad và iPhone. Tiến độ của bạn tự động đồng bộ ở mọi nơi, để bạn chăm sóc sức khỏe bất cứ lúc nào.',
+        phone_plant: 'Cây Đã Nở Hoa',
+        sync_pill: '⚡ Đồng bộ tức thì <5ms qua Wi-Fi/LAN nội bộ & tự động gộp qua Google Cloud',
+        feat_title: 'Mọi Thứ Bạn Cần Để Khỏe Lâu Dài',
+        feat_sub: 'Kết hợp khoa học nhãn khoa, vận động tại chỗ và âm thanh chữa lành trong một ứng dụng duy nhất.',
+        f1_t: 'Nghỉ Mắt 20-20-20',
+        f1_d: 'Sau mỗi 20 phút làm việc, nhắc bạn phóng tầm mắt xa 6 mét trong 20 giây để mắt luôn ẩm mượt.',
+        f2_t: 'Giãn Cơ Tại Ghế',
+        f2_d: 'Hình vẽ chuyển động dẫn nhịp từng bước giúp bạn thả lỏng cổ, bả vai và cổ tay ngay tại chỗ ngồi.',
+        f3_t: 'Uống Nước Nuôi Cây',
+        f3_d: 'Mỗi ngụm nước bạn uống giúp chậu cây nhỏ trên màn hình lớn dần từ hạt mầm đến đơm hoa.',
+        f4_t: 'Phòng Thu Âm Thanh Tĩnh',
+        f4_d: 'Hoà âm tiếng mưa rơi, suối rừng, sóng não cùng kho nhạc Lofi & Zing MP3 không quảng cáo.',
+        det_title: 'Những Chi Tiết Nhỏ Giữ Thói Quen Bền Vững',
+        det_sub: 'Từng tinh chỉnh tinh tế giúp việc chăm sóc bản thân diễn ra tự nhiên mà không cần cố gắng.',
+        d1_t: 'Tự Dịu Nhạc 20%',
+        d1_s: 'Nhỏ nhạc êm ái khi nhắc',
+        d2_t: 'Tự Hoãn Khi Họp',
+        d2_s: 'Không làm phiền lúc trình chiếu',
+        d3_t: 'Icon Khay Hệ Thống',
+        d3_s: 'Xem nhanh tiến độ ở Taskbar',
+        d4_t: 'Cảm Biến Rời Bàn',
+        d4_s: 'Tự đặt lại sau 5 phút vắng mặt',
+        d5_t: 'Hoàn Tác 5 Giây',
+        d5_s: 'Sửa ngay nếu lỡ bấm nhầm',
+        d6_t: 'Vòng Tròn Kép Mebius',
+        d6_s: 'Thống kê trực quan 7 ngày',
+        d7_t: 'Giao Diện Sáng & Tối',
+        d7_s: 'Dịu mắt cả ngày lẫn đêm',
+        d8_t: 'Siêu Nhẹ 3,2 MB',
+        d8_s: 'Lõi Rust 0% GPU khi thu nhỏ',
+        cta_title: 'Bắt Đầu Thói Quen Khỏe Mạnh Ngay Hôm Nay',
+        cta_sub: 'Tải miễn phí DeskAura v1.2.4 — Chỉ mất vài giây cài đặt cho cả Windows và macOS.'
       },
       en: {
-        bar_label: 'Choose the experience tailored for you:',
-        bar_home: '☀️ Main Brand Hub',
-        bar_office: '🏥 Office Wellness Clinic (/van-phong)',
-        bar_dev: '🌙 Dev & Night-Owl Edition (/for-devs)',
-        nav_vibe: 'The Silent Vibe',
-        nav_features: '4-Pillar Bento',
-        nav_tech: 'Rust Tech Flex',
-        nav_faq: 'Privacy & FAQ',
-        nav_office_link: 'For Office Pros ↗',
-        nav_dev_link: 'For Developers ↗',
-        nav_download: 'Free Download v1.2.4',
-        hero_badge: 'Your Silent Desk Companion • Featherweight ~10MB Rust Core • 100% Free',
-        hero_title: 'Focus on Crushing Your Deadlines.<br /><span class="gradient-text">Let DeskAura Take Care of Your Health.</span>',
-        hero_subtitle: 'No intrusive popups breaking your train of thought, no jarring alarm bells. DeskAura quietly protects your spine, prompts 20-20-20 eye resets, grows your virtual plant as you hydrate, and plays ambient focus soundscapes.',
-        cta_mac: 'Download for macOS (.dmg)',
-        cta_win: 'Download for Windows (.exe)',
-        niche_btn_office: '👩‍💼 Office Professional with eye strain or neck pain? View the Wellness Prescription →',
-        niche_btn_dev: '👨‍💻 Developer / Night Owl pulling late nights? Enter the Dark-Mode Dev Hub →',
-        tvc_tab_1: '👁️ Office TVC: Eyes & Spine Care (20s)',
-        tvc_tab_2: '🎬 Developer TVC: Late-Night OT Relief (18s)',
-        tvc_tab_3: '💻 Real-Time App Walkthrough (45s)',
-        btn_unmute: 'Unmute TVC Audio',
-        vibe_eyebrow: 'The Vibe • Philosophy of Silence',
-        vibe_title: 'Wellness Delivered in Complete Serenity',
-        vibe_quote: '“A great companion never shouts at you while you are deep in focus.”',
-        vibe_desc: 'Most people uninstall break timers within 3 days because they hijack the screen and ring alarms mid-meeting or mid-thought. DeskAura was engineered with the exact opposite philosophy:',
-        v1_t: '🔕 No Jarring Alarms',
-        v1_d: 'Gentle whispers at the corner of your screen—never startling you in the office.',
-        v2_t: '🛡️ Meeting-Aware',
-        v2_d: 'Automatically defers reminders while you are presenting on Zoom or in fullscreen.',
-        v3_t: '💤 Hardware Idle Sense',
-        v3_d: 'Native OS sensors pause the countdown automatically when you step away for tea.',
-        feat_eyebrow: 'Bento Showcase • 4 Pillars',
-        feat_title: 'The Complete Desk Wellness Ecosystem',
-        feat_sub: 'Everything you need to power through 8–12 hour workdays while keeping your vision sharp, your spine mobile, and your mind calm.',
-        p1_title: '1. Sharp Vision — Clinical 20-20-20 Eye Care',
-        p1_desc: 'Every 20 minutes of screen time, DeskAura guides a soothing 20-second eye reset to relax ciliary muscles and replenish natural tear film.',
-        p1_w_title: 'Live 20-Second Eye Reset Timer',
-        p1_w_sub: 'Click to experience a 20-second eye relaxation:',
-        p1_w_btn: 'Try 20s',
-        p2_title: '2. 5-Stage Virtual Plant Hydration',
-        p2_desc: 'Every glass of water nurtures your virtual desk plant from Seed to Full Bloom—complete with a 5-second Undo button for accidental clicks.',
-        p2_w_hint: 'Water your plant right now:',
-        p3_title: '3. Spine Protection & 12 Seated Stretches',
-        p3_desc: 'Smooth animated SVG guidance during Long Breaks: cervical neck releases, chest openers, carpal-tunnel wrist stretches, and 4-7-8 breathing.',
-        ex_1: '🔄 Cervical Neck Release',
-        ex_2: '🙌 Thoracic Chest Opener',
-        ex_3: '🤲 Carpal Wrist Stretch',
-        ex_4: '🌬️ 4-7-8 Breathwork',
-        p4_title: '4. 8-Channel Offline Ambient & Focus Studio',
-        p4_desc: 'Blend Night Rain, Coffee Shop, Forest Stream, Campfire, and Focus Waves natively—100% offline with zero browser RAM overhead or ads.',
-        tech_eyebrow: 'Tech Flex • Under the Hood',
-        tech_title: 'Powered by Rust — Featherlight on Your Machine',
-        tech_sub: 'Built for those who hate bloatware: Zero lag, zero battery drain, and seamless multi-device synchronization.',
-        t1_t: ' ~10 MB Rust & Tauri 2.0 Core',
-        t1_d: '15x lighter than traditional Electron apps. Installs in 3 seconds and launches instantaneously.',
-        t2_t: '0% GPU When Minimized',
-        t2_d: 'When tucked into the Menu Bar / System Tray, all rendering pipelines freeze to preserve 100% battery life.',
-        t3_t: 'Instant Multi-Device Sync',
-        t3_d: 'Syncs hydration and break streaks between Mac and Windows in <5ms over LAN UDP and Google Cloud.',
-        t4_t: '100% Local-First & Encrypted',
-        t4_d: 'All wellness data is protected by RAM-only enc:v2: hardware encryption. Zero tracking, zero third-party data sales.',
-        faq_eyebrow: 'Peace of Mind',
-        faq_title: 'Privacy & Usage FAQ',
-        faq_q1: '1. Is my wellness data 100% private and stored locally?',
-        faq_a1: 'Yes! DeskAura is built on a 100% Local-First architecture with volatile RAM-only enc:v2: encryption. Every feature works 100% offline without an internet connection.',
-        faq_q2: '2. Will DeskAura slow down my computer or drain laptop battery?',
-        faq_a2: 'Not at all. Built with native Rust (Tauri 2.0) and direct OS C FFI (spawning 0 child processes), DeskAura uses 0% GPU in the system tray and weighs only ~10 MB.',
-        faq_q3: '3. Are there any monthly subscriptions or ads?',
-        faq_a3: 'DeskAura is 100% free, open-source, and guaranteed never to display ads or interrupt your workspace.',
-        bottom_title: 'Focus on Crushing Your Deadlines. Let DeskAura Take Care of Your Health.',
-        bottom_sub: 'Download your silent desk companion today — 100% free for macOS & Windows.'
+        bar_label: 'Choose view:',
+        bar_home: '☀️ Main Hub',
+        bar_office: '🏥 For Office Pros (/van-phong)',
+        bar_dev: '🌙 For Developers (/for-devs)',
+        nav_how: 'How It Works',
+        nav_devices: 'All Devices',
+        nav_features: 'Features',
+        nav_details: 'Small Details',
+        nav_office: 'Office ↗',
+        nav_dev: 'Devs ↗',
+        v_tab_0: '👁️ Office TVC (20s)',
+        v_tab_1: '🎬 Night Coder TVC (18s)',
+        v_tab_2: '💻 Live App Tour (45s)',
+        hero_eyebrow: 'THE SILENT DESK WELLNESS COMPANION',
+        hero_title: 'Focus on Crushing Deadlines.<br />Let DeskAura Care for You.',
+        hero_sub: '20-20-20 eye resets, guided seated stretches, virtual plant hydration, and seamless sync across all your devices.',
+        cta_mac: 'Download for Mac',
+        cta_win: 'Download for Windows',
+        hero_note: '✨ 100% Free • Featherlight 3.2 MB • No Login Required',
+        how_title: 'Staying Healthy At Your Desk Has Never Been Easier',
+        how_sub: 'Three simple steps to protect your eyes, relieve neck stiffness, and stay hydrated all day.',
+        s1_num: 'Step 1',
+        s1_title: 'Set Your Personal Pace',
+        s1_desc: 'Choose a hydration goal and eye-break rhythm that fits your daily schedule.',
+        s2_num: 'Step 2',
+        s2_title: 'Get Gentle Reminders',
+        s2_desc: 'Whisper-quiet prompts auto-duck your music and pause automatically during meetings.',
+        s3_num: 'Step 3',
+        s3_title: 'Log in a Tap & Bloom',
+        s3_desc: 'Log a glass of water in one click and watch your virtual desk plant bloom.',
+        dev_title: 'All Your Devices',
+        dev_sub: 'Stay connected across your Office PC, Home MacBook, iPad, and iPhone. Your progress syncs everywhere, so you can log wherever you are.',
+        phone_plant: 'Plant In Full Bloom',
+        sync_pill: '⚡ Instant <5ms peer-to-peer Wi-Fi/LAN sync & automatic Google Cloud merge',
+        feat_title: 'Everything You Need To Feel Great All Day',
+        feat_sub: 'Clinical eye care, seated mobility, and acoustic focus united in one featherlight app.',
+        f1_t: '20-20-20 Eye Resets',
+        f1_d: 'Every 20 minutes, look 20 feet away for 20 seconds to keep your eyes fresh and hydrated.',
+        f2_t: 'Seated Desk Stretches',
+        f2_d: 'Smooth animated SVG guidance helps you release neck, shoulder, and wrist tension right at your chair.',
+        f3_t: 'Plant Hydration Tracker',
+        f3_d: 'Every glass of water nurtures your virtual desk plant from a tiny seed into full bloom.',
+        f4_t: 'Ambient Focus Studio',
+        f4_d: 'Blend rain, forest stream, and brainwaves with ad-free Global Lofi and Zing MP3.',
+        det_title: 'Small Details That Make The Habit Stick',
+        det_sub: 'Thoughtful touches that keep your wellness routine effortless once the reminders do their job.',
+        d1_t: '20% Music Auto-Duck',
+        d1_s: 'Softens audio during prompts',
+        d2_t: 'Fullscreen Meeting Guard',
+        d2_s: 'Never interrupts presentations',
+        d3_t: 'Dynamic Tray Icon',
+        d3_s: 'Glanceable progress in Taskbar',
+        d4_t: '5-Min Away Sensor',
+        d4_s: 'Auto-resets when you step away',
+        d5_t: '5-Second Undo',
+        d5_s: 'Fix accidental taps instantly',
+        d6_t: 'Mebius Progress Rings',
+        d6_s: '7-day visual streak history',
+        d7_t: 'Light & Dark Modes',
+        d7_s: 'Easy on the eyes day or night',
+        d8_t: 'Featherlight 3.2 MB',
+        d8_s: 'Rust core with 0% idle GPU',
+        cta_title: 'Start Your Healthy Desk Habit Today',
+        cta_sub: 'Download DeskAura v1.2.4 for free — Installs in seconds on Windows and macOS.'
       }
     };
 
     function setLanguage(lang) {
-      currentLang = lang;
-      localStorage.setItem('deskaura_lp_lang', lang);
       document.documentElement.lang = lang;
       document.getElementById('btn-lang-vi').classList.toggle('active', lang === 'vi');
       document.getElementById('btn-lang-en').classList.toggle('active', lang === 'en');
-
-      const dict = i18nDict[lang];
+      const d = dict[lang];
       document.querySelectorAll('[data-i18n]').forEach((el) => {
-        const key = el.getAttribute('data-i18n');
-        if (dict[key]) el.innerHTML = dict[key];
+        const k = el.getAttribute('data-i18n');
+        if (d[k]) el.innerHTML = d[k];
       });
-
-      document.getElementById('cinema-caption-text').textContent = cinemaSources[currentVideoIdx][lang];
-      document.getElementById('vibe-preview-img').src = lang === 'vi' ? 'screenshots/01-dashboard-vi.png' : 'screenshots/01-dashboard-en.png';
-      updateWaterUI();
+      document.getElementById('mockup-laptop-img').src = lang === 'vi' ? 'screenshots/01-dashboard-vi.png' : 'screenshots/01-dashboard-en.png';
+      document.getElementById('mockup-tablet-img').src = lang === 'vi' ? 'screenshots/02-sound-studio.png' : 'screenshots/02-sound-studio-en.png';
     }
-
-    function switchCinema(idx) {
-      currentVideoIdx = idx;
-      for (let i = 0; i < 3; i++) {
-        document.getElementById('tab-video-' + i).classList.toggle('active', i === idx);
-      }
-      const videoEl = document.getElementById('main-cinema-video');
-      const wasMuted = videoEl.muted;
-      videoEl.src = cinemaSources[idx].src;
-      videoEl.muted = wasMuted;
-      videoEl.play().catch(() => {});
-      document.getElementById('cinema-caption-text').textContent = cinemaSources[idx][currentLang];
-    }
-
-    function toggleVideoSound() {
-      const videoEl = document.getElementById('main-cinema-video');
-      videoEl.muted = !videoEl.muted;
-      const btn = document.getElementById('sound-toggle-btn');
-      btn.innerHTML = videoEl.muted
-        ? '🔊 <span>' + (currentLang === 'vi' ? 'Bật âm thanh TVC' : 'Unmute TVC Audio') + '</span>'
-        : '🔈 <span>' + (currentLang === 'vi' ? 'Đang bật tiếng (Bấm để tắt)' : 'Audio On (Click to Mute)') + '</span>';
-    }
-
-    let eyeInterval = null;
-    function startDemoEyeTimer() {
-      const display = document.getElementById('demo-eye-timer');
-      if (eyeInterval) {
-        clearInterval(eyeInterval);
-        eyeInterval = null;
-        display.textContent = '00:20';
-        return;
-      }
-      let remaining = 20;
-      display.textContent = '00:20';
-      eyeInterval = setInterval(() => {
-        remaining--;
-        if (remaining <= 0) {
-          clearInterval(eyeInterval);
-          eyeInterval = null;
-          display.textContent = '✨ 20s!';
-          setTimeout(() => { display.textContent = '00:20'; }, 2000);
-        } else {
-          display.textContent = '00:' + String(remaining).padStart(2, '0');
-        }
-      }, 1000);
-    }
-
-    let demoWater = 1250;
-    function updateWaterUI() {
-      const pct = Math.min(100, (demoWater / 2000) * 100);
-      document.getElementById('demo-water-ml').textContent = demoWater.toLocaleString() + ' / 2,000 ml';
-      document.getElementById('demo-water-bar').style.width = pct + '%';
-      const stageEl = document.getElementById('demo-plant-stage');
-      if (demoWater < 500) stageEl.textContent = currentLang === 'vi' ? '🌰 Cấp 1: Hạt Mầm' : '🌰 Stage 1: Seed';
-      else if (demoWater < 1000) stageEl.textContent = currentLang === 'vi' ? '🌱 Cấp 2: Nảy Chồi Non' : '🌱 Stage 2: Sprout';
-      else if (demoWater < 1500) stageEl.textContent = currentLang === 'vi' ? '🌿 Cấp 3: Cây Xanh Tươi Tốt' : '🌿 Stage 3: Lush Plant';
-      else if (demoWater < 2000) stageEl.textContent = currentLang === 'vi' ? '🌳 Cấp 4: Cây Trưởng Thành' : '🌳 Stage 4: Thriving Tree';
-      else stageEl.textContent = currentLang === 'vi' ? '🌸 Cấp 5: Đơm Hoa Rực Rỡ!' : '🌸 Stage 5: Full Bloom!';
-    }
-
-    function addDemoWater() {
-      demoWater = demoWater >= 2000 ? 250 : demoWater + 250;
-      updateWaterUI();
-    }
-
-    function toggleFaq(triggerBtn) {
-      const item = triggerBtn.closest('.faq-item');
-      const panel = item.querySelector('.faq-panel');
-      const isExpanded = triggerBtn.getAttribute('aria-expanded') === 'true';
-      const nextState = !isExpanded;
-      triggerBtn.setAttribute('aria-expanded', String(nextState));
-      if (nextState) {
-        panel.hidden = false;
-        requestAnimationFrame(() => { item.classList.add('is-expanded'); });
-      } else {
-        item.classList.remove('is-expanded');
-      }
-    }
-
-    document.querySelectorAll('.faq-panel').forEach((panel) => {
-      panel.addEventListener('transitionend', (e) => {
-        const item = panel.closest('.faq-item');
-        if (e.propertyName === 'block-size' && !item.classList.contains('is-expanded')) {
-          panel.hidden = true;
-        }
-      });
-    });
 
     (function detectOS() {
       const ua = navigator.userAgent.toLowerCase();
-      const macBtn = document.getElementById('cta-mac');
-      const winBtn = document.getElementById('cta-win');
       if (ua.includes('win')) {
-        winBtn.classList.replace('btn-secondary', 'btn-primary');
-        macBtn.classList.replace('btn-primary', 'btn-secondary');
+        document.getElementById('cta-win').classList.replace('btn-secondary', 'btn-primary');
+        document.getElementById('cta-mac').classList.replace('btn-primary', 'btn-secondary');
       }
     })();
-
-    setLanguage(currentLang);
   </script>
 </body>
 </html>

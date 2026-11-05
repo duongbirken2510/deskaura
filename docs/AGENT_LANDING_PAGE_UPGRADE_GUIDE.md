@@ -90,14 +90,38 @@ Hiện tại nút Windows đang cố định nằm trên nút Mac. Thêm đoạn
 - Nếu người dùng vào bằng **Windows**: Giữ nút `a[data-dl-os="win"]` ở vị trí đầu tiên.
 - **Lưu ý**: Giữ nguyên thuộc tính `data-dl-os="win"` và `data-dl-os="mac"` để sự kiện mở `#post-download-modal` hoạt động bình thường.
 
-### 2.4. Nhúng Khu Vực "Rạp Chiếu Đôi TVC Điện Ảnh & Trải Nghiệm Thực Tế" (Ngay dưới Hero)
+### 2.4. Nhúng Khu Vực "Rạp Chiếu Đôi TVC Điện Ảnh & Trải Nghiệm Thực Tế" (Ngay ở cột trái Hero hoặc ngay dưới Hero)
 Thêm section trình chiếu video với 3 nút bấm chuyển tab mượt mà (hỗ trợ song ngữ `VI`/`EN` theo `data-lang` của `#deskaura-root`):
-1. **Tab 1 (Mặc định):** `👁️ TVC Dân Văn Phòng: Đôi Mắt & Cột Sống (20s)` $\rightarrow$ phát `/videos/deskaura/deskaura_tvc_eyecare.mp4`
-2. **Tab 2:** `🎬 TVC Lập Trình Viên: Xoa Dịu Đêm OT (18s)` $\rightarrow$ phát `/videos/deskaura/deskaura_tvc_intro.mp4`
-3. **Tab 3:** `💻 Trải Nghiệm Giao Diện Thực Tế (45s)` $\rightarrow$ phát `/videos/deskaura/deskaura_demo_45s.mp4`
+1. **Tab 1 (Mặc định):** `👁️ TVC Văn Phòng: Đôi Mắt & Cột Sống (20s)` $\rightarrow$ phát `/videos/deskaura/deskaura_tvc_eyecare.mp4`
+2. **Tab 2:** `🌙 TVC Lập Trình Viên: Đêm OT (18s)` $\rightarrow$ phát `/videos/deskaura/deskaura_tvc_intro.mp4`
+3. **Tab 3:** `💻 Giao Diện Thực Tế (45s)` $\rightarrow$ phát `/videos/deskaura/deskaura_demo_45s.mp4`
 - Có thuộc tính `poster="/images/deskaura/deskaura_social_hero.jpg"`, `autoplay muted playsinline loop controls`, kèm nút bấm **`🔊 Bật âm thanh TVC`** ngay bên dưới.
 
-### 2.5. Sửa lỗi `.reveal-item` ở Footer `#ket-noi` bị ẩn (`opacity: 0`)
+### 2.5. Bổ sung Section "MỌI THIẾT BỊ CỦA BẠN" (All Your Devices — Phong cách WaterMinder Visual-First)
+Tham chiếu trực tiếp khối `#all-devices` trong file `docs/index.html`:
+- **Thiết kế Visual-First (80% Hình ảnh / 20% Chữ):** Nền tối tương phản cao (`#060d0b`), tiêu đề lớn **`Mọi Thiết Bị Của Bạn`** kèm đúng **1 câu mô tả ngắn gọn**: *"Kết nối xuyên suốt giữa Mac, Windows PC, iPhone và iPad. Tiến trình uống nước và chăm sóc mắt luôn đồng bộ dù bạn ngồi ở văn phòng hay về nhà."*
+- **4 Khung Thiết Bị Đặt Cạnh Nhau Cùng Hiển Thị `1,600 ml • 80%`:**
+  1. **Menu Bar / System Tray Pill** (`🌱 1,600ml • 👁️ 14:20`)
+  2. **iPhone (Mobile Web / PWA)** (`1,600 ml • 80%` + Nút tròn `+ 200ml` + Chậu cây xanh)
+  3. **MacBook Air & Windows PC (Trung tâm)** (Giao diện 3 cột: *Uống Nước 1,600 ml / 2,000 ml (80%)* + *Nghỉ Mắt 20-20-20* + *Âm Thanh Tập Trung*)
+  4. **iPad / Tablet** (Vườn Cây & Thống Kê Tuần `80% • 1,600ml` + Chuỗi 14 Ngày Liên Tiếp)
+
+### 2.6. Bổ sung Lưới 8 Ô "NHỮNG CHI TIẾT NHỎ GIỮ THÓI QUEN BỀN VỮNG" (Small Details Grid) & Quy Tắc Tối Giản Chữ (WaterMinder Rule)
+Tham chiếu trực tiếp khối `.details-grid` trong `docs/index.html`:
+- **Quy tắc trình bày sạch sẽ (Clean Visual-First):**
+  - Mỗi thẻ tính năng dùng **Icon/Hình minh họa cỡ lớn (`88px–108px`)** làm tâm điểm thị giác.
+  - Tiêu đề ngắn gọn (`3–5 từ`) và phần giải thích **chỉ gói gọn trong 1 câu đơn giản (`12–18 từ`)** — tuyệt đối không viết đoạn văn dài nhiều dòng gây ngộp chữ.
+- **Lưới 8 ô chi tiết nhỏ (`4 cột x 2 hàng`):**
+  1. `🤫` **Tự Hoãn Khi Họp** — *Không nhảy thông báo lúc thuyết trình.*
+  2. `🔉` **Tự Dịu Nhạc Nền** — *Hạ nhạc xuống 20% khi giọng nhắc vang lên.*
+  3. `🕺` **6 Bài Giãn Cơ** — *Hình vẽ hướng dẫn tập ngay tại ghế.*
+  4. `↩️` **Hoàn Tác 5 Giây** — *Bấm nhầm cốc nước? Hoàn tác ngay.*
+  5. `🔥` **Chuỗi Ngày Streak** — *Giữ lửa thói quen khỏe mạnh mỗi tuần.*
+  6. `🪶` **Siêu Nhẹ ~15MB RAM** — *Lõi Rust mượt mà trên mọi dòng máy.*
+  7. `🔄` **Bản Portable .exe** — *Chạy ngay không cần quyền Admin IT.*
+  8. `🔒` **Riêng Tư 100%** — *Không quảng cáo, không thu thập dữ liệu.*
+
+### 2.7. Sửa lỗi `.reveal-item` ở Footer `#ket-noi` bị ẩn (`opacity: 0`)
 Trong script `IntersectionObserver` của trang, đổi `rootMargin: '0px 0px -40px 0px'` thành `rootMargin: '0px 0px 80px 0px'` để phần Footer liên hệ luôn hiển thị mượt mà ngay khi cuộn gần tới đáy trang.
 
 ---
