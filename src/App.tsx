@@ -63,12 +63,14 @@ import {
   setTrayLanguage,
   setWindowAlwaysOnTop,
   showAndFocusWindow,
+  stageSilentUpdate,
   updateTrayProgressIcon,
 } from './services/tauriBridge';
+import { readEncryptedJson, writeEncryptedJson } from './services/localStorageCrypto';
 import pkg from '../package.json';
 import { AppLanguage, TRANSLATIONS } from './i18n/translations';
 
-const CURRENT_APP_VERSION = pkg.version || '1.2.1';
+const CURRENT_APP_VERSION = pkg.version || '1.2.3';
 import {
   BreakType,
   DailyWellnessStats,
@@ -104,29 +106,12 @@ export const App: React.FC = () => {
   });
   const t = TRANSLATIONS[lang];
 
-  // 1. Settings States (v1.2 Default: 60-minute Unified Combo Cycle + 3-min Natural Idle Reset)
+  // 1. Settings States (v1.2.3: Hardware-Bound Encrypted Storage enc:v1: with Zero-Data-Loss Migration)
   const [standupSettings, setStandupSettings] = useState<StandupSettings>(() => {
     const isV12Migrated = localStorage.getItem(STORAGE_KEYS.V12_COMBO_MIGRATED) === '1';
     const isIdle180Migrated = localStorage.getItem(STORAGE_KEYS.V12_IDLE180_MIGRATED) === '1';
-    const saved = localStorage.getItem(STORAGE_KEYS.STANDUP);
-    if (saved) {
-      try {
-        const parsed: StandupSettings = JSON.parse(saved);
-        if (!isV12Migrated && parsed.standupIntervalMinutes === 45) {
-          parsed.standupIntervalMinutes = 60;
-        }
-        if (!isIdle180Migrated && (!parsed.autoResetIdleSeconds || parsed.autoResetIdleSeconds === 300)) {
-          parsed.autoResetIdleSeconds = 180;
-          localStorage.setItem(STORAGE_KEYS.V12_IDLE180_MIGRATED, '1');
-        }
-        return parsed;
-      } catch {
-        // fallback
-      }
-    }
-    localStorage.setItem(STORAGE_KEYS.V12_IDLE180_MIGRATED, '1');
     const now = Date.now();
-    return {
+    const defaultStandup: StandupSettings = {
       standupIntervalMinutes: 60,
       standupDurationSeconds: 180,
       eyeBreakEnabled: true,
@@ -142,42 +127,43 @@ export const App: React.FC = () => {
       timerSyncUpdatedAt: now,
       lastActiveAt: now,
     };
+    const parsed = readEncryptedJson<StandupSettings | null>(STORAGE_KEYS.STANDUP, null);
+    if (parsed) {
+      if (!isV12Migrated && parsed.standupIntervalMinutes === 45) {
+        parsed.standupIntervalMinutes = 60;
+      }
+      if (!isIdle180Migrated && (!parsed.autoResetIdleSeconds || parsed.autoResetIdleSeconds === 300)) {
+        parsed.autoResetIdleSeconds = 180;
+        localStorage.setItem(STORAGE_KEYS.V12_IDLE180_MIGRATED, '1');
+      }
+      return parsed;
+    }
+    localStorage.setItem(STORAGE_KEYS.V12_IDLE180_MIGRATED, '1');
+    return defaultStandup;
   });
 
   const [hydrationSettings, setHydrationSettings] = useState<HydrationSettings>(() => {
     const isV12Migrated = localStorage.getItem(STORAGE_KEYS.V12_COMBO_MIGRATED) === '1';
-    const saved = localStorage.getItem(STORAGE_KEYS.HYDRATION);
-    if (saved) {
-      try {
-        const parsed: HydrationSettings = JSON.parse(saved);
-        if (!isV12Migrated && parsed.intervalMinutes === 40) {
-          parsed.intervalMinutes = 60;
-        }
-        localStorage.setItem(STORAGE_KEYS.V12_COMBO_MIGRATED, '1');
-        return parsed;
-      } catch {
-        // fallback
-      }
-    }
-    localStorage.setItem(STORAGE_KEYS.V12_COMBO_MIGRATED, '1');
-    return {
+    const defaultHydration: HydrationSettings = {
       dailyGoalMl: 1800,
       weightKg: 60,
       intervalMinutes: 60,
       quickAmounts: [100, 200, 300],
     };
+    const parsed = readEncryptedJson<HydrationSettings | null>(STORAGE_KEYS.HYDRATION, null);
+    if (parsed) {
+      if (!isV12Migrated && parsed.intervalMinutes === 40) {
+        parsed.intervalMinutes = 60;
+      }
+      localStorage.setItem(STORAGE_KEYS.V12_COMBO_MIGRATED, '1');
+      return parsed;
+    }
+    localStorage.setItem(STORAGE_KEYS.V12_COMBO_MIGRATED, '1');
+    return defaultHydration;
   });
 
   const [voiceSettings, setVoiceSettings] = useState<VoiceReminderSettings>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.VOICE);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // fallback
-      }
-    }
-    return {
+    const defaultVoice: VoiceReminderSettings = {
       enabled: true,
       voicePack: 'female_neural',
       volume: 0.9,
@@ -189,33 +175,19 @@ export const App: React.FC = () => {
       customWaterText:
         'Đến giờ bổ sung nước rồi, bạn hãy uống một ngụm nước mát nhé!',
     };
+    return readEncryptedJson<VoiceReminderSettings>(STORAGE_KEYS.VOICE, defaultVoice);
   });
 
-  // 2. Daily Wellness Stats & 7-Day History
+  // 2. Daily Wellness Stats & 7-Day History (Hardware-Bound Encrypted Storage enc:v1:)
   const [weeklyHistory, setWeeklyHistory] = useState<DailyWellnessStats[]>(() => {
-    const raw = localStorage.getItem(STORAGE_KEYS.WEEKLY_HISTORY);
-    if (raw) {
-      try {
-        return JSON.parse(raw);
-      } catch {
-        // fallback
-      }
-    }
-    return [];
+    return readEncryptedJson<DailyWellnessStats[]>(STORAGE_KEYS.WEEKLY_HISTORY, []);
   });
 
   const [dailyStats, setDailyStats] = useState<DailyWellnessStats>(() => {
     const today = getTodayString();
-    const saved = localStorage.getItem(STORAGE_KEYS.DAILY_STATS);
-    if (saved) {
-      try {
-        const parsed: DailyWellnessStats = JSON.parse(saved);
-        if (parsed.date === today) {
-          return parsed;
-        }
-      } catch {
-        // fallback
-      }
+    const parsed = readEncryptedJson<DailyWellnessStats | null>(STORAGE_KEYS.DAILY_STATS, null);
+    if (parsed && parsed.date === today) {
+      return parsed;
     }
     return {
       date: today,
@@ -272,29 +244,28 @@ export const App: React.FC = () => {
   const [autostartEnabled, setAutostartEnabled] = useState<boolean>(false);
   const [startMinimized, setStartMinimized] = useState<boolean>(true);
 
-  // Auto-Updater States
+  // Silent OTA Auto-Updater States (Chrome / VS Code style)
   const [availableUpdateVersion, setAvailableUpdateVersion] = useState<string | null>(null);
   const [isUpdatingApp, setIsUpdatingApp] = useState<boolean>(false);
   const [updateStatusMsg, setUpdateStatusMsg] = useState<string | null>(null);
-  const lastNotifiedUpdateRef = useRef<string | null>(null);
+  const isStagingUpdateRef = useRef<boolean>(false);
 
   const checkAppUpdate = useCallback(
     async (manual = false) => {
+      if (isStagingUpdateRef.current) return;
       if (manual) {
         setUpdateStatusMsg(lang === 'en' ? 'Checking...' : 'Đang kiểm tra...');
       }
       const remoteVer = await fetchLatestGithubVersion();
       if (remoteVer && compareSemver(remoteVer, CURRENT_APP_VERSION) > 0) {
-        setAvailableUpdateVersion(remoteVer);
+        isStagingUpdateRef.current = true;
         setUpdateStatusMsg(null);
-        if (lastNotifiedUpdateRef.current !== remoteVer) {
-          lastNotifiedUpdateRef.current = remoteVer;
-          void sendTrayNotification(
-            `🎉 DeskAura v${remoteVer}`,
-            lang === 'en'
-              ? `Version ${remoteVer} is ready! Click "Update v${remoteVer}" in the app header to install.`
-              : `Phiên bản mới v${remoteVer} đã sẵn sàng! Nhấn nút "Cập nhật v${remoteVer}" trên thanh tiêu đề để nâng cấp.`
-          );
+        // Step 1: Silently download & pre-stage update in the background without any popup/notification
+        const stageResult = await stageSilentUpdate(remoteVer);
+        isStagingUpdateRef.current = false;
+        if (stageResult !== null) {
+          // Step 2: Only light up the Subtle Visual Nudge once the update is 100% staged on disk
+          setAvailableUpdateVersion(remoteVer);
         }
       } else if (manual) {
         setUpdateStatusMsg(
@@ -309,11 +280,6 @@ export const App: React.FC = () => {
   const handleInstallUpdate = useCallback(async () => {
     if (!availableUpdateVersion || isUpdatingApp) return;
     setIsUpdatingApp(true);
-    setUpdateStatusMsg(
-      lang === 'en'
-        ? `Downloading v${availableUpdateVersion}...`
-        : `Đang tải bản v${availableUpdateVersion}...`
-    );
     try {
       await downloadAndInstallUpdate(availableUpdateVersion);
     } catch (err: unknown) {
@@ -321,17 +287,17 @@ export const App: React.FC = () => {
       setUpdateStatusMsg(
         err instanceof Error ? err.message : String(err)
       );
-      window.setTimeout(() => setUpdateStatusMsg(null), 6000);
+      window.setTimeout(() => setUpdateStatusMsg(null), 5000);
     }
-  }, [availableUpdateVersion, isUpdatingApp, lang]);
+  }, [availableUpdateVersion, isUpdatingApp]);
 
   useEffect(() => {
     const initTimer = window.setTimeout(() => {
       void checkAppUpdate(false);
-    }, 3500);
+    }, 4000);
     const pollTimer = window.setInterval(() => {
       void checkAppUpdate(false);
-    }, 30 * 60 * 1000);
+    }, 6 * 60 * 60 * 1000);
     return () => {
       window.clearTimeout(initTimer);
       window.clearInterval(pollTimer);
@@ -429,25 +395,25 @@ export const App: React.FC = () => {
   const [radioVolume, setRadioVolume] = useState<number>(0.65);
   const [radioError, setRadioError] = useState<string | null>(null);
 
-  // Save settings to LocalStorage
+  // Save settings & health history to Hardware-Bound Encrypted Storage (enc:v1:)
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.STANDUP, JSON.stringify(standupSettings));
+    writeEncryptedJson(STORAGE_KEYS.STANDUP, standupSettings);
   }, [standupSettings]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.HYDRATION, JSON.stringify(hydrationSettings));
+    writeEncryptedJson(STORAGE_KEYS.HYDRATION, hydrationSettings);
   }, [hydrationSettings]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.VOICE, JSON.stringify(voiceSettings));
+    writeEncryptedJson(STORAGE_KEYS.VOICE, voiceSettings);
   }, [voiceSettings]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.DAILY_STATS, JSON.stringify(dailyStats));
+    writeEncryptedJson(STORAGE_KEYS.DAILY_STATS, dailyStats);
     setWeeklyHistory((prev) => {
       const filtered = prev.filter((item) => item.date !== dailyStats.date);
       const updated = [...filtered, dailyStats].slice(-14);
-      localStorage.setItem(STORAGE_KEYS.WEEKLY_HISTORY, JSON.stringify(updated));
+      writeEncryptedJson(STORAGE_KEYS.WEEKLY_HISTORY, updated);
       return updated;
     });
   }, [dailyStats]);
@@ -467,7 +433,7 @@ export const App: React.FC = () => {
     if (docData.weeklyHistory) {
       setWeeklyHistory((prev) => {
         const merged = mergeWeeklyHistory(prev, docData.weeklyHistory);
-        localStorage.setItem(STORAGE_KEYS.WEEKLY_HISTORY, JSON.stringify(merged));
+        writeEncryptedJson(STORAGE_KEYS.WEEKLY_HISTORY, merged);
         return merged;
       });
     }
@@ -1536,15 +1502,21 @@ export const App: React.FC = () => {
                 <button
                   onClick={() => void handleInstallUpdate()}
                   disabled={isUpdatingApp}
-                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition animate-pulse disabled:opacity-60"
+                  title={
+                    lang === 'en'
+                      ? `Update v${availableUpdateVersion} is ready. Click to restart & apply.`
+                      : `Bản cập nhật v${availableUpdateVersion} đã sẵn sàng. Nhấn để khởi động lại & áp dụng.`
+                  }
+                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition disabled:opacity-60 cursor-pointer"
                 >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-200" />
                   {isUpdatingApp
                     ? lang === 'en'
-                      ? `⏳ Updating...`
-                      : `⏳ Đang tải...`
+                      ? 'Restarting...'
+                      : 'Đang khởi động lại...'
                     : lang === 'en'
-                    ? `🚀 Update v${availableUpdateVersion}`
-                    : `🚀 Cập nhật v${availableUpdateVersion}`}
+                    ? `Restart to update v${availableUpdateVersion}`
+                    : `Khởi động lại (v${availableUpdateVersion})`}
                 </button>
               )}
               {updateStatusMsg && !isUpdatingApp && (
@@ -1595,7 +1567,14 @@ export const App: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('settings')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+              title={
+                availableUpdateVersion
+                  ? lang === 'en'
+                    ? `Update v${availableUpdateVersion} is ready. Restart to apply.`
+                    : `Bản cập nhật v${availableUpdateVersion} đã sẵn sàng. Khởi động lại để áp dụng.`
+                  : undefined
+              }
+              className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                 activeTab === 'settings'
                   ? 'bg-white text-emerald-700 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
@@ -1603,6 +1582,16 @@ export const App: React.FC = () => {
             >
               <Settings className="w-3.5 h-3.5" />
               {t.navSettings}
+              {availableUpdateVersion && (
+                <span
+                  className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white"
+                  title={
+                    lang === 'en'
+                      ? `Update v${availableUpdateVersion} ready`
+                      : `Bản cập nhật v${availableUpdateVersion} đã sẵn sàng`
+                  }
+                />
+              )}
             </button>
           </nav>
 
@@ -2211,7 +2200,40 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'settings' && (
-          <SettingsPanel
+          <div className="space-y-4">
+            {availableUpdateVersion && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-extrabold text-emerald-900">
+                      {lang === 'en'
+                        ? `Update v${availableUpdateVersion} is downloaded and ready`
+                        : `Bản cập nhật v${availableUpdateVersion} đã tải ngầm sẵn sàng`}
+                    </h4>
+                    <p className="text-xs text-emerald-700 mt-0.5">
+                      {lang === 'en'
+                        ? 'Click to restart in 1 second, or it will automatically apply the next time you turn on your computer.'
+                        : 'Nhấn để khởi động lại trong 1 giây, hoặc bản mới sẽ tự động áp dụng vào lần bật máy tiếp theo.'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => void handleInstallUpdate()}
+                  disabled={isUpdatingApp}
+                  className="px-4 py-2 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition whitespace-nowrap cursor-pointer disabled:opacity-60"
+                >
+                  {isUpdatingApp
+                    ? lang === 'en'
+                      ? 'Restarting...'
+                      : 'Đang khởi động lại...'
+                    : lang === 'en'
+                    ? 'Restart and Update'
+                    : 'Khởi động lại và Cập nhật'}
+                </button>
+              </div>
+            )}
+            <SettingsPanel
             standupSettings={standupSettings}
             hydrationSettings={hydrationSettings}
             voiceSettings={voiceSettings}
@@ -2277,6 +2299,7 @@ export const App: React.FC = () => {
               setIsTestingVoice(false);
             }}
           />
+          </div>
         )}
       </main>
 

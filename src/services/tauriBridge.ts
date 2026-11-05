@@ -219,6 +219,15 @@ export async function fetchLatestGithubVersion(): Promise<string | null> {
   }
 }
 
+export async function stageSilentUpdate(version: string): Promise<string | null> {
+  if (!isTauriEnv()) return null;
+  try {
+    return await invoke<string>('stage_silent_update', { version });
+  } catch {
+    return null;
+  }
+}
+
 export async function downloadAndInstallUpdate(version: string): Promise<string> {
   if (!isTauriEnv()) {
     window.open('https://github.com/duongbirken2510/deskaura', '_blank', 'noopener,noreferrer');

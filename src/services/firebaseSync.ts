@@ -33,6 +33,7 @@ import {
   getHardwareDeviceInfo,
   startGoogleOAuthLoopback,
 } from './tauriBridge';
+import { bindHardwareIdToVault } from './localStorageCrypto';
 
 export interface FirebaseConfigPayload {
   apiKey: string;
@@ -131,6 +132,7 @@ export async function ensureHardwareIdentity(): Promise<string> {
     cachedHardwareId = hwInfo.hardware_id;
     cachedHardwareOS = hwInfo.os;
     localStorage.setItem(HARDWARE_ID_STORAGE_KEY, hwInfo.hardware_id);
+    bindHardwareIdToVault(hwInfo.hardware_id);
     const savedName = localStorage.getItem(DEVICE_NAME_STORAGE_KEY);
     if (
       !savedName ||

@@ -645,8 +645,47 @@ fn open_in_system_browser(url: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Two-Phase Garbage Collection: Cleans up any leftover update installers, DMGs, or `.old.exe` files on startup.
+fn cleanup_old_update_files() {
+    // 1. Clean `.old.exe` / `.update.exe` next to current executable (Windows In-Place Swap leftovers)
+    if let Ok(current_exe) = std::env::current_exe() {
+        let old_exe = current_exe.with_extension("old.exe");
+        let _ = std::fs::remove_file(&old_exe);
+        if let Some(parent) = current_exe.parent() {
+            let _ = std::fs::remove_file(parent.join("deskaura.old.exe"));
+            let _ = std::fs::remove_file(parent.join("deskaura.update.exe"));
+            let _ = std::fs::remove_file(parent.join("DeskAura_Portable.old.exe"));
+        }
+    }
+
+    // 2. Clean temporary update installers / DMGs in OS temp directory
+    let temp_dir = std::env::temp_dir();
+    if let Ok(entries) = std::fs::read_dir(&temp_dir) {
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().to_string();
+            let is_deskaura_update = (name.starts_with("DeskAura_")
+                && (name.ends_with(".dmg") || name.ends_with("-setup.exe")))
+                || (name.starts_with("deskaura_staged_") && name.ends_with(".exe"));
+            if is_deskaura_update {
+                let _ = std::fs::remove_file(entry.path());
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let mount_point = "/tmp/deskaura_update_mnt";
+        if std::path::Path::new(mount_point).exists() {
+            let _ = std::process::Command::new("/usr/bin/hdiutil")
+                .args(["detach", mount_point, "-force"])
+                .status();
+        }
+    }
+}
+
+/// Phase 1 of Chrome/VSCode Silent OTA: Downloads and stages/pre-installs the new version in the background.
 #[tauri::command]
-async fn download_and_install_update(app: AppHandle, version: String) -> Result<String, String> {
+async fn stage_silent_update(version: String) -> Result<String, String> {
     let clean_ver: String = version
         .trim()
         .trim_start_matches('v')
@@ -655,7 +694,7 @@ async fn download_and_install_update(app: AppHandle, version: String) -> Result<
         .collect();
 
     if clean_ver.is_empty() {
-        return Err("Phiên bản cập nhật không hợp lệ.".to_string());
+        return Err("invalid_version".to_string());
     }
 
     #[cfg(target_os = "windows")]
@@ -663,49 +702,67 @@ async fn download_and_install_update(app: AppHandle, version: String) -> Result<
         use std::os::windows::process::CommandExt;
         const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-        let url = format!(
+        let temp_dir = std::env::temp_dir();
+        let staged_exe = temp_dir.join(format!("deskaura_staged_{}.exe", clean_ver));
+        let staged_str = staged_exe.to_string_lossy().to_string();
+
+        // Strategy A: Try Silent In-Place Binary Swap using DeskAura_Portable.exe (0 UAC, instant apply on next boot or restart)
+        let portable_url =
+            "https://github.com/duongbirken2510/deskaura/raw/main/Release_Windows/DeskAura_Portable.exe";
+        let dl_ok = std::process::Command::new("curl.exe")
+            .args(["-fL", "-sS", "-o", &staged_str, portable_url])
+            .creation_flags(CREATE_NO_WINDOW)
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false);
+
+        let valid_portable = dl_ok
+            && std::fs::metadata(&staged_exe)
+                .map(|m| m.len() > 2_000_000)
+                .unwrap_or(false);
+
+        if valid_portable {
+            if let Ok(current_exe) = std::env::current_exe() {
+                let old_exe = current_exe.with_extension("old.exe");
+                let _ = std::fs::remove_file(&old_exe);
+                if std::fs::rename(&current_exe, &old_exe).is_ok() {
+                    if std::fs::copy(&staged_exe, &current_exe).is_ok() {
+                        let _ = std::fs::remove_file(&staged_exe);
+                        return Ok("staged_swapped".to_string());
+                    } else {
+                        // Rollback rename if copy failed
+                        let _ = std::fs::rename(&old_exe, &current_exe);
+                    }
+                }
+            }
+        }
+        let _ = std::fs::remove_file(&staged_exe);
+
+        // Strategy B: Fallback to staging the NSIS setup installer in %TEMP% for silent /S execution
+        let setup_url = format!(
             "https://github.com/duongbirken2510/deskaura/raw/main/Release_Windows/DeskAura_{}_x64-setup.exe",
             clean_ver
         );
-        let temp_dir = std::env::temp_dir();
         let installer_path = temp_dir.join(format!("DeskAura_{}_x64-setup.exe", clean_ver));
         let installer_str = installer_path.to_string_lossy().to_string();
 
         let status = std::process::Command::new("curl.exe")
-            .args(["-fL", "-sS", "-o", &installer_str, &url])
+            .args(["-fL", "-sS", "-o", &installer_str, &setup_url])
             .creation_flags(CREATE_NO_WINDOW)
             .status()
-            .map_err(|e| format!("Không thể tải bộ cài Windows: {e}"))?;
+            .map_err(|e| format!("stage_failed: {e}"))?;
 
-        let valid_file = status.success()
+        let valid_setup = status.success()
             && std::fs::metadata(&installer_path)
                 .map(|m| m.len() > 500_000)
                 .unwrap_or(false);
 
-        if !valid_file {
-            // Fallback: open GitHub Release_Windows folder in browser if CI is still building
-            let fallback_url = "https://github.com/duongbirken2510/deskaura/tree/main/Release_Windows";
-            let _ = open_in_system_browser(fallback_url.to_string());
-            return Err(
-                "Bộ cài Windows đang được GitHub tự động biên dịch (khoảng 2-3 phút). Đã mở trang tải dự phòng trên trình duyệt."
-                    .to_string(),
-            );
+        if !valid_setup {
+            let _ = std::fs::remove_file(&installer_path);
+            return Err("not_ready_yet".to_string());
         }
 
-        // Launch the NSIS installer and close DeskAura so it can overwrite smoothly
-        std::process::Command::new("cmd")
-            .args(["/C", "start", "", &installer_str])
-            .creation_flags(CREATE_NO_WINDOW)
-            .spawn()
-            .map_err(|e| format!("Không thể khởi chạy bộ cài: {e}"))?;
-
-        let app_clone = app.clone();
-        std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(800));
-            app_clone.exit(0);
-        });
-
-        return Ok("started_windows_installer".to_string());
+        return Ok("staged_installer".to_string());
     }
 
     #[cfg(target_os = "macos")]
@@ -719,7 +776,7 @@ async fn download_and_install_update(app: AppHandle, version: String) -> Result<
         let status = std::process::Command::new("/usr/bin/curl")
             .args(["-fL", "-sS", "-o", &dmg_path, &url])
             .status()
-            .map_err(|e| format!("Không thể tải bộ cài macOS: {e}"))?;
+            .map_err(|e| format!("stage_failed: {e}"))?;
 
         let valid_file = status.success()
             && std::fs::metadata(&dmg_path)
@@ -727,9 +784,8 @@ async fn download_and_install_update(app: AppHandle, version: String) -> Result<
                 .unwrap_or(false);
 
         if !valid_file {
-            let fallback_url = "https://github.com/duongbirken2510/deskaura/tree/main/Release_macOS";
-            let _ = open_in_system_browser(fallback_url.to_string());
-            return Err("Không tìm thấy file DMG cho phiên bản này, đã mở trang tải trên trình duyệt.".to_string());
+            let _ = std::fs::remove_file(&dmg_path);
+            return Err("not_ready_yet".to_string());
         }
 
         let mount_point = "/tmp/deskaura_update_mnt";
@@ -761,22 +817,103 @@ async fn download_and_install_update(app: AppHandle, version: String) -> Result<
                 .args(["detach", mount_point, "-force"])
                 .status();
 
+            // Immediate Phase 1 Cleanup: remove temporary DMG once extracted into /Applications
+            let _ = std::fs::remove_file(&dmg_path);
+
             if copy_ok {
-                let _ = std::process::Command::new("/bin/sh")
-                    .args(["-c", "sleep 1 && open -a /Applications/DeskAura.app"])
-                    .spawn();
-                let app_clone = app.clone();
-                std::thread::spawn(move || {
-                    std::thread::sleep(std::time::Duration::from_millis(500));
-                    app_clone.exit(0);
-                });
-                return Ok("restarting_macos_app".to_string());
+                return Ok("staged_macos_app".to_string());
             }
         }
 
-        // Fallback: open the downloaded DMG file directly in Finder
-        let _ = std::process::Command::new("open").arg(&dmg_path).spawn();
-        return Ok("opened_macos_dmg".to_string());
+        let _ = std::fs::remove_file(&dmg_path);
+        return Err("stage_copy_failed".to_string());
+    }
+
+    #[allow(unreachable_code)]
+    Ok("unsupported_os".to_string())
+}
+
+/// Phase 2 of Chrome/VSCode Silent OTA: Instantly restarts into the pre-staged update (< 1-2s).
+#[tauri::command]
+async fn download_and_install_update(app: AppHandle, version: String) -> Result<String, String> {
+    let clean_ver: String = version
+        .trim()
+        .trim_start_matches('v')
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '.' || *c == '-')
+        .collect();
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        // If In-Place Binary Swap was already staged, current_exe IS the new version! Relaunch it immediately.
+        if let Ok(current_exe) = std::env::current_exe() {
+            let old_exe = current_exe.with_extension("old.exe");
+            if old_exe.exists() {
+                let exe_str = current_exe.to_string_lossy().to_string();
+                let _ = std::process::Command::new("cmd")
+                    .args(["/C", "timeout /t 1 /nobreak > NUL && start \"\" \"", &exe_str, "\""])
+                    .creation_flags(CREATE_NO_WINDOW)
+                    .spawn();
+                let _ = std::process::Command::new(&current_exe).spawn();
+                let app_clone = app.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(300));
+                    app_clone.exit(0);
+                });
+                return Ok("restarting_swapped_exe".to_string());
+            }
+        }
+
+        // Check if silent installer was staged in %TEMP%
+        let temp_dir = std::env::temp_dir();
+        let installer_path = temp_dir.join(format!("DeskAura_{}_x64-setup.exe", clean_ver));
+        if !installer_path.exists() {
+            let _ = stage_silent_update(clean_ver.clone()).await;
+            if let Ok(current_exe) = std::env::current_exe() {
+                if current_exe.with_extension("old.exe").exists() {
+                    let _ = std::process::Command::new(&current_exe).spawn();
+                    let app_clone = app.clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_millis(300));
+                        app_clone.exit(0);
+                    });
+                    return Ok("restarting_swapped_exe".to_string());
+                }
+            }
+        }
+
+        if installer_path.exists() {
+            let installer_str = installer_path.to_string_lossy().to_string();
+            let _ = std::process::Command::new(&installer_str)
+                .arg("/S")
+                .creation_flags(CREATE_NO_WINDOW)
+                .spawn();
+            let app_clone = app.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(400));
+                app_clone.exit(0);
+            });
+            return Ok("started_silent_installer".to_string());
+        }
+
+        return Err("Gói cập nhật đang được tải ngầm, vui lòng thử lại sau ít giây.".to_string());
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        // /Applications/DeskAura.app was already updated in background by stage_silent_update!
+        let _ = std::process::Command::new("/bin/sh")
+            .args(["-c", "sleep 0.6 && open -a /Applications/DeskAura.app"])
+            .spawn();
+        let app_clone = app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(300));
+            app_clone.exit(0);
+        });
+        return Ok("restarting_macos_app".to_string());
     }
 
     #[allow(unreachable_code)]
@@ -1254,6 +1391,7 @@ pub fn run() {
 
             let _tray = tray_builder.build(app)?;
 
+            cleanup_old_update_files();
             lan_sync::start_lan_listener(app.handle().clone());
 
             Ok(())
@@ -1282,6 +1420,7 @@ pub fn run() {
             close_web_music_player,
             control_web_music_player,
             open_in_system_browser,
+            stage_silent_update,
             download_and_install_update,
             get_autostart_status,
             set_autostart_status,
