@@ -646,6 +646,144 @@ fn open_in_system_browser(url: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn download_and_install_update(app: AppHandle, version: String) -> Result<String, String> {
+    let clean_ver: String = version
+        .trim()
+        .trim_start_matches('v')
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '.' || *c == '-')
+        .collect();
+
+    if clean_ver.is_empty() {
+        return Err("Phiên bản cập nhật không hợp lệ.".to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        let url = format!(
+            "https://github.com/duongbirken2510/deskaura/raw/main/Release_Windows/DeskAura_{}_x64-setup.exe",
+            clean_ver
+        );
+        let temp_dir = std::env::temp_dir();
+        let installer_path = temp_dir.join(format!("DeskAura_{}_x64-setup.exe", clean_ver));
+        let installer_str = installer_path.to_string_lossy().to_string();
+
+        let status = std::process::Command::new("curl.exe")
+            .args(["-fL", "-sS", "-o", &installer_str, &url])
+            .creation_flags(CREATE_NO_WINDOW)
+            .status()
+            .map_err(|e| format!("Không thể tải bộ cài Windows: {e}"))?;
+
+        let valid_file = status.success()
+            && std::fs::metadata(&installer_path)
+                .map(|m| m.len() > 500_000)
+                .unwrap_or(false);
+
+        if !valid_file {
+            // Fallback: open GitHub Release_Windows folder in browser if CI is still building
+            let fallback_url = "https://github.com/duongbirken2510/deskaura/tree/main/Release_Windows";
+            let _ = open_in_system_browser(fallback_url.to_string());
+            return Err(
+                "Bộ cài Windows đang được GitHub tự động biên dịch (khoảng 2-3 phút). Đã mở trang tải dự phòng trên trình duyệt."
+                    .to_string(),
+            );
+        }
+
+        // Launch the NSIS installer and close DeskAura so it can overwrite smoothly
+        std::process::Command::new("cmd")
+            .args(["/C", "start", "", &installer_str])
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()
+            .map_err(|e| format!("Không thể khởi chạy bộ cài: {e}"))?;
+
+        let app_clone = app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(800));
+            app_clone.exit(0);
+        });
+
+        return Ok("started_windows_installer".to_string());
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let url = format!(
+            "https://github.com/duongbirken2510/deskaura/raw/main/Release_macOS/DeskAura_{}_aarch64.dmg",
+            clean_ver
+        );
+        let dmg_path = format!("/tmp/DeskAura_{}_aarch64.dmg", clean_ver);
+
+        let status = std::process::Command::new("/usr/bin/curl")
+            .args(["-fL", "-sS", "-o", &dmg_path, &url])
+            .status()
+            .map_err(|e| format!("Không thể tải bộ cài macOS: {e}"))?;
+
+        let valid_file = status.success()
+            && std::fs::metadata(&dmg_path)
+                .map(|m| m.len() > 500_000)
+                .unwrap_or(false);
+
+        if !valid_file {
+            let fallback_url = "https://github.com/duongbirken2510/deskaura/tree/main/Release_macOS";
+            let _ = open_in_system_browser(fallback_url.to_string());
+            return Err("Không tìm thấy file DMG cho phiên bản này, đã mở trang tải trên trình duyệt.".to_string());
+        }
+
+        let mount_point = "/tmp/deskaura_update_mnt";
+        let _ = std::process::Command::new("/usr/bin/hdiutil")
+            .args(["detach", mount_point, "-force"])
+            .status();
+
+        let attach_ok = std::process::Command::new("/usr/bin/hdiutil")
+            .args([
+                "attach",
+                "-nobrowse",
+                "-quiet",
+                "-mountpoint",
+                mount_point,
+                &dmg_path,
+            ])
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false);
+
+        if attach_ok {
+            let copy_ok = std::process::Command::new("/bin/cp")
+                .args(["-Rf", &format!("{}/DeskAura.app", mount_point), "/Applications/"])
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false);
+
+            let _ = std::process::Command::new("/usr/bin/hdiutil")
+                .args(["detach", mount_point, "-force"])
+                .status();
+
+            if copy_ok {
+                let _ = std::process::Command::new("/bin/sh")
+                    .args(["-c", "sleep 1 && open -a /Applications/DeskAura.app"])
+                    .spawn();
+                let app_clone = app.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    app_clone.exit(0);
+                });
+                return Ok("restarting_macos_app".to_string());
+            }
+        }
+
+        // Fallback: open the downloaded DMG file directly in Finder
+        let _ = std::process::Command::new("open").arg(&dmg_path).spawn();
+        return Ok("opened_macos_dmg".to_string());
+    }
+
+    #[allow(unreachable_code)]
+    Ok("unsupported_os".to_string())
+}
+
+#[tauri::command]
 fn hide_web_music_player(app: AppHandle) {
     if let Some(existing) = app.get_webview_window("music-player") {
         let _ = existing.hide();
@@ -1144,6 +1282,7 @@ pub fn run() {
             close_web_music_player,
             control_web_music_player,
             open_in_system_browser,
+            download_and_install_update,
             get_autostart_status,
             set_autostart_status,
             show_and_focus_window,

@@ -1,0 +1,80 @@
+name: Build Windows Installer & Portable
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'Release_Windows/**'
+      - '**.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust build cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri Windows NSIS Installer & Portable Binary
+        run: npx tauri build --bundles nsis
+
+      - name: Update Release_Windows and push to main
+        shell: pwsh
+        run: |
+          $pkg = Get-Content -Raw -Path "package.json" | ConvertFrom-Json
+          $version = $pkg.version
+          Write-Host "Packaging DeskAura Windows v$version..."
+
+          if (!(Test-Path "Release_Windows")) {
+            New-Item -ItemType Directory -Force -Path "Release_Windows" | Out-Null
+          }
+
+          # Remove older setup installers so only the latest version remains
+          Get-ChildItem -Path "Release_Windows" -Filter "DeskAura_*_x64-setup.exe" | Remove-Item -Force -ErrorAction SilentlyContinue
+
+          $nsisInstaller = Get-ChildItem -Path "src-tauri/target/release/bundle/nsis" -Filter "*_x64-setup.exe" | Select-Object -First 1
+          if ($null -ne $nsisInstaller) {
+            Copy-Item -Path $nsisInstaller.FullName -Destination "Release_Windows/DeskAura_${version}_x64-setup.exe" -Force
+          }
+
+          if (Test-Path "src-tauri/target/release/deskaura.exe") {
+            Copy-Item -Path "src-tauri/target/release/deskaura.exe" -Destination "Release_Windows/DeskAura_Portable.exe" -Force
+          }
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add Release_Windows/
+          $status = git status --porcelain Release_Windows/
+          if ($status) {
+            git commit -m "chore(release): auto-build Windows v$version installer and portable exe [skip ci]"
+            git pull --rebase origin main
+            git push origin main
+          } else {
+            Write-Host "No changes in Release_Windows to commit."
+          }
+

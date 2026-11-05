@@ -189,6 +189,44 @@ export async function openInSystemBrowser(url: string): Promise<void> {
   }
 }
 
+export function compareSemver(a: string, b: string): number {
+  const cleanA = a.trim().replace(/^v/i, '').split('.').map((n) => parseInt(n, 10) || 0);
+  const cleanB = b.trim().replace(/^v/i, '').split('.').map((n) => parseInt(n, 10) || 0);
+  const len = Math.max(cleanA.length, cleanB.length);
+  for (let i = 0; i < len; i++) {
+    const va = cleanA[i] || 0;
+    const vb = cleanB[i] || 0;
+    if (va > vb) return 1;
+    if (va < vb) return -1;
+  }
+  return 0;
+}
+
+export async function fetchLatestGithubVersion(): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://raw.githubusercontent.com/duongbirken2510/deskaura/main/package.json?t=${Date.now()}`,
+      { cache: 'no-store' }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && typeof data.version === 'string') {
+      return data.version.trim();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function downloadAndInstallUpdate(version: string): Promise<string> {
+  if (!isTauriEnv()) {
+    window.open('https://github.com/duongbirken2510/deskaura', '_blank', 'noopener,noreferrer');
+    return 'browser';
+  }
+  return await invoke<string>('download_and_install_update', { version });
+}
+
 export async function setTrayLanguage(lang: 'vi' | 'en'): Promise<void> {
   if (!isTauriEnv()) return;
   try {

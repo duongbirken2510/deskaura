@@ -50,6 +50,9 @@ import {
   LanPulsePacket,
   broadcastLanPulse,
   closeWebMusicPlayer,
+  compareSemver,
+  downloadAndInstallUpdate,
+  fetchLatestGithubVersion,
   getAutostartStatus,
   getSystemContext,
   hideWindowToTray,
@@ -62,7 +65,10 @@ import {
   showAndFocusWindow,
   updateTrayProgressIcon,
 } from './services/tauriBridge';
+import pkg from '../package.json';
 import { AppLanguage, TRANSLATIONS } from './i18n/translations';
+
+const CURRENT_APP_VERSION = pkg.version || '1.2.1';
 import {
   BreakType,
   DailyWellnessStats,
@@ -265,6 +271,72 @@ export const App: React.FC = () => {
   // Autostart Status
   const [autostartEnabled, setAutostartEnabled] = useState<boolean>(false);
   const [startMinimized, setStartMinimized] = useState<boolean>(true);
+
+  // Auto-Updater States
+  const [availableUpdateVersion, setAvailableUpdateVersion] = useState<string | null>(null);
+  const [isUpdatingApp, setIsUpdatingApp] = useState<boolean>(false);
+  const [updateStatusMsg, setUpdateStatusMsg] = useState<string | null>(null);
+  const lastNotifiedUpdateRef = useRef<string | null>(null);
+
+  const checkAppUpdate = useCallback(
+    async (manual = false) => {
+      if (manual) {
+        setUpdateStatusMsg(lang === 'en' ? 'Checking...' : 'Đang kiểm tra...');
+      }
+      const remoteVer = await fetchLatestGithubVersion();
+      if (remoteVer && compareSemver(remoteVer, CURRENT_APP_VERSION) > 0) {
+        setAvailableUpdateVersion(remoteVer);
+        setUpdateStatusMsg(null);
+        if (lastNotifiedUpdateRef.current !== remoteVer) {
+          lastNotifiedUpdateRef.current = remoteVer;
+          void sendTrayNotification(
+            `🎉 DeskAura v${remoteVer}`,
+            lang === 'en'
+              ? `Version ${remoteVer} is ready! Click "Update v${remoteVer}" in the app header to install.`
+              : `Phiên bản mới v${remoteVer} đã sẵn sàng! Nhấn nút "Cập nhật v${remoteVer}" trên thanh tiêu đề để nâng cấp.`
+          );
+        }
+      } else if (manual) {
+        setUpdateStatusMsg(
+          lang === 'en' ? '✓ Up to date' : `✓ Mới nhất (v${CURRENT_APP_VERSION})`
+        );
+        window.setTimeout(() => setUpdateStatusMsg(null), 3500);
+      }
+    },
+    [lang]
+  );
+
+  const handleInstallUpdate = useCallback(async () => {
+    if (!availableUpdateVersion || isUpdatingApp) return;
+    setIsUpdatingApp(true);
+    setUpdateStatusMsg(
+      lang === 'en'
+        ? `Downloading v${availableUpdateVersion}...`
+        : `Đang tải bản v${availableUpdateVersion}...`
+    );
+    try {
+      await downloadAndInstallUpdate(availableUpdateVersion);
+    } catch (err: unknown) {
+      setIsUpdatingApp(false);
+      setUpdateStatusMsg(
+        err instanceof Error ? err.message : String(err)
+      );
+      window.setTimeout(() => setUpdateStatusMsg(null), 6000);
+    }
+  }, [availableUpdateVersion, isUpdatingApp, lang]);
+
+  useEffect(() => {
+    const initTimer = window.setTimeout(() => {
+      void checkAppUpdate(false);
+    }, 3500);
+    const pollTimer = window.setInterval(() => {
+      void checkAppUpdate(false);
+    }, 30 * 60 * 1000);
+    return () => {
+      window.clearTimeout(initTimer);
+      window.clearInterval(pollTimer);
+    };
+  }, [checkAppUpdate]);
 
   // Firebase Multi-Device Cloud Sync States
   const [syncStatus, setSyncStatus] = useState<SyncConnectionStatus>('disconnected');
@@ -1449,9 +1521,37 @@ export const App: React.FC = () => {
               <h1 className="text-base font-extrabold tracking-tight text-slate-800">
                 DeskAura
               </h1>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                v1.2.1
-              </span>
+              <button
+                onClick={() => void checkAppUpdate(true)}
+                title={
+                  lang === 'en'
+                    ? 'Click to check for updates'
+                    : 'Nhấn để kiểm tra bản cập nhật mới'
+                }
+                className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition cursor-pointer"
+              >
+                v{CURRENT_APP_VERSION}
+              </button>
+              {availableUpdateVersion && (
+                <button
+                  onClick={() => void handleInstallUpdate()}
+                  disabled={isUpdatingApp}
+                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition animate-pulse disabled:opacity-60"
+                >
+                  {isUpdatingApp
+                    ? lang === 'en'
+                      ? `⏳ Updating...`
+                      : `⏳ Đang tải...`
+                    : lang === 'en'
+                    ? `🚀 Update v${availableUpdateVersion}`
+                    : `🚀 Cập nhật v${availableUpdateVersion}`}
+                </button>
+              )}
+              {updateStatusMsg && !isUpdatingApp && (
+                <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  {updateStatusMsg}
+                </span>
+              )}
             </div>
           </div>
 
