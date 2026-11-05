@@ -15,6 +15,11 @@ import {
   StandupSettings,
   VoiceReminderSettings,
 } from '../types/wellness';
+import { CloudSyncCard } from './CloudSyncCard';
+import {
+  FirebaseConfigPayload,
+  SyncConnectionStatus,
+} from '../services/firebaseSync';
 
 interface SettingsPanelProps {
   standupSettings: StandupSettings;
@@ -25,6 +30,21 @@ interface SettingsPanelProps {
   isTestingVoice: boolean;
   lastDuckedCount: number;
   lang?: 'vi' | 'en';
+  syncStatus: SyncConnectionStatus;
+  syncError: string | null;
+  activeSyncCode: string;
+  userEmail: string | null;
+  lastSyncedDevice: string | null;
+  lastSyncedAt: number | null;
+  isFirebaseConfigured: boolean;
+  currentProjectId: string | null;
+  onSaveFirebaseConfig: (config: FirebaseConfigPayload) => void;
+  onConnectSyncCode: (code: string) => void;
+  onDisconnectSync: () => void;
+  onGoogleSignIn: () => void;
+  onEmailAuth: (email: string, pass: string, isRegister: boolean) => void;
+  onLogoutAccount: () => void;
+  onForceSyncNow: () => void;
   onUpdateStandup: (partial: Partial<StandupSettings>) => void;
   onUpdateHydration: (partial: Partial<HydrationSettings>) => void;
   onUpdateVoice: (partial: Partial<VoiceReminderSettings>) => void;
@@ -41,6 +61,21 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   isTestingVoice,
   lastDuckedCount,
   lang = 'vi',
+  syncStatus,
+  syncError,
+  activeSyncCode,
+  userEmail,
+  lastSyncedDevice,
+  lastSyncedAt,
+  isFirebaseConfigured,
+  currentProjectId,
+  onSaveFirebaseConfig,
+  onConnectSyncCode,
+  onDisconnectSync,
+  onGoogleSignIn,
+  onEmailAuth,
+  onLogoutAccount,
+  onForceSyncNow,
   onUpdateStandup,
   onUpdateHydration,
   onUpdateVoice,
@@ -50,6 +85,26 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const isEn = lang === 'en';
   return (
     <div className="space-y-6">
+      {/* Section 0: Multi-Device Cloud Sync (Firebase Realtime + Aura Sync Code) */}
+      <CloudSyncCard
+        lang={lang}
+        syncStatus={syncStatus}
+        syncError={syncError}
+        activeSyncCode={activeSyncCode}
+        userEmail={userEmail}
+        lastSyncedDevice={lastSyncedDevice}
+        lastSyncedAt={lastSyncedAt}
+        isConfigured={isFirebaseConfigured}
+        currentProjectId={currentProjectId}
+        onSaveFirebaseConfig={onSaveFirebaseConfig}
+        onConnectSyncCode={onConnectSyncCode}
+        onDisconnectSync={onDisconnectSync}
+        onGoogleSignIn={onGoogleSignIn}
+        onEmailAuth={onEmailAuth}
+        onLogoutAccount={onLogoutAccount}
+        onForceSyncNow={onForceSyncNow}
+      />
+
       {/* Section 1: Voice Reminder & Windows WASAPI Audio Ducking */}
       <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">

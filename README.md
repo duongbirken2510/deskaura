@@ -34,6 +34,10 @@ Phiên bản **DeskAura v1.1** tập trung tối ưu hóa trải nghiệm thị 
    - Bổ sung mục **Kiểu Hiển Thị Khi Đến Giờ Nhắc Nhở** trong phần Cài Đặt với 2 chế độ:
      - **🖥️ Hiển thị Màn hình Nhắc nhở (Bung cửa sổ):** Tự động bung cửa sổ hướng dẫn bài tập giãn cơ lên màn hình kết hợp giọng đọc AI.
      - **🔔 Chỉ nhắc ở Icon Taskbar / Khay hệ thống:** Không bung cửa sổ làm gián đoạn công việc đang gõ dở — chỉ nháy sáng biểu tượng dưới Taskbar/Dock, hiện thông báo góc màn hình kèm giọng nhắc nhẹ nhàng.
+4. ☁️ **Đồng Bộ Đa Thiết Bị Thời Gian Thực (`Firebase Cloud Sync` & `Aura Sync Code`):**
+   - Kết nối liền mạch giữa **PC Windows, MacBook và iPhone/iPad** qua cơ sở dữ liệu **Google Cloud Firestore (`Offline-First`)**.
+   - Hỗ trợ song song **Mã Đồng Bộ Nhanh 6 ký tự (`Aura Code`, VD: `AURA-YVGUD7`)** và **Tài khoản Google / Email**.
+   - Tích hợp thuật toán **Hợp nhất Nhật ký (`Deduplicated Log Union`)** chống ghi đè lịch sử uống nước và số lần đứng dậy khi mở nhiều thiết bị cùng lúc.
 
 ---
 
@@ -71,6 +75,13 @@ Màn hình nhắc nghỉ ngơi dịu mắt với hoạt ảnh bài tập cổ - 
 Lựa chọn linh hoạt giữa **Bung màn hình nhắc nhở** hoặc **Chỉ nhắc ở Icon Taskbar / Khay hệ thống**, kết hợp công nghệ **Windows WASAPI Audio Ducking** tự động hạ nhỏ âm lượng ứng dụng khác xuống 20% khi phát giọng đọc AI.
 
 ![DeskAura v1.1 Reminder Mode & Settings](./docs/screenshots/04-settings-en.png)
+
+---
+
+### 6. Đồng Bộ Đa Thiết Bị Thời Gian Thực (`Firebase Cloud Sync & 6-Digit Aura Code`)
+Ghép đôi tức thì giữa **PC Windows, MacBook và iPhone/iPad** bằng **Mã Đồng Bộ Nhanh (`Aura Code` 6 ký tự)** hoặc **Tài khoản Google / Email**, tự động hợp nhất lịch sử uống nước và biểu đồ Mebius 7 ngày mà không sợ mất dữ liệu khi Offline.
+
+![DeskAura v1.1 Multi-Device Firebase Cloud Sync](./docs/screenshots/06-cloud-sync-firebase.png)
 
 ---
 

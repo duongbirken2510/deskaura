@@ -7,6 +7,10 @@ All notable changes to **DeskAura** are documented in this file.
 ## [v1.1.0] — 2026-11-04
 
 ### ✨ Tính Năng Mới (Added)
+- **Đồng Bộ Đa Thiết Bị Thời Gian Thực (`Firebase Cloud Sync` & `Aura Sync Code`):**
+  - Kết nối tức thì giữa **PC Windows, MacBook và iPhone/iPad** qua cơ sở dữ liệu **Google Cloud Firestore (`Offline-First`)**.
+  - Hỗ trợ song song **Mã Đồng Bộ Nhanh 6 ký tự (`Aura Code`, VD: `AURA-YVGUD7`)** và **Tài khoản Google / Email**.
+  - Tích hợp thuật toán **Hợp nhất Nhật ký (`Deduplicated Log Union`)** chống ghi đè dữ liệu nước uống và số lần đứng dậy khi mở nhiều thiết bị cùng lúc.
 - **Tab `Thống Kê` (`Analytics`) Độc Lập:** Tách riêng bộ 3 biểu đồ **Mebius 7 Ngày** (*Thống kê Nước uống & Vận động 7 ngày*, *Nhịp Tập Trung Sâu Deep Focus Flow*, *Điểm Sức Khỏe Aura Index 0–100*) sang tab riêng biệt để giữ trang **Tổng Quan Sức Khỏe** tinh gọn trên 1 khung nhìn.
 - **Tùy Chọn Kiểu Nhắc Nhở (`Màn Hình Nhắc` vs. `Icon Taskbar`):**
   - **🖥️ Hiển thị Màn hình Nhắc nhở (Bung cửa sổ - `overlay`):** Tự động bung cửa sổ hướng dẫn bài tập giãn cơ kết hợp giọng đọc AI khi đến giờ nghỉ.
@@ -27,3 +31,4 @@ All notable changes to **DeskAura** are documented in this file.
 - Hoạt ảnh hướng dẫn giãn cơ đa khớp 60fps & Trạm theo dõi uống nước cùng **Chậu cây DeskAura**.
 - Bộ trộn 10 lớp âm thanh thiên nhiên & sóng não Offline + Trình phát Zing MP3 chạy ngầm chống quảng cáo.
 - Giọng đọc AI Song ngữ Việt - Anh & công nghệ tự động giảm âm lượng ứng dụng khác (**Windows WASAPI Audio Ducking**).
+

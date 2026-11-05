@@ -4,6 +4,7 @@ import {
   Activity,
   BarChart3,
   Bell,
+  Cloud,
   Clock,
   Coffee,
   Droplets,
@@ -20,6 +21,14 @@ import {
   Trash2,
   Volume2,
 } from 'lucide-react';
+import {
+  CloudWellnessDocument,
+  FirebaseConfigPayload,
+  SyncConnectionStatus,
+  firebaseSyncService,
+  mergeDailyStats,
+  mergeWeeklyHistory,
+} from './services/firebaseSync';
 import { BreakOverlayModal } from './components/BreakOverlayModal';
 import { VirtualDeskPlant } from './components/ExerciseIllustration';
 import {
@@ -212,6 +221,23 @@ export const App: React.FC = () => {
   const [autostartEnabled, setAutostartEnabled] = useState<boolean>(false);
   const [startMinimized, setStartMinimized] = useState<boolean>(true);
 
+  // Firebase Multi-Device Cloud Sync States
+  const [syncStatus, setSyncStatus] = useState<SyncConnectionStatus>('disconnected');
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [activeSyncCode, setActiveSyncCode] = useState<string>(() =>
+    firebaseSyncService.getSavedSyncCode()
+  );
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [lastSyncedDevice, setLastSyncedDevice] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  const [isFirebaseConfigured, setIsFirebaseConfigured] = useState<boolean>(() =>
+    firebaseSyncService.isConfigured()
+  );
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(
+    () => firebaseSyncService.getSavedConfig()?.projectId || null
+  );
+  const isApplyingRemoteRef = useRef<boolean>(false);
+
   // 4. Sound Mixer States
   const [activeSounds, setActiveSounds] = useState<Record<SoundId, boolean>>({
     rain: false,
@@ -265,7 +291,27 @@ export const App: React.FC = () => {
     });
   }, [dailyStats]);
 
-  // Initialize Autostart Status, Tray Language & Radio Callback
+  // Initialize Autostart Status, Tray Language, Radio Callback & Firebase Cloud Sync
+  const handleRemoteCloudSnapshot = useCallback((docData: CloudWellnessDocument) => {
+    isApplyingRemoteRef.current = true;
+    setLastSyncedDevice(docData.lastDeviceName || null);
+    setLastSyncedAt(docData.updatedAt || Date.now());
+
+    if (docData.dailyStats) {
+      setDailyStats((prev) => mergeDailyStats(prev, docData.dailyStats));
+    }
+    if (docData.weeklyHistory) {
+      setWeeklyHistory((prev) => {
+        const merged = mergeWeeklyHistory(prev, docData.weeklyHistory);
+        localStorage.setItem(STORAGE_KEYS.WEEKLY_HISTORY, JSON.stringify(merged));
+        return merged;
+      });
+    }
+    setTimeout(() => {
+      isApplyingRemoteRef.current = false;
+    }, 350);
+  }, []);
+
   useEffect(() => {
     getAutostartStatus().then((status) => setAutostartEnabled(status));
     setTrayLanguage(lang);
@@ -273,7 +319,219 @@ export const App: React.FC = () => {
       setIsRadioPlaying(playing);
       if (error) setRadioError(error);
     });
+
+    if (firebaseSyncService.isConfigured()) {
+      const unsubAuth = firebaseSyncService.onUserChange((user) => {
+        setUserEmail(user?.email || null);
+      });
+      const savedCode = firebaseSyncService.getSavedSyncCode();
+      if (savedCode) {
+        firebaseSyncService.startRealtimeSync(
+          savedCode,
+          {
+            dailyStats,
+            weeklyHistory,
+            standupSettings,
+            hydrationSettings,
+            voiceSettings,
+          },
+          handleRemoteCloudSnapshot,
+          (status, err) => {
+            setSyncStatus(status);
+            setSyncError(err || null);
+          }
+        );
+      }
+      return () => {
+        unsubAuth();
+        firebaseSyncService.stopListening();
+      };
+    }
   }, []);
+
+  // Automatically push local wellness changes to Firebase Cloud when connected
+  useEffect(() => {
+    if (isApplyingRemoteRef.current) return;
+    if (!isFirebaseConfigured) return;
+    if (!activeSyncCode && !userEmail) return;
+
+    const timer = window.setTimeout(() => {
+      firebaseSyncService
+        .pushUpdate(activeSyncCode || null, {
+          dailyStats,
+          weeklyHistory,
+          standupSettings,
+          hydrationSettings,
+          voiceSettings,
+        })
+        .catch((err) => {
+          setSyncError(err instanceof Error ? err.message : String(err));
+        });
+    }, 600);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    activeSyncCode,
+    dailyStats,
+    hydrationSettings,
+    isFirebaseConfigured,
+    standupSettings,
+    userEmail,
+    voiceSettings,
+    weeklyHistory,
+  ]);
+
+  const handleSaveFirebaseConfig = (config: FirebaseConfigPayload) => {
+    const res = firebaseSyncService.init(config);
+    if (!res.ok) {
+      setSyncStatus('error');
+      setSyncError(res.error || 'Failed to initialize Firebase');
+      return;
+    }
+    setIsFirebaseConfigured(true);
+    setCurrentProjectId(config.projectId);
+    setSyncError(null);
+
+    firebaseSyncService.onUserChange((user) => {
+      setUserEmail(user?.email || null);
+    });
+
+    const codeToUse = activeSyncCode || firebaseSyncService.getSavedSyncCode();
+    if (codeToUse) {
+      firebaseSyncService.startRealtimeSync(
+        codeToUse,
+        {
+          dailyStats,
+          weeklyHistory,
+          standupSettings,
+          hydrationSettings,
+          voiceSettings,
+        },
+        handleRemoteCloudSnapshot,
+        (status, err) => {
+          setSyncStatus(status);
+          setSyncError(err || null);
+        }
+      );
+    }
+  };
+
+  const handleConnectSyncCode = (code: string) => {
+    if (!code) return;
+    firebaseSyncService.saveSyncCode(code);
+    setActiveSyncCode(code);
+    setSyncError(null);
+    if (!firebaseSyncService.isConfigured()) {
+      setSyncError(
+        lang === 'en'
+          ? 'Please paste your Firebase project config first using the button above.'
+          : 'Sếp hãy bấm nút "Cấu hình Firebase Project" ở góc phải thẻ để dán khóa dự án Firebase trước nhé.'
+      );
+      return;
+    }
+    firebaseSyncService.startRealtimeSync(
+      code,
+      {
+        dailyStats,
+        weeklyHistory,
+        standupSettings,
+        hydrationSettings,
+        voiceSettings,
+      },
+      handleRemoteCloudSnapshot,
+      (status, err) => {
+        setSyncStatus(status);
+        setSyncError(err || null);
+      }
+    );
+  };
+
+  const handleDisconnectSync = () => {
+    firebaseSyncService.stopListening();
+    firebaseSyncService.saveSyncCode('');
+    setActiveSyncCode('');
+    setSyncStatus('disconnected');
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setSyncError(null);
+      const user = await firebaseSyncService.signInWithGoogle();
+      setUserEmail(user.email || 'Google User');
+      await firebaseSyncService.startRealtimeSync(
+        activeSyncCode || null,
+        {
+          dailyStats,
+          weeklyHistory,
+          standupSettings,
+          hydrationSettings,
+          voiceSettings,
+        },
+        handleRemoteCloudSnapshot,
+        (status, err) => {
+          setSyncStatus(status);
+          setSyncError(err || null);
+        }
+      );
+    } catch (err: unknown) {
+      setSyncError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const handleEmailAuth = async (
+    email: string,
+    pass: string,
+    isRegister: boolean
+  ) => {
+    try {
+      setSyncError(null);
+      const user = await firebaseSyncService.signInWithEmail(
+        email,
+        pass,
+        isRegister
+      );
+      setUserEmail(user.email || email);
+      await firebaseSyncService.startRealtimeSync(
+        activeSyncCode || null,
+        {
+          dailyStats,
+          weeklyHistory,
+          standupSettings,
+          hydrationSettings,
+          voiceSettings,
+        },
+        handleRemoteCloudSnapshot,
+        (status, err) => {
+          setSyncStatus(status);
+          setSyncError(err || null);
+        }
+      );
+    } catch (err: unknown) {
+      setSyncError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const handleLogoutAccount = async () => {
+    await firebaseSyncService.logout();
+    setUserEmail(null);
+    setSyncStatus('disconnected');
+  };
+
+  const handleForceSyncNow = async () => {
+    try {
+      setSyncError(null);
+      await firebaseSyncService.pushUpdate(activeSyncCode || null, {
+        dailyStats,
+        weeklyHistory,
+        standupSettings,
+        hydrationSettings,
+        voiceSettings,
+      });
+      setLastSyncedAt(Date.now());
+    } catch (err: unknown) {
+      setSyncError(err instanceof Error ? err.message : String(err));
+    }
+  };
 
   const handleSwitchLanguage = (nextLang: AppLanguage) => {
     setLang(nextLang);
@@ -803,6 +1061,32 @@ export const App: React.FC = () => {
 
           {/* Right Quick Status, Language Toggle & Tray Action */}
           <div className="flex items-center gap-2">
+            {/* Cloud Sync Quick Indicator Pill */}
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition ${
+                syncStatus === 'synced'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : syncStatus === 'offline_cached'
+                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                  : 'bg-slate-50 text-slate-600 border-slate-200/80 hover:bg-slate-100'
+              }`}
+              title={
+                lang === 'en'
+                  ? 'Multi-Device Cloud Sync Status'
+                  : 'Trạng thái Đồng bộ Đa thiết bị (Cloud Sync)'
+              }
+            >
+              <Cloud className="w-3.5 h-3.5" />
+              {activeSyncCode
+                ? activeSyncCode
+                : syncStatus === 'synced'
+                ? 'Cloud'
+                : lang === 'en'
+                ? 'Sync'
+                : 'Đồng bộ'}
+            </button>
+
             {/* Language Switcher Pill (VI / EN) */}
             <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/80">
               <button
@@ -1341,6 +1625,21 @@ export const App: React.FC = () => {
             isTestingVoice={isTestingVoice}
             lastDuckedCount={duckedAppsCount}
             lang={lang}
+            syncStatus={syncStatus}
+            syncError={syncError}
+            activeSyncCode={activeSyncCode}
+            userEmail={userEmail}
+            lastSyncedDevice={lastSyncedDevice}
+            lastSyncedAt={lastSyncedAt}
+            isFirebaseConfigured={isFirebaseConfigured}
+            currentProjectId={currentProjectId}
+            onSaveFirebaseConfig={handleSaveFirebaseConfig}
+            onConnectSyncCode={handleConnectSyncCode}
+            onDisconnectSync={handleDisconnectSync}
+            onGoogleSignIn={handleGoogleSignIn}
+            onEmailAuth={handleEmailAuth}
+            onLogoutAccount={handleLogoutAccount}
+            onForceSyncNow={handleForceSyncNow}
             onUpdateStandup={(partial) => {
               setStandupSettings((prev) => {
                 const updated = { ...prev, ...partial };
