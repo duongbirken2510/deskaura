@@ -18,22 +18,19 @@ pub fn get_idle_seconds() -> u64 {
 }
 
 #[cfg(target_os = "macos")]
+#[link(name = "CoreGraphics", kind = "framework")]
+extern "C" {
+    fn CGEventSourceSecondsSinceLastEventType(state_id: i32, event_type: u32) -> f64;
+}
+
+#[cfg(target_os = "macos")]
 pub fn get_idle_seconds() -> u64 {
-    if let Ok(output) = std::process::Command::new("ioreg")
-        .args(["-c", "IOHIDSystem", "-d", "4"])
-        .output()
-    {
-        if let Ok(stdout) = String::from_utf8(output.stdout) {
-            for line in stdout.lines() {
-                if line.contains("\"HIDIdleTime\"") {
-                    if let Some(eq_idx) = line.find('=') {
-                        let num_str = line[eq_idx + 1..].trim();
-                        if let Ok(nanos) = num_str.parse::<u64>() {
-                            return nanos / 1_000_000_000;
-                        }
-                    }
-                }
-            }
+    // kCGEventSourceStateCombinedSessionState = 0, kCGAnyInputEventType = u32::MAX (~0)
+    // Native C FFI call (<0.001ms, 0 child processes spawned vs spawning `ioreg` every 3s)
+    unsafe {
+        let secs = CGEventSourceSecondsSinceLastEventType(0, u32::MAX);
+        if secs.is_finite() && secs >= 0.0 {
+            return secs as u64;
         }
     }
     0

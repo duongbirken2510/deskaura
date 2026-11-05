@@ -1,8 +1,12 @@
+#[cfg(target_os = "windows")]
 use std::collections::HashMap;
+#[cfg(target_os = "windows")]
 use std::sync::{Mutex, OnceLock};
 
+#[cfg(target_os = "windows")]
 static SAVED_VOLUMES: OnceLock<Mutex<HashMap<u32, f32>>> = OnceLock::new();
 
+#[cfg(target_os = "windows")]
 fn get_volume_store() -> &'static Mutex<HashMap<u32, f32>> {
     SAVED_VOLUMES.get_or_init(|| Mutex::new(HashMap::new()))
 }

@@ -122,7 +122,7 @@ async fn start_google_oauth_loopback(
 ) -> Result<String, String> {
     use std::io::{Read, Write};
     use std::net::TcpListener;
-    use std::time::{Duration, Instant};
+    use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
     let listener = TcpListener::bind("127.0.0.1:0")
         .map_err(|e| format!("Không thể khởi tạo cổng xác thực cục bộ: {e}"))?;
@@ -130,6 +130,21 @@ async fn start_google_oauth_loopback(
         .local_addr()
         .map_err(|e| format!("Không thể lấy cổng xác thực: {e}"))?
         .port();
+
+    // Generate per-session anti-CSRF state nonce
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let state_nonce = format!("da_oauth_{:x}_{}", nanos, std::process::id());
+
+    // Safely JSON-encode config strings to prevent any DOM/Script injection
+    let safe_api_key = serde_json::to_string(&api_key).unwrap_or_else(|_| "\"\"".to_string());
+    let safe_auth_domain =
+        serde_json::to_string(&auth_domain).unwrap_or_else(|_| "\"\"".to_string());
+    let safe_project_id = serde_json::to_string(&project_id).unwrap_or_else(|_| "\"\"".to_string());
+    let safe_state_nonce =
+        serde_json::to_string(&state_nonce).unwrap_or_else(|_| "\"\"".to_string());
 
     let auth_url = format!("http://localhost:{port}/");
     let _ = open_in_system_browser(auth_url);
@@ -157,6 +172,7 @@ async fn start_google_oauth_loopback(
                         let path_part = first_line.split_whitespace().nth(1).unwrap_or("");
                         let query = path_part.split('?').nth(1).unwrap_or("");
                         let mut id_token = String::new();
+                        let mut req_state = String::new();
                         let mut err_msg = String::new();
 
                         for pair in query.split('&') {
@@ -165,9 +181,18 @@ async fn start_google_oauth_loopback(
                             let v = kv.next().unwrap_or("");
                             if k == "id_token" {
                                 id_token = v.to_string();
+                            } else if k == "state" {
+                                req_state = v.to_string();
                             } else if k == "error" {
                                 err_msg = v.to_string();
                             }
+                        }
+
+                        if req_state != state_nonce {
+                            let forbidden = "HTTP/1.1 403 Forbidden\r\nContent-Length: 19\r\nConnection: close\r\n\r\nInvalid OAuth state";
+                            let _ = stream.write_all(forbidden.as_bytes());
+                            let _ = stream.flush();
+                            continue;
                         }
 
                         let success_html = r#"<!DOCTYPE html>
@@ -194,7 +219,7 @@ async fn start_google_oauth_loopback(
 </html>"#;
 
                         let response = format!(
-                            "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nX-Content-Type-Options: nosniff\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
                             success_html.len(),
                             success_html
                         );
@@ -240,10 +265,11 @@ async fn start_google_oauth_loopback(
     import {{ initializeApp }} from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js';
     import {{ getAuth, GoogleAuthProvider, signInWithPopup }} from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js';
 
+    const OAUTH_STATE = {safe_state_nonce};
     const app = initializeApp({{
-      apiKey: "{api_key}",
-      authDomain: "{auth_domain}",
-      projectId: "{project_id}"
+      apiKey: {safe_api_key},
+      authDomain: {safe_auth_domain},
+      projectId: {safe_project_id}
     }});
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
@@ -256,7 +282,7 @@ async fn start_google_oauth_loopback(
         const result = await signInWithPopup(auth, provider);
         const cred = GoogleAuthProvider.credentialFromResult(result);
         if (cred && cred.idToken) {{
-          window.location.href = '/callback?id_token=' + encodeURIComponent(cred.idToken);
+          window.location.href = '/callback?state=' + encodeURIComponent(OAUTH_STATE) + '&id_token=' + encodeURIComponent(cred.idToken);
         }} else {{
           throw new Error('Không nhận được mã xác thực Google.');
         }}
@@ -275,7 +301,7 @@ async fn start_google_oauth_loopback(
                         );
 
                         let response = format!(
-                            "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nX-Content-Type-Options: nosniff\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
                             login_html.len(),
                             login_html
                         );
@@ -432,6 +458,26 @@ pub fn execute_zing_action(app: &AppHandle, action: &str, value: Option<f32>) ->
     true
 }
 
+fn validate_safe_external_url(raw: &str) -> Result<tauri::Url, String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err("URL trống".to_string());
+    }
+    // Reject any shell control characters to prevent command injection
+    const FORBIDDEN_CHARS: &[char] = &['"', '\'', '`', '$', '|', ';', '\n', '\r', '<', '>'];
+    if trimmed.chars().any(|c| FORBIDDEN_CHARS.contains(&c)) {
+        return Err("URL chứa ký tự không an toàn".to_string());
+    }
+    let parsed: tauri::Url = trimmed
+        .parse()
+        .map_err(|e| format!("URL không hợp lệ: {e}"))?;
+    let scheme = parsed.scheme();
+    if scheme != "https" && scheme != "http" {
+        return Err(format!("Giao thức không được phép: {scheme}"));
+    }
+    Ok(parsed)
+}
+
 #[tauri::command]
 async fn open_web_music_player(
     app: AppHandle,
@@ -444,9 +490,7 @@ async fn open_web_music_player(
         url.trim().to_string()
     };
 
-    let parsed: tauri::Url = target_url
-        .parse()
-        .map_err(|e| format!("URL không hợp lệ: {e}"))?;
+    let parsed = validate_safe_external_url(&target_url)?;
 
     if let Some(existing) = app.get_webview_window("music-player") {
         if url != "__SHOW_ONLY__" && !url.trim().is_empty() {
@@ -625,12 +669,15 @@ async fn open_web_music_player(
 
 #[tauri::command]
 fn open_in_system_browser(url: String) -> Result<(), String> {
+    let parsed = validate_safe_external_url(&url)?;
+    let safe_url = parsed.to_string();
+
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
         const CREATE_NO_WINDOW: u32 = 0x08000000;
-        std::process::Command::new("cmd")
-            .args(["/C", "start", "", url.trim()])
+        std::process::Command::new("rundll32")
+            .args(["url.dll,FileProtocolHandler", &safe_url])
             .creation_flags(CREATE_NO_WINDOW)
             .spawn()
             .map_err(|e| format!("Không thể mở trình duyệt: {e}"))?;
@@ -638,11 +685,42 @@ fn open_in_system_browser(url: String) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     {
         std::process::Command::new("open")
-            .arg(url.trim())
+            .arg(&safe_url)
             .spawn()
             .map_err(|e| format!("Không thể mở trình duyệt trên macOS: {e}"))?;
     }
     Ok(())
+}
+
+/// Verifies that a downloaded binary is a real binary (PE MZ header on Windows or non-HTML binary >500KB on macOS)
+/// and not an HTML error page or corrupted transfer.
+fn is_valid_binary_payload(path: &std::path::Path, min_bytes: u64) -> bool {
+    use std::io::Read;
+    let Ok(meta) = std::fs::metadata(path) else {
+        return false;
+    };
+    if meta.len() < min_bytes {
+        return false;
+    }
+    let Ok(mut file) = std::fs::File::open(path) else {
+        return false;
+    };
+    let mut header = [0u8; 16];
+    if file.read_exact(&mut header).is_err() {
+        return false;
+    }
+    // Reject HTML/XML error pages disguised as binary downloads
+    if header.starts_with(b"<!DOC") || header.starts_with(b"<html") || header.starts_with(b"<?xml") {
+        return false;
+    }
+    #[cfg(target_os = "windows")]
+    {
+        // Windows PE executables must start with Magic Bytes "MZ" (0x4D, 0x5A)
+        if header[0] != 0x4D || header[1] != 0x5A {
+            return false;
+        }
+    }
+    true
 }
 
 /// Two-Phase Garbage Collection: Cleans up any leftover update installers, DMGs, or `.old.exe` files on startup.
@@ -658,8 +736,11 @@ fn cleanup_old_update_files() {
         }
     }
 
-    // 2. Clean temporary update installers / DMGs in OS temp directory
+    // 2. Clean temporary update installers / DMGs in OS temp directory & private OTA vault
     let temp_dir = std::env::temp_dir();
+    let ota_vault = temp_dir.join("deskaura_ota_vault");
+    let _ = std::fs::remove_dir_all(&ota_vault);
+
     if let Ok(entries) = std::fs::read_dir(&temp_dir) {
         for entry in entries.flatten() {
             let name = entry.file_name().to_string_lossy().to_string();
@@ -716,10 +797,7 @@ async fn stage_silent_update(version: String) -> Result<String, String> {
             .map(|s| s.success())
             .unwrap_or(false);
 
-        let valid_portable = dl_ok
-            && std::fs::metadata(&staged_exe)
-                .map(|m| m.len() > 2_000_000)
-                .unwrap_or(false);
+        let valid_portable = dl_ok && is_valid_binary_payload(&staged_exe, 2_000_000);
 
         if valid_portable {
             if let Ok(current_exe) = std::env::current_exe() {
@@ -752,10 +830,7 @@ async fn stage_silent_update(version: String) -> Result<String, String> {
             .status()
             .map_err(|e| format!("stage_failed: {e}"))?;
 
-        let valid_setup = status.success()
-            && std::fs::metadata(&installer_path)
-                .map(|m| m.len() > 500_000)
-                .unwrap_or(false);
+        let valid_setup = status.success() && is_valid_binary_payload(&installer_path, 500_000);
 
         if !valid_setup {
             let _ = std::fs::remove_file(&installer_path);
@@ -771,26 +846,27 @@ async fn stage_silent_update(version: String) -> Result<String, String> {
             "https://github.com/duongbirken2510/deskaura/raw/main/Release_macOS/DeskAura_{}_aarch64.dmg",
             clean_ver
         );
-        let dmg_path = format!("/tmp/DeskAura_{}_aarch64.dmg", clean_ver);
+        let ota_vault = std::env::temp_dir().join("deskaura_ota_vault");
+        let _ = std::fs::create_dir_all(&ota_vault);
+        let dmg_path_buf = ota_vault.join(format!("DeskAura_{}_aarch64.dmg", clean_ver));
+        let dmg_path = dmg_path_buf.to_string_lossy().to_string();
 
         let status = std::process::Command::new("/usr/bin/curl")
             .args(["-fL", "-sS", "-o", &dmg_path, &url])
             .status()
             .map_err(|e| format!("stage_failed: {e}"))?;
 
-        let valid_file = status.success()
-            && std::fs::metadata(&dmg_path)
-                .map(|m| m.len() > 500_000)
-                .unwrap_or(false);
+        let valid_file = status.success() && is_valid_binary_payload(&dmg_path_buf, 500_000);
 
         if !valid_file {
-            let _ = std::fs::remove_file(&dmg_path);
+            let _ = std::fs::remove_file(&dmg_path_buf);
             return Err("not_ready_yet".to_string());
         }
 
-        let mount_point = "/tmp/deskaura_update_mnt";
+        let mount_point_buf = ota_vault.join("mnt");
+        let mount_point = mount_point_buf.to_string_lossy().to_string();
         let _ = std::process::Command::new("/usr/bin/hdiutil")
-            .args(["detach", mount_point, "-force"])
+            .args(["detach", &mount_point, "-force"])
             .status();
 
         let attach_ok = std::process::Command::new("/usr/bin/hdiutil")
@@ -799,7 +875,7 @@ async fn stage_silent_update(version: String) -> Result<String, String> {
                 "-nobrowse",
                 "-quiet",
                 "-mountpoint",
-                mount_point,
+                &mount_point,
                 &dmg_path,
             ])
             .status()
@@ -814,18 +890,18 @@ async fn stage_silent_update(version: String) -> Result<String, String> {
                 .unwrap_or(false);
 
             let _ = std::process::Command::new("/usr/bin/hdiutil")
-                .args(["detach", mount_point, "-force"])
+                .args(["detach", &mount_point, "-force"])
                 .status();
 
             // Immediate Phase 1 Cleanup: remove temporary DMG once extracted into /Applications
-            let _ = std::fs::remove_file(&dmg_path);
+            let _ = std::fs::remove_file(&dmg_path_buf);
 
             if copy_ok {
                 return Ok("staged_macos_app".to_string());
             }
         }
 
-        let _ = std::fs::remove_file(&dmg_path);
+        let _ = std::fs::remove_file(&dmg_path_buf);
         return Err("stage_copy_failed".to_string());
     }
 
@@ -836,7 +912,7 @@ async fn stage_silent_update(version: String) -> Result<String, String> {
 /// Phase 2 of Chrome/VSCode Silent OTA: Instantly restarts into the pre-staged update (< 1-2s).
 #[tauri::command]
 async fn download_and_install_update(app: AppHandle, version: String) -> Result<String, String> {
-    let clean_ver: String = version
+    let _clean_ver: String = version
         .trim()
         .trim_start_matches('v')
         .chars()
@@ -845,6 +921,7 @@ async fn download_and_install_update(app: AppHandle, version: String) -> Result<
 
     #[cfg(target_os = "windows")]
     {
+        let clean_ver = _clean_ver;
         use std::os::windows::process::CommandExt;
         const CREATE_NO_WINDOW: u32 = 0x08000000;
 
@@ -1099,19 +1176,42 @@ fn update_tray_progress_icon(
     is_deferred_alert: Option<bool>,
     tooltip: String,
 ) {
+    use std::sync::{Mutex, OnceLock};
+    static LAST_TRAY_CACHE: OnceLock<Mutex<(i32, bool, bool, String)>> = OnceLock::new();
+
     if let Some(tray) = app.tray_by_id("main-tray") {
-        let rgba = render_tray_pie_icon(
-            progress_ratio,
-            is_eye_cue,
-            is_deferred_alert.unwrap_or(false),
-        );
-        let img = tauri::image::Image::new_owned(rgba, 32, 32);
-        let _ = tray.set_icon(Some(img));
-        #[cfg(target_os = "macos")]
-        {
-            let _ = tray.set_icon_as_template(false);
+        let deferred = is_deferred_alert.unwrap_or(false);
+        let quantized = (progress_ratio.clamp(0.0, 1.0) * 100.0).round() as i32;
+        let cache = LAST_TRAY_CACHE.get_or_init(|| Mutex::new((-1, false, false, String::new())));
+
+        let mut need_icon = true;
+        let mut need_tooltip = !tooltip.is_empty();
+
+        if let Ok(mut guard) = cache.lock() {
+            if guard.0 == quantized && guard.1 == is_eye_cue && guard.2 == deferred {
+                need_icon = false;
+            } else {
+                guard.0 = quantized;
+                guard.1 = is_eye_cue;
+                guard.2 = deferred;
+            }
+            if guard.3 == tooltip {
+                need_tooltip = false;
+            } else if !tooltip.is_empty() {
+                guard.3 = tooltip.clone();
+            }
         }
-        if !tooltip.is_empty() {
+
+        if need_icon {
+            let rgba = render_tray_pie_icon(progress_ratio, is_eye_cue, deferred);
+            let img = tauri::image::Image::new_owned(rgba, 32, 32);
+            let _ = tray.set_icon(Some(img));
+            #[cfg(target_os = "macos")]
+            {
+                let _ = tray.set_icon_as_template(false);
+            }
+        }
+        if need_tooltip {
             let _ = tray.set_tooltip(Some(&tooltip));
         }
     }

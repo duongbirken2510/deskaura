@@ -21,5 +21,19 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
+  build: {
+    target: "es2021",
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom"],
+          "vendor-firebase-auth": ["firebase/app", "firebase/auth"],
+          "vendor-firebase-firestore": ["firebase/firestore"],
+          "vendor-ui": ["lucide-react", "canvas-confetti"],
+        },
+      },
+    },
+  },
 }));
 

@@ -28,7 +28,7 @@ interface MebiusDualActivityRingsProps {
   lang: AppLanguage;
 }
 
-export const MebiusDualActivityRings: React.FC<MebiusDualActivityRingsProps> = ({
+export const MebiusDualActivityRings: React.FC<MebiusDualActivityRingsProps> = React.memo(({
   standupSecondsLeft,
   standupIntervalMinutes,
   eyeSecondsLeft,
@@ -184,7 +184,7 @@ export const MebiusDualActivityRings: React.FC<MebiusDualActivityRingsProps> = (
       </div>
     </div>
   );
-};
+});
 
 /* ============================================================================
  * 2. Mebius Hourly Hydration Pill Bar Chart (For Card 2: Smart Hydration)
@@ -203,7 +203,7 @@ const HOUR_SLOTS = [
   { id: '18', label: '18h+', start: 18, end: 23 },
 ];
 
-export const MebiusHourlyHydrationChart: React.FC<MebiusHourlyHydrationChartProps> = ({
+export const MebiusHourlyHydrationChart: React.FC<MebiusHourlyHydrationChartProps> = React.memo(({
   waterLogs,
   lang,
 }) => {
@@ -308,7 +308,7 @@ export const MebiusHourlyHydrationChart: React.FC<MebiusHourlyHydrationChartProp
       </table>
     </div>
   );
-};
+});
 
 /* ============================================================================
  * 3. Mebius 3-Card Weekly Analytics & Deep Focus Row (Dashboard Row 2)

@@ -707,7 +707,7 @@ interface DeskPlantProps {
   onPokePlant?: () => void;
 }
 
-export const VirtualDeskPlant: React.FC<DeskPlantProps> = ({
+export const VirtualDeskPlant: React.FC<DeskPlantProps> = React.memo(({
   growthPercent,
   mood = 'growing',
   quote,
@@ -939,4 +939,4 @@ export const VirtualDeskPlant: React.FC<DeskPlantProps> = ({
       </svg>
     </div>
   );
-};
+});

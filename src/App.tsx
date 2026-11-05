@@ -31,15 +31,22 @@ import {
   mergeDailyStats,
   mergeWeeklyHistory,
 } from './services/firebaseSync';
-import { BreakOverlayModal } from './components/BreakOverlayModal';
 import { PlantMood, VirtualDeskPlant } from './components/ExerciseIllustration';
 import {
   MebiusAnalyticsRow,
   MebiusDualActivityRings,
   MebiusHourlyHydrationChart,
 } from './components/MebiusAnalyticsRow';
-import { SettingsPanel } from './components/SettingsPanel';
-import { SoundMixerPanel } from './components/SoundMixerPanel';
+
+const BreakOverlayModal = React.lazy(() =>
+  import('./components/BreakOverlayModal').then((m) => ({ default: m.BreakOverlayModal }))
+);
+const SettingsPanel = React.lazy(() =>
+  import('./components/SettingsPanel').then((m) => ({ default: m.SettingsPanel }))
+);
+const SoundMixerPanel = React.lazy(() =>
+  import('./components/SoundMixerPanel').then((m) => ({ default: m.SoundMixerPanel }))
+);
 import {
   AMBIENT_SOUNDS,
   PLANT_WITTY_QUOTES,
@@ -66,7 +73,11 @@ import {
   stageSilentUpdate,
   updateTrayProgressIcon,
 } from './services/tauriBridge';
-import { readEncryptedJson, writeEncryptedJson } from './services/localStorageCrypto';
+import {
+  hashLanRoomKey,
+  readEncryptedJson,
+  writeEncryptedJson,
+} from './services/localStorageCrypto';
 import pkg from '../package.json';
 import { AppLanguage, TRANSLATIONS } from './i18n/translations';
 
@@ -929,9 +940,9 @@ export const App: React.FC = () => {
     }).then((unlisten) => unlisteners.push(unlisten));
 
     onTauriEvent<LanPulsePacket>('deskaura://lan-pulse', (packet) => {
-      const myRoom = (userEmail || activeSyncCode || '').trim().toLowerCase();
+      const myRoomHash = hashLanRoomKey(userEmail || activeSyncCode || '');
       const myHwId = getCachedHardwareId();
-      if (!myRoom || packet.room_key !== myRoom || packet.device_id === myHwId) {
+      if (!myRoomHash || packet.room_key !== myRoomHash || packet.device_id === myHwId) {
         return;
       }
       const now = Date.now();
@@ -1021,6 +1032,8 @@ export const App: React.FC = () => {
 
   // Pillar 3: Dynamic System Tray Pie/Ring Progress Indicator (with Ruby Red Fullscreen Deferral & Witty Quotes)
   const [quoteSeed, setQuoteSeed] = useState<number>(0);
+  const handlePokePlant = useCallback(() => setQuoteSeed((s) => s + 1), []);
+  const lastTrayStateKeyRef = useRef<string>('');
 
   useEffect(() => {
     const totalSec = Math.max(60, standupSettings.standupIntervalMinutes * 60);
@@ -1033,16 +1046,23 @@ export const App: React.FC = () => {
 
     // Update tray icon immediately on passive eye cue / fullscreen deferral, or every 5s of normal countdown
     if (isDeferredByFullscreen || isEyeCue || standupSecondsLeft % 5 === 0) {
+      const quantizedRatio = Math.round(ratio * 100);
+      const wPct = Math.min(
+        100,
+        Math.round((dailyStats.waterIntakeMl / hydrationSettings.dailyGoalMl) * 100)
+      );
+      const trayKey = `${quantizedRatio}_${minsLeft}_${wPct}_${isEyeCue ? passiveEyeCueSec : 0}_${isDeferredByFullscreen ? 1 : 0}_${lang}_${quoteSeed}`;
+      if (lastTrayStateKeyRef.current === trayKey) {
+        return;
+      }
+      lastTrayStateKeyRef.current = trayKey;
+
       const quotesDict = PLANT_WITTY_QUOTES[lang] || PLANT_WITTY_QUOTES.vi;
       const eyeQuotes = quotesDict.eyeCue;
       const eyeQuote = eyeQuotes[quoteSeed % eyeQuotes.length];
 
       const hour = new Date().getHours();
       const isNight = hour >= 23 || hour <= 4;
-      const wPct = Math.min(
-        100,
-        Math.round((dailyStats.waterIntakeMl / hydrationSettings.dailyGoalMl) * 100)
-      );
       const gPct = Math.min(
         100,
         Math.round(wPct * 0.75 + Math.min(25, dailyStats.standupCompletedCount * 6.25))
@@ -1181,11 +1201,11 @@ export const App: React.FC = () => {
         const myHwId = getCachedHardwareId();
         const isMultiDevice = connectedDevices.length >= 2;
         if (isMultiDevice && ctx.idle_seconds < 15) {
-          const roomKey = (userEmail || activeSyncCode || '').trim().toLowerCase();
+          const roomKeyHash = hashLanRoomKey(userEmail || activeSyncCode || '');
           // 1. Local LAN UDP Broadcast (0 Cloud cost, <1ms latency) every 6 seconds while active
-          if (roomKey && myHwId && tickCounterRef.current % 6 === 0) {
+          if (roomKeyHash && myHwId && tickCounterRef.current % 6 === 0) {
             broadcastLanPulse(
-              roomKey,
+              roomKeyHash,
               myHwId,
               getDefaultDeviceName(),
               standupSettings.nextStandupAt,
@@ -2033,7 +2053,7 @@ export const App: React.FC = () => {
                       growthPercent={plantGrowthPct}
                       mood={plantMood}
                       quote={activePlantQuote}
-                      onPokePlant={() => setQuoteSeed((s) => s + 1)}
+                      onPokePlant={handlePokePlant}
                     />
                     <p
                       className={`text-xs font-bold mt-1 ${
@@ -2131,35 +2151,37 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'sounds' && (
-          <SoundMixerPanel
-            activeSounds={activeSounds}
-            soundVolumes={soundVolumes}
-            masterVolume={masterVolume}
-            isMasterMuted={isMasterMuted}
-            activeStationUrl={activeStationUrl}
-            isRadioPlaying={isRadioPlaying}
-            radioVolume={radioVolume}
-            radioError={radioError}
-            lang={lang}
-            onToggleSound={handleToggleSound}
-            onChangeSoundVolume={handleChangeSoundVolume}
-            onApplyPreset={handleApplyPreset}
-            onStopAllSounds={handleStopAllSounds}
-            onChangeMasterVolume={(vol) => {
-              setMasterVolume(vol);
-              soundEngine.setMasterVolume(vol);
-            }}
-            onToggleMasterMute={() => {
-              const muted = soundEngine.toggleMasterMute();
-              setIsMasterMuted(muted);
-            }}
-            onPlayRadioStream={handlePlayRadioStream}
-            onStopRadio={handleStopRadio}
-            onChangeRadioVolume={(vol) => {
-              setRadioVolume(vol);
-              soundEngine.setRadioVolume(vol);
-            }}
-          />
+          <React.Suspense fallback={null}>
+            <SoundMixerPanel
+              activeSounds={activeSounds}
+              soundVolumes={soundVolumes}
+              masterVolume={masterVolume}
+              isMasterMuted={isMasterMuted}
+              activeStationUrl={activeStationUrl}
+              isRadioPlaying={isRadioPlaying}
+              radioVolume={radioVolume}
+              radioError={radioError}
+              lang={lang}
+              onToggleSound={handleToggleSound}
+              onChangeSoundVolume={handleChangeSoundVolume}
+              onApplyPreset={handleApplyPreset}
+              onStopAllSounds={handleStopAllSounds}
+              onChangeMasterVolume={(vol) => {
+                setMasterVolume(vol);
+                soundEngine.setMasterVolume(vol);
+              }}
+              onToggleMasterMute={() => {
+                const muted = soundEngine.toggleMasterMute();
+                setIsMasterMuted(muted);
+              }}
+              onPlayRadioStream={handlePlayRadioStream}
+              onStopRadio={handleStopRadio}
+              onChangeRadioVolume={(vol) => {
+                setRadioVolume(vol);
+                soundEngine.setRadioVolume(vol);
+              }}
+            />
+          </React.Suspense>
         )}
 
         {activeTab === 'settings' && (
@@ -2196,91 +2218,97 @@ export const App: React.FC = () => {
                 </button>
               </div>
             )}
-            <SettingsPanel
-            standupSettings={standupSettings}
-            hydrationSettings={hydrationSettings}
-            voiceSettings={voiceSettings}
-            autostartEnabled={autostartEnabled}
-            startMinimized={startMinimized}
-            isTestingVoice={isTestingVoice}
-            lastDuckedCount={duckedAppsCount}
-            lang={lang}
-            syncStatus={syncStatus}
-            syncError={syncError}
-            activeSyncCode={activeSyncCode}
-            userEmail={userEmail}
-            lastSyncedDevice={lastSyncedDevice}
-            lastSyncedAt={lastSyncedAt}
-            connectedDevices={connectedDevices}
-            onConnectSyncCode={handleConnectSyncCode}
-            onDisconnectSync={handleDisconnectSync}
-            onGoogleSignIn={handleGoogleSignIn}
-            onEmailAuth={handleEmailAuth}
-            onLogoutAccount={handleLogoutAccount}
-            onForceSyncNow={handleForceSyncNow}
-            onUpdateStandup={(partial) => {
-              const now = Date.now();
-              setStandupSettings((prev) => {
-                const updated = { ...prev, ...partial };
-                if (partial.standupIntervalMinutes) {
-                  const sec = partial.standupIntervalMinutes * 60;
-                  setStandupSecondsLeft(sec);
-                  updated.nextStandupAt = now + sec * 1000;
-                  updated.timerSyncUpdatedAt = now;
+            <React.Suspense fallback={null}>
+              <SettingsPanel
+                standupSettings={standupSettings}
+                hydrationSettings={hydrationSettings}
+                voiceSettings={voiceSettings}
+                autostartEnabled={autostartEnabled}
+                startMinimized={startMinimized}
+                isTestingVoice={isTestingVoice}
+                lastDuckedCount={duckedAppsCount}
+                lang={lang}
+                syncStatus={syncStatus}
+                syncError={syncError}
+                activeSyncCode={activeSyncCode}
+                userEmail={userEmail}
+                lastSyncedDevice={lastSyncedDevice}
+                lastSyncedAt={lastSyncedAt}
+                connectedDevices={connectedDevices}
+                onConnectSyncCode={handleConnectSyncCode}
+                onDisconnectSync={handleDisconnectSync}
+                onGoogleSignIn={handleGoogleSignIn}
+                onEmailAuth={handleEmailAuth}
+                onLogoutAccount={handleLogoutAccount}
+                onForceSyncNow={handleForceSyncNow}
+                onUpdateStandup={(partial) => {
+                  const now = Date.now();
+                  setStandupSettings((prev) => {
+                    const updated = { ...prev, ...partial };
+                    if (partial.standupIntervalMinutes) {
+                      const sec = partial.standupIntervalMinutes * 60;
+                      setStandupSecondsLeft(sec);
+                      updated.nextStandupAt = now + sec * 1000;
+                      updated.timerSyncUpdatedAt = now;
+                    }
+                    if (partial.eyeBreakIntervalMinutes) {
+                      const sec = partial.eyeBreakIntervalMinutes * 60;
+                      setEyeSecondsLeft(sec);
+                      updated.nextEyeAt = now + sec * 1000;
+                      updated.timerSyncUpdatedAt = now;
+                    }
+                    return updated;
+                  });
+                }}
+                onUpdateHydration={(partial) => {
+                  setHydrationSettings((prev) => {
+                    const updated = { ...prev, ...partial };
+                    if (partial.intervalMinutes) {
+                      const sec = partial.intervalMinutes * 60;
+                      setWaterSecondsLeft(sec);
+                      syncTimerTargets(undefined, undefined, sec);
+                    }
+                    return updated;
+                  });
+                }}
+                onUpdateVoice={(partial) =>
+                  setVoiceSettings((prev) => ({ ...prev, ...partial }))
                 }
-                if (partial.eyeBreakIntervalMinutes) {
-                  const sec = partial.eyeBreakIntervalMinutes * 60;
-                  setEyeSecondsLeft(sec);
-                  updated.nextEyeAt = now + sec * 1000;
-                  updated.timerSyncUpdatedAt = now;
-                }
-                return updated;
-              });
-            }}
-            onUpdateHydration={(partial) => {
-              setHydrationSettings((prev) => {
-                const updated = { ...prev, ...partial };
-                if (partial.intervalMinutes) {
-                  const sec = partial.intervalMinutes * 60;
-                  setWaterSecondsLeft(sec);
-                  syncTimerTargets(undefined, undefined, sec);
-                }
-                return updated;
-              });
-            }}
-            onUpdateVoice={(partial) =>
-              setVoiceSettings((prev) => ({ ...prev, ...partial }))
-            }
-            onToggleAutostart={async (enabled, minimized) => {
-              setAutostartEnabled(enabled);
-              setStartMinimized(minimized);
-              await setAutostartStatus(enabled, minimized);
-            }}
-            onTestVietnameseVoice={async () => {
-              setIsTestingVoice(true);
-              await triggerVoiceReminder('test');
-              setIsTestingVoice(false);
-            }}
-          />
+                onToggleAutostart={async (enabled, minimized) => {
+                  setAutostartEnabled(enabled);
+                  setStartMinimized(minimized);
+                  await setAutostartStatus(enabled, minimized);
+                }}
+                onTestVietnameseVoice={async () => {
+                  setIsTestingVoice(true);
+                  await triggerVoiceReminder('test');
+                  setIsTestingVoice(false);
+                }}
+              />
+            </React.Suspense>
           </div>
         )}
       </main>
 
       {/* Guided Break & Stretch Overlay Modal */}
-      <BreakOverlayModal
-        isOpen={isBreakModalOpen}
-        breakType={currentBreakType}
-        remainingSeconds={breakRemainingSec}
-        totalSeconds={breakTotalSec}
-        holdToSkip={standupSettings.holdToSkip}
-        duckedAppsCount={duckedAppsCount}
-        lang={lang}
-        onCompleteBreak={completeBreakSession}
-        onSnoozeBreak={snoozeBreakSession}
-        onSkipBreak={skipBreakSession}
-        onQuickDrinkWater={handleAddWater}
-        onReplayVoice={() => triggerVoiceReminder(currentBreakType)}
-      />
+      {isBreakModalOpen && (
+        <React.Suspense fallback={null}>
+          <BreakOverlayModal
+            isOpen={isBreakModalOpen}
+            breakType={currentBreakType}
+            remainingSeconds={breakRemainingSec}
+            totalSeconds={breakTotalSec}
+            holdToSkip={standupSettings.holdToSkip}
+            duckedAppsCount={duckedAppsCount}
+            lang={lang}
+            onCompleteBreak={completeBreakSession}
+            onSnoozeBreak={snoozeBreakSession}
+            onSkipBreak={skipBreakSession}
+            onQuickDrinkWater={handleAddWater}
+            onReplayVoice={() => triggerVoiceReminder(currentBreakType)}
+          />
+        </React.Suspense>
+      )}
     </div>
   );
 };
