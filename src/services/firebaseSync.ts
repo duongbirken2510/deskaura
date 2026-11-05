@@ -15,6 +15,7 @@ import {
   Firestore,
   doc,
   getDoc,
+  getFirestore,
   initializeFirestore,
   onSnapshot,
   persistentLocalCache,
@@ -38,10 +39,18 @@ export interface FirebaseConfigPayload {
   appId: string;
 }
 
+export interface ConnectedDeviceMetadata {
+  uid: string;
+  name: string;
+  os: string;
+  lastSeenAt: number;
+}
+
 export interface CloudWellnessDocument {
   syncCode?: string;
   ownerUid?: string;
   linkedUids?: string[];
+  connectedDevices?: ConnectedDeviceMetadata[];
   updatedAt: number;
   lastDeviceName: string;
   dailyStats: DailyWellnessStats;
@@ -80,6 +89,14 @@ const DEFAULT_DESKAURA_FIREBASE_CONFIG: FirebaseConfigPayload = {
     viteEnv.VITE_FIREBASE_APP_ID || '1:1017938473342:web:d04594f1751072c4b4832f',
 };
 
+export function getDetectedOS(): string {
+  const ua = navigator.userAgent || '';
+  if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS';
+  if (/Macintosh|Mac OS X/i.test(ua)) return 'macOS';
+  if (/Windows/i.test(ua)) return 'Windows';
+  return 'Desktop';
+}
+
 export function getDefaultDeviceName(): string {
   const saved = localStorage.getItem(DEVICE_NAME_STORAGE_KEY);
   if (saved) return saved;
@@ -95,6 +112,27 @@ export function getDefaultDeviceName(): string {
   }
   localStorage.setItem(DEVICE_NAME_STORAGE_KEY, detected);
   return detected;
+}
+
+export function mergeConnectedDevices(
+  existing: ConnectedDeviceMetadata[] | undefined,
+  currentUid: string
+): ConnectedDeviceMetadata[] {
+  const byUid = new Map<string, ConnectedDeviceMetadata>();
+  (existing || []).forEach((dev) => {
+    if (dev && dev.uid) {
+      byUid.set(dev.uid, dev);
+    }
+  });
+  byUid.set(currentUid, {
+    uid: currentUid,
+    name: getDefaultDeviceName(),
+    os: getDetectedOS(),
+    lastSeenAt: Date.now(),
+  });
+  return Array.from(byUid.values())
+    .sort((a, b) => b.lastSeenAt - a.lastSeenAt)
+    .slice(0, 15);
 }
 
 export function setDeviceName(name: string): void {
@@ -306,16 +344,14 @@ class FirebaseSyncService {
             }),
           });
         } catch {
-          // If already initialized, fallback
+          this.db = getFirestore(this.app);
         }
       } else {
         this.app = getApps()[0];
+        this.db = getFirestore(this.app);
       }
 
       this.auth = getAuth(this.app);
-      if (!this.db && this.app) {
-        this.db = initializeFirestore(this.app, {});
-      }
 
       if (config) {
         this.saveConfig(config);
@@ -448,6 +484,7 @@ class FirebaseSyncService {
                 linkedUids: [user.uid],
               }
             : {}),
+          connectedDevices: mergeConnectedDevices([], user.uid),
           updatedAt: Date.now(),
           lastDeviceName: getDefaultDeviceName(),
           dailyStats: initialLocalData.dailyStats,
@@ -457,6 +494,42 @@ class FirebaseSyncService {
           voiceSettings: initialLocalData.voiceSettings,
         };
         await setDoc(targetDocRef, seedPayload);
+      } else {
+        const existingData = existingSnap.data() as CloudWellnessDocument;
+        const mergedDaily = existingData?.dailyStats
+          ? mergeDailyStats(initialLocalData.dailyStats, existingData.dailyStats)
+          : initialLocalData.dailyStats;
+        const mergedHistory = existingData?.weeklyHistory
+          ? mergeWeeklyHistory(
+              initialLocalData.weeklyHistory,
+              existingData.weeklyHistory
+            )
+          : initialLocalData.weeklyHistory.slice(-14);
+
+        if (normalizedCode) {
+          const ownerUid = existingData?.ownerUid || user.uid;
+          const linkedSet = new Set<string>(existingData?.linkedUids || [ownerUid]);
+          linkedSet.add(user.uid);
+          await setDoc(targetDocRef, {
+            syncCode: normalizedCode,
+            ownerUid,
+            linkedUids: Array.from(linkedSet).slice(0, 15),
+            connectedDevices: mergeConnectedDevices(
+              existingData?.connectedDevices,
+              user.uid
+            ),
+            updatedAt: Date.now(),
+            lastDeviceName: getDefaultDeviceName(),
+            dailyStats: mergedDaily,
+            weeklyHistory: mergedHistory,
+            standupSettings:
+              existingData?.standupSettings || initialLocalData.standupSettings,
+            hydrationSettings:
+              existingData?.hydrationSettings || initialLocalData.hydrationSettings,
+            voiceSettings:
+              existingData?.voiceSettings || initialLocalData.voiceSettings,
+          });
+        }
       }
 
       this.unsubscribeSnapshot = onSnapshot(
@@ -516,6 +589,10 @@ class FirebaseSyncService {
         syncCode: normalizedCode,
         ownerUid,
         linkedUids,
+        connectedDevices: mergeConnectedDevices(
+          existingData?.connectedDevices,
+          user.uid
+        ),
         updatedAt: Date.now(),
         lastDeviceName: getDefaultDeviceName(),
         dailyStats: mergedDaily,
@@ -527,6 +604,10 @@ class FirebaseSyncService {
       await setDoc(targetDocRef, roomDoc);
     } else {
       const userDoc: CloudWellnessDocument = {
+        connectedDevices: mergeConnectedDevices(
+          existingData?.connectedDevices,
+          user.uid
+        ),
         updatedAt: Date.now(),
         lastDeviceName: getDefaultDeviceName(),
         dailyStats: mergedDaily,

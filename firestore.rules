@@ -4,369 +4,106 @@ rules_version = '2';
 // Assumed Data Model — DeskAura Wellness Multi-Device Cloud Sync
 // ===============================================================
 //
-// This security rules file assumes the following data structures:
-//
 // Collection: /sync_rooms/{syncCode}
-// Document ID: syncCode matching ^[A-Z0-9-]{6,20}$ (e.g., "AURA-8921" or "892145")
-// Fields:
-//   - syncCode: string (required, immutable, matches document ID ^[A-Z0-9-]{6,20}$)
-//   - ownerUid: string (required, immutable, 1..128 chars, set to request.auth.uid on create)
-//   - linkedUids: list<string> (optional, max 15 items) - UIDs of paired devices
-//   - updatedAt: int | timestamp (required) - epoch milliseconds or server timestamp
-//   - lastDeviceName: string (optional, 1..100 chars) - human-readable device identifier
-//   - dailyStats: map (required) - current day's hydration & break statistics:
-//       - date: string (YYYY-MM-DD, 8..20 chars)
-//       - waterIntakeMl: number (0..20000)
-//       - waterLogs: list<map> (max 100 entries)
-//       - standupCompletedCount: number (0..500)
-//       - eyeBreakCompletedCount: number (0..500)
-//       - focusMinutes: number (0..1440)
-//   - weeklyHistory: list<map> (optional, max 30 entries) - past daily wellness summaries
-//   - standupSettings: map (optional) - user's standup and 20-20-20 eye break settings
-//   - hydrationSettings: map (optional) - user's daily water goal and interval settings
-//   - voiceSettings: map (optional) - neural voice reminder and audio ducking settings
+// Document ID: syncCode (6..20 chars, e.g., "AURA-892145")
+// Allowed Fields:
+//   - syncCode: string (matches document ID, immutable on update)
+//   - ownerUid: string (set to request.auth.uid on create, immutable on update)
+//   - linkedUids: list<string>
+//   - connectedDevices: list<map>
+//   - updatedAt: number | timestamp
+//   - lastDeviceName: string
+//   - dailyStats: map
+//   - weeklyHistory: list<map>
+//   - standupSettings: map
+//   - hydrationSettings: map
+//   - voiceSettings: map
 //
 // Collection: /users/{userId}
 // Document ID: userId matching request.auth.uid
-// Fields:
-//   - updatedAt: int | timestamp (required) - epoch milliseconds or server timestamp
-//   - lastDeviceName: string (optional, 1..100 chars) - human-readable device identifier
-//   - activeSyncCode: string | null (optional, matches ^[A-Z0-9-]{6,20}$) - linked sync room code
-//   - dailyStats: map (required) - current day's hydration & break statistics
-//   - weeklyHistory: list<map> (optional, max 30 entries) - past daily wellness summaries
-//   - standupSettings: map (optional) - user's standup and 20-20-20 eye break settings
-//   - hydrationSettings: map (optional) - user's daily water goal and interval settings
-//   - voiceSettings: map (optional) - neural voice reminder and audio ducking settings
+// Allowed Fields:
+//   - updatedAt: number | timestamp
+//   - lastDeviceName: string
+//   - activeSyncCode: string | null
+//   - connectedDevices: list<map>
+//   - dailyStats: map
+//   - weeklyHistory: list<map>
+//   - standupSettings: map
+//   - hydrationSettings: map
+//   - voiceSettings: map
 //
 // ===============================================================
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ===============================================================
-    // Helper Functions
-    // ===============================================================
-
-    // Check if the user is authenticated (Anonymous, Email/Password, or Google Sign-In)
-    function isAuthenticated() {
-      return request.auth != null;
+    function isValidSyncRoomData(syncCode) {
+      return request.resource.data.keys().hasOnly([
+        'syncCode',
+        'ownerUid',
+        'linkedUids',
+        'connectedDevices',
+        'updatedAt',
+        'lastDeviceName',
+        'dailyStats',
+        'weeklyHistory',
+        'standupSettings',
+        'hydrationSettings',
+        'voiceSettings'
+      ]) &&
+      request.resource.data.syncCode == syncCode &&
+      syncCode.size() >= 6 &&
+      syncCode.size() <= 20;
     }
 
-    // Check if user owns the resource (for user-owned documents)
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    function isValidUserWellnessData() {
+      return request.resource.data.keys().hasOnly([
+        'updatedAt',
+        'lastDeviceName',
+        'activeSyncCode',
+        'connectedDevices',
+        'dailyStats',
+        'weeklyHistory',
+        'standupSettings',
+        'hydrationSettings',
+        'voiceSettings'
+      ]);
     }
-
-    // Check if user is owner based on document's ownerUid field
-    function isRoomOwner() {
-      return isAuthenticated() && request.auth.uid == resource.data.ownerUid;
-    }
-
-    // Verify ownerUid matches the authenticated user on create
-    function ownerUidUnchanged() {
-      return ('ownerUid' in request.resource.data) &&
-        request.resource.data.ownerUid is string &&
-        request.resource.data.ownerUid == request.auth.uid &&
-        request.resource.data.ownerUid.size() >= 1 &&
-        request.resource.data.ownerUid.size() <= 128;
-    }
-
-    // Ensure ownerUid and syncCode are never modified on update
-    function areImmutableRoomFieldsUnchanged() {
-      return request.resource.data.ownerUid == resource.data.ownerUid &&
-        request.resource.data.syncCode == resource.data.syncCode;
-    }
-
-    // Validate required fields exist
-    function hasRequiredFields(fields) {
-      return request.resource.data.keys().hasAll(fields);
-    }
-
-    // Validate that the document contains only the allowed fields
-    function hasOnlyAllowedFields(fields) {
-      return request.resource.data.keys().hasOnly(fields);
-    }
-
-    // Validate that a map contains only allowed keys
-    function isValidMap(mapData, allowedKeys) {
-      return mapData is map && mapData.keys().hasOnly(allowedKeys);
-    }
-
-    // Validate that a list is a list and enforces size limits
-    function isValidList(listData, maxSize) {
-      return listData is list && listData.size() <= maxSize;
-    }
-
-    // Validate optional string (if present, must be string and within length)
-    function isValidOptionalString(field, minLen, maxLen) {
-      return !(field in request.resource.data) ||
-        (request.resource.data[field] is string &&
-         request.resource.data[field].size() >= minLen &&
-         request.resource.data[field].size() <= maxLen);
-    }
-
-    // Validate Aura Sync Code format (6 to 20 uppercase alphanumeric or hyphen chars)
-    function isValidSyncCode(code) {
-      return code is string &&
-        code.size() >= 6 &&
-        code.size() <= 20 &&
-        code.matches("^[A-Z0-9-]{6,20}$");
-    }
-
-    // Validate updatedAt field (accepts positive epoch ms number or Firestore timestamp)
-    function isValidUpdatedAt(val) {
-      return (val is number && val > 0) || val is timestamp;
-    }
-
-    // ===============================================================
-    // Nested Wellness Schema Validators
-    // ===============================================================
-
-    // Validate dailyStats map structure and value bounds
-    function isValidDailyStats(stats) {
-      return stats is map &&
-        stats.keys().size() <= 15 &&
-        stats.keys().hasAll([
-          'date',
-          'waterIntakeMl',
-          'waterLogs',
-          'standupCompletedCount',
-          'eyeBreakCompletedCount',
-          'focusMinutes'
-        ]) &&
-        stats.date is string &&
-        stats.date.size() == 10 &&
-        stats.date.matches("^[0-9]{4}-[0-9]{2}-[0-9]{2}$") &&
-        stats.waterIntakeMl is number &&
-        stats.waterIntakeMl >= 0 &&
-        stats.waterIntakeMl <= 20000 &&
-        isValidList(stats.waterLogs, 100) &&
-        stats.standupCompletedCount is number &&
-        stats.standupCompletedCount >= 0 &&
-        stats.standupCompletedCount <= 500 &&
-        stats.eyeBreakCompletedCount is number &&
-        stats.eyeBreakCompletedCount >= 0 &&
-        stats.eyeBreakCompletedCount <= 500 &&
-        stats.focusMinutes is number &&
-        stats.focusMinutes >= 0 &&
-        stats.focusMinutes <= 1440;
-    }
-
-    // Validate standupSettings map if present (bounded map size + core type/range validation)
-    function isValidOptionalStandupSettings(data) {
-      return !('standupSettings' in data) || (
-        data.standupSettings is map &&
-        data.standupSettings.keys().size() <= 20 &&
-        (!('standupIntervalMinutes' in data.standupSettings) ||
-          (data.standupSettings.standupIntervalMinutes is number &&
-           data.standupSettings.standupIntervalMinutes >= 1 &&
-           data.standupSettings.standupIntervalMinutes <= 480)) &&
-        (!('standupDurationSeconds' in data.standupSettings) ||
-          (data.standupSettings.standupDurationSeconds is number &&
-           data.standupSettings.standupDurationSeconds >= 5 &&
-           data.standupSettings.standupDurationSeconds <= 3600)) &&
-        (!('eyeBreakEnabled' in data.standupSettings) ||
-          data.standupSettings.eyeBreakEnabled is bool) &&
-        (!('eyeBreakIntervalMinutes' in data.standupSettings) ||
-          (data.standupSettings.eyeBreakIntervalMinutes is number &&
-           data.standupSettings.eyeBreakIntervalMinutes >= 1 &&
-           data.standupSettings.eyeBreakIntervalMinutes <= 240)) &&
-        (!('eyeBreakDurationSeconds' in data.standupSettings) ||
-          (data.standupSettings.eyeBreakDurationSeconds is number &&
-           data.standupSettings.eyeBreakDurationSeconds >= 5 &&
-           data.standupSettings.eyeBreakDurationSeconds <= 600)) &&
-        (!('autoResetIdleSeconds' in data.standupSettings) ||
-          (data.standupSettings.autoResetIdleSeconds is number &&
-           data.standupSettings.autoResetIdleSeconds >= 10 &&
-           data.standupSettings.autoResetIdleSeconds <= 7200)) &&
-        (!('pauseOnFullscreen' in data.standupSettings) ||
-          data.standupSettings.pauseOnFullscreen is bool) &&
-        (!('reminderMode' in data.standupSettings) ||
-          (data.standupSettings.reminderMode is string &&
-           data.standupSettings.reminderMode.size() <= 30)) &&
-        (!('holdToSkip' in data.standupSettings) ||
-          data.standupSettings.holdToSkip is bool)
-      );
-    }
-
-    // Validate hydrationSettings map if present (bounded map size + core type/range validation)
-    function isValidOptionalHydrationSettings(data) {
-      return !('hydrationSettings' in data) || (
-        data.hydrationSettings is map &&
-        data.hydrationSettings.keys().size() <= 20 &&
-        (!('dailyGoalMl' in data.hydrationSettings) ||
-          (data.hydrationSettings.dailyGoalMl is number &&
-           data.hydrationSettings.dailyGoalMl >= 100 &&
-           data.hydrationSettings.dailyGoalMl <= 20000)) &&
-        (!('weightKg' in data.hydrationSettings) ||
-          (data.hydrationSettings.weightKg is number &&
-           data.hydrationSettings.weightKg >= 10 &&
-           data.hydrationSettings.weightKg <= 400)) &&
-        (!('intervalMinutes' in data.hydrationSettings) ||
-          (data.hydrationSettings.intervalMinutes is number &&
-           data.hydrationSettings.intervalMinutes >= 1 &&
-           data.hydrationSettings.intervalMinutes <= 480)) &&
-        (!('quickAmounts' in data.hydrationSettings) ||
-          isValidList(data.hydrationSettings.quickAmounts, 10))
-      );
-    }
-
-    // Validate voiceSettings map if present (bounded map size + core type/range validation)
-    function isValidOptionalVoiceSettings(data) {
-      return !('voiceSettings' in data) || (
-        data.voiceSettings is map &&
-        data.voiceSettings.keys().size() <= 20 &&
-        (!('enabled' in data.voiceSettings) ||
-          data.voiceSettings.enabled is bool) &&
-        (!('voicePack' in data.voiceSettings) ||
-          (data.voiceSettings.voicePack is string &&
-           data.voiceSettings.voicePack.size() <= 50)) &&
-        (!('volume' in data.voiceSettings) ||
-          (data.voiceSettings.volume is number &&
-           data.voiceSettings.volume >= 0 &&
-           data.voiceSettings.volume <= 1)) &&
-        (!('duckOtherApps' in data.voiceSettings) ||
-          data.voiceSettings.duckOtherApps is bool) &&
-        (!('duckRatio' in data.voiceSettings) ||
-          (data.voiceSettings.duckRatio is number &&
-           data.voiceSettings.duckRatio >= 0 &&
-           data.voiceSettings.duckRatio <= 1)) &&
-        (!('playChimeBeforeVoice' in data.voiceSettings) ||
-          data.voiceSettings.playChimeBeforeVoice is bool) &&
-        (!('customStandupText' in data.voiceSettings) ||
-          (data.voiceSettings.customStandupText is string &&
-           data.voiceSettings.customStandupText.size() <= 500)) &&
-        (!('customWaterText' in data.voiceSettings) ||
-          (data.voiceSettings.customWaterText is string &&
-           data.voiceSettings.customWaterText.size() <= 500))
-      );
-    }
-
-    // Validate linkedUids list if present (max 15 devices, valid string check on head element)
-    function isValidOptionalLinkedUids(data) {
-      return !('linkedUids' in data) || (
-        isValidList(data.linkedUids, 15) &&
-        (data.linkedUids.size() == 0 ||
-          (data.linkedUids[0] is string &&
-           data.linkedUids[0].size() >= 1 &&
-           data.linkedUids[0].size() <= 128))
-      );
-    }
-
-    // Validate weeklyHistory list if present (max 30 daily entries)
-    function isValidOptionalWeeklyHistory(data) {
-      return !('weeklyHistory' in data) || (
-        isValidList(data.weeklyHistory, 30) &&
-        (data.weeklyHistory.size() == 0 || data.weeklyHistory[0] is map)
-      );
-    }
-
-    // ===============================================================
-    // Domain Validators (Called on BOTH create and update)
-    // ===============================================================
-
-    // Domain validator for /sync_rooms/{syncCode}
-    function isValidSyncRoom(data, syncCode) {
-      return isValidSyncCode(syncCode) &&
-        hasOnlyAllowedFields([
-          'syncCode',
-          'ownerUid',
-          'linkedUids',
-          'updatedAt',
-          'lastDeviceName',
-          'dailyStats',
-          'weeklyHistory',
-          'standupSettings',
-          'hydrationSettings',
-          'voiceSettings'
-        ]) &&
-        hasRequiredFields([
-          'syncCode',
-          'ownerUid',
-          'updatedAt',
-          'dailyStats'
-        ]) &&
-        data.syncCode == syncCode &&
-        isValidSyncCode(data.syncCode) &&
-        data.ownerUid is string &&
-        data.ownerUid.size() >= 1 &&
-        data.ownerUid.size() <= 128 &&
-        isValidUpdatedAt(data.updatedAt) &&
-        isValidOptionalString('lastDeviceName', 1, 100) &&
-        isValidOptionalLinkedUids(data) &&
-        isValidDailyStats(data.dailyStats) &&
-        isValidOptionalWeeklyHistory(data) &&
-        isValidOptionalStandupSettings(data) &&
-        isValidOptionalHydrationSettings(data) &&
-        isValidOptionalVoiceSettings(data);
-    }
-
-    // Domain validator for /users/{userId}
-    function isValidUserWellnessDoc(data) {
-      return hasOnlyAllowedFields([
-          'updatedAt',
-          'lastDeviceName',
-          'activeSyncCode',
-          'dailyStats',
-          'weeklyHistory',
-          'standupSettings',
-          'hydrationSettings',
-          'voiceSettings'
-        ]) &&
-        hasRequiredFields([
-          'updatedAt',
-          'dailyStats'
-        ]) &&
-        isValidUpdatedAt(data.updatedAt) &&
-        isValidOptionalString('lastDeviceName', 1, 100) &&
-        (!('activeSyncCode' in data) ||
-          data.activeSyncCode == null ||
-          isValidSyncCode(data.activeSyncCode)) &&
-        isValidDailyStats(data.dailyStats) &&
-        isValidOptionalWeeklyHistory(data) &&
-        isValidOptionalStandupSettings(data) &&
-        isValidOptionalHydrationSettings(data) &&
-        isValidOptionalVoiceSettings(data);
-    }
-
-    // ===============================================================
-    // Collection Rules
-    // ===============================================================
 
     // Multi-device Aura Sync Rooms (/sync_rooms/{syncCode})
     match /sync_rooms/{syncCode} {
       // Exact room lookup allowed for authenticated devices knowing the syncCode
-      allow get: if isAuthenticated() && isValidSyncCode(syncCode);
+      allow get: if request.auth != null &&
+        syncCode.size() >= 6 &&
+        syncCode.size() <= 20;
 
       // Explicitly forbid listing/enumerating sync rooms
       allow list: if false;
 
-      // Creating a sync room requires authentication, valid schema, and creator as ownerUid
-      allow create: if isAuthenticated() &&
-        ownerUidUnchanged() &&
-        isValidSyncRoom(request.resource.data, syncCode);
+      // Creating a sync room requires authentication, valid keys, and creator as ownerUid
+      allow create: if request.auth != null &&
+        request.resource.data.ownerUid == request.auth.uid &&
+        isValidSyncRoomData(syncCode);
 
-      // Updating a sync room requires authentication, valid schema, and immutable ownerUid/syncCode
-      allow update: if isAuthenticated() &&
-        areImmutableRoomFieldsUnchanged() &&
-        isValidSyncRoom(request.resource.data, syncCode);
+      // Updating a sync room requires authentication, valid keys, and immutable ownerUid/syncCode
+      allow update: if request.auth != null &&
+        request.resource.data.ownerUid == resource.data.ownerUid &&
+        request.resource.data.syncCode == resource.data.syncCode &&
+        isValidSyncRoomData(syncCode);
 
       // Only the original creator/owner of the sync room may delete it
-      allow delete: if isRoomOwner();
+      allow delete: if request.auth != null &&
+        resource.data.ownerUid == request.auth.uid;
     }
 
     // Personal User Cloud Profile (/users/{userId})
     match /users/{userId} {
-      // Strictly owner-only read and write access (No Mixed Content / Zero PII Leak)
-      allow read: if isOwner(userId);
+      allow read, delete: if request.auth != null &&
+        request.auth.uid == userId;
 
-      allow create: if isOwner(userId) &&
-        isValidUserWellnessDoc(request.resource.data);
-
-      allow update: if isOwner(userId) &&
-        isValidUserWellnessDoc(request.resource.data);
-
-      allow delete: if isOwner(userId);
+      allow create, update: if request.auth != null &&
+        request.auth.uid == userId &&
+        isValidUserWellnessData();
     }
 
     // Default deny for all other paths

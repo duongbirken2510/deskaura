@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Sliders,
   Volume2,
+  VolumeX,
 } from 'lucide-react';
 import {
   HydrationSettings,
@@ -17,7 +18,7 @@ import {
 } from '../types/wellness';
 import { CloudSyncCard } from './CloudSyncCard';
 import {
-  FirebaseConfigPayload,
+  ConnectedDeviceMetadata,
   SyncConnectionStatus,
 } from '../services/firebaseSync';
 
@@ -36,9 +37,7 @@ interface SettingsPanelProps {
   userEmail: string | null;
   lastSyncedDevice: string | null;
   lastSyncedAt: number | null;
-  isFirebaseConfigured: boolean;
-  currentProjectId: string | null;
-  onSaveFirebaseConfig: (config: FirebaseConfigPayload) => void;
+  connectedDevices: ConnectedDeviceMetadata[];
   onConnectSyncCode: (code: string) => void;
   onDisconnectSync: () => void;
   onGoogleSignIn: () => void;
@@ -67,9 +66,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   userEmail,
   lastSyncedDevice,
   lastSyncedAt,
-  isFirebaseConfigured,
-  currentProjectId,
-  onSaveFirebaseConfig,
+  connectedDevices,
   onConnectSyncCode,
   onDisconnectSync,
   onGoogleSignIn,
@@ -94,9 +91,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         userEmail={userEmail}
         lastSyncedDevice={lastSyncedDevice}
         lastSyncedAt={lastSyncedAt}
-        isConfigured={isFirebaseConfigured}
-        currentProjectId={currentProjectId}
-        onSaveFirebaseConfig={onSaveFirebaseConfig}
+        connectedDevices={connectedDevices}
         onConnectSyncCode={onConnectSyncCode}
         onDisconnectSync={onDisconnectSync}
         onGoogleSignIn={onGoogleSignIn}
@@ -426,6 +421,66 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 )}
               </div>
             </button>
+          </div>
+
+          {/* Silent Popup Mode Selector (Voice On vs Silent Visual Mode) */}
+          <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div
+                className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                  voiceSettings.enabled
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-amber-100 text-amber-700'
+                }`}
+              >
+                {voiceSettings.enabled ? (
+                  <Volume2 className="w-4 h-4" />
+                ) : (
+                  <VolumeX className="w-4 h-4" />
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-800">
+                  {isEn
+                    ? 'Sound Mode During Reminders (Voice Prompt vs. Silent Popup)'
+                    : 'Chế độ Âm thanh khi Nhắc nhở (Có giọng đọc vs. Im lặng tránh làm phiền)'}
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  {isEn
+                    ? 'Turn off voice prompts when working in a quiet office or without headphones (visual popup/tray alert only)'
+                    : 'Tắt giọng đọc khi ngồi ở văn phòng yên tĩnh không đeo tai nghe (chỉ hiện Popup / nháy Icon Taskbar)'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/70">
+              <button
+                type="button"
+                onClick={() => onUpdateVoice({ enabled: true })}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                  voiceSettings.enabled
+                    ? 'bg-white text-emerald-700 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Volume2 className="w-3.5 h-3.5" />
+                {isEn ? '🔊 Voice Prompt On' : '🔊 Bật giọng đọc'}
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdateVoice({ enabled: false })}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                  !voiceSettings.enabled
+                    ? 'bg-amber-500 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <VolumeX className="w-3.5 h-3.5" />
+                {isEn
+                  ? '🔇 Silent Mode (Popup Only)'
+                  : '🔇 Tắt giọng đọc (Chỉ hiện Popup)'}
+              </button>
+            </div>
           </div>
         </div>
 

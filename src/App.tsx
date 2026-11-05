@@ -20,10 +20,11 @@ import {
   Sun,
   Trash2,
   Volume2,
+  VolumeX,
 } from 'lucide-react';
 import {
   CloudWellnessDocument,
-  FirebaseConfigPayload,
+  ConnectedDeviceMetadata,
   SyncConnectionStatus,
   firebaseSyncService,
   mergeDailyStats,
@@ -230,11 +231,9 @@ export const App: React.FC = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [lastSyncedDevice, setLastSyncedDevice] = useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
-  const [isFirebaseConfigured, setIsFirebaseConfigured] = useState<boolean>(() =>
+  const [connectedDevices, setConnectedDevices] = useState<ConnectedDeviceMetadata[]>([]);
+  const [isFirebaseConfigured] = useState<boolean>(() =>
     firebaseSyncService.isConfigured()
-  );
-  const [currentProjectId, setCurrentProjectId] = useState<string | null>(
-    () => firebaseSyncService.getSavedConfig()?.projectId || null
   );
   const isApplyingRemoteRef = useRef<boolean>(false);
 
@@ -296,6 +295,9 @@ export const App: React.FC = () => {
     isApplyingRemoteRef.current = true;
     setLastSyncedDevice(docData.lastDeviceName || null);
     setLastSyncedAt(docData.updatedAt || Date.now());
+    if (Array.isArray(docData.connectedDevices)) {
+      setConnectedDevices(docData.connectedDevices);
+    }
 
     if (docData.dailyStats) {
       setDailyStats((prev) => mergeDailyStats(prev, docData.dailyStats));
@@ -354,6 +356,7 @@ export const App: React.FC = () => {
     if (isApplyingRemoteRef.current) return;
     if (!isFirebaseConfigured) return;
     if (!activeSyncCode && !userEmail) return;
+    if (syncStatus === 'connecting') return;
 
     const timer = window.setTimeout(() => {
       firebaseSyncService
@@ -367,7 +370,7 @@ export const App: React.FC = () => {
         .catch((err) => {
           setSyncError(err instanceof Error ? err.message : String(err));
         });
-    }, 600);
+    }, 800);
 
     return () => window.clearTimeout(timer);
   }, [
@@ -376,59 +379,17 @@ export const App: React.FC = () => {
     hydrationSettings,
     isFirebaseConfigured,
     standupSettings,
+    syncStatus,
     userEmail,
     voiceSettings,
     weeklyHistory,
   ]);
-
-  const handleSaveFirebaseConfig = (config: FirebaseConfigPayload) => {
-    const res = firebaseSyncService.init(config);
-    if (!res.ok) {
-      setSyncStatus('error');
-      setSyncError(res.error || 'Failed to initialize Firebase');
-      return;
-    }
-    setIsFirebaseConfigured(true);
-    setCurrentProjectId(config.projectId);
-    setSyncError(null);
-
-    firebaseSyncService.onUserChange((user) => {
-      setUserEmail(user?.email || null);
-    });
-
-    const codeToUse = activeSyncCode || firebaseSyncService.getSavedSyncCode();
-    if (codeToUse) {
-      firebaseSyncService.startRealtimeSync(
-        codeToUse,
-        {
-          dailyStats,
-          weeklyHistory,
-          standupSettings,
-          hydrationSettings,
-          voiceSettings,
-        },
-        handleRemoteCloudSnapshot,
-        (status, err) => {
-          setSyncStatus(status);
-          setSyncError(err || null);
-        }
-      );
-    }
-  };
 
   const handleConnectSyncCode = (code: string) => {
     if (!code) return;
     firebaseSyncService.saveSyncCode(code);
     setActiveSyncCode(code);
     setSyncError(null);
-    if (!firebaseSyncService.isConfigured()) {
-      setSyncError(
-        lang === 'en'
-          ? 'Please paste your Firebase project config first using the button above.'
-          : 'Sếp hãy bấm nút "Cấu hình Firebase Project" ở góc phải thẻ để dán khóa dự án Firebase trước nhé.'
-      );
-      return;
-    }
     firebaseSyncService.startRealtimeSync(
       code,
       {
@@ -1087,6 +1048,39 @@ export const App: React.FC = () => {
                 : 'Đồng bộ'}
             </button>
 
+            {/* Quick Voice Mute / Silent Mode Toggle Pill */}
+            <button
+              onClick={() =>
+                setVoiceSettings((prev) => ({ ...prev, enabled: !prev.enabled }))
+              }
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition ${
+                voiceSettings.enabled
+                  ? 'bg-emerald-50/70 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100/70'
+                  : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+              }`}
+              title={
+                voiceSettings.enabled
+                  ? lang === 'en'
+                    ? 'Voice prompt enabled — Click to switch to Silent Popup mode'
+                    : 'Đang bật giọng đọc nhắc nhở — Bấm để tắt giọng (Chỉ hiện Popup)'
+                  : lang === 'en'
+                  ? 'Silent Popup mode active — Click to turn voice prompt back on'
+                  : 'Đang tắt giọng đọc (Chỉ hiện Popup) — Bấm để bật lại giọng đọc'
+              }
+            >
+              {voiceSettings.enabled ? (
+                <>
+                  <Volume2 className="w-3.5 h-3.5" />
+                  {lang === 'en' ? 'Voice On' : 'Giọng đọc'}
+                </>
+              ) : (
+                <>
+                  <VolumeX className="w-3.5 h-3.5" />
+                  {lang === 'en' ? 'Silent' : 'Tắt giọng'}
+                </>
+              )}
+            </button>
+
             {/* Language Switcher Pill (VI / EN) */}
             <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/80">
               <button
@@ -1631,9 +1625,7 @@ export const App: React.FC = () => {
             userEmail={userEmail}
             lastSyncedDevice={lastSyncedDevice}
             lastSyncedAt={lastSyncedAt}
-            isFirebaseConfigured={isFirebaseConfigured}
-            currentProjectId={currentProjectId}
-            onSaveFirebaseConfig={handleSaveFirebaseConfig}
+            connectedDevices={connectedDevices}
             onConnectSyncCode={handleConnectSyncCode}
             onDisconnectSync={handleDisconnectSync}
             onGoogleSignIn={handleGoogleSignIn}

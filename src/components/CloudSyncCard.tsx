@@ -4,7 +4,6 @@ import {
   Cloud,
   CloudOff,
   Copy,
-  KeyRound,
   Laptop,
   Link2,
   LogIn,
@@ -12,16 +11,14 @@ import {
   RefreshCw,
   ShieldCheck,
   Smartphone,
-  Sparkles,
   UserCheck,
 } from 'lucide-react';
 import {
-  FirebaseConfigPayload,
+  ConnectedDeviceMetadata,
   SyncConnectionStatus,
   generateAuraSyncCode,
   getDefaultDeviceName,
   normalizeSyncCode,
-  parseFirebaseConfigInput,
   setDeviceName,
 } from '../services/firebaseSync';
 
@@ -33,9 +30,7 @@ interface CloudSyncCardProps {
   userEmail: string | null;
   lastSyncedDevice: string | null;
   lastSyncedAt: number | null;
-  isConfigured: boolean;
-  currentProjectId: string | null;
-  onSaveFirebaseConfig: (config: FirebaseConfigPayload) => void;
+  connectedDevices: ConnectedDeviceMetadata[];
   onConnectSyncCode: (code: string) => void;
   onDisconnectSync: () => void;
   onGoogleSignIn: () => void;
@@ -52,9 +47,7 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
   userEmail,
   lastSyncedDevice,
   lastSyncedAt,
-  isConfigured,
-  currentProjectId,
-  onSaveFirebaseConfig,
+  connectedDevices,
   onConnectSyncCode,
   onDisconnectSync,
   onGoogleSignIn,
@@ -66,9 +59,6 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
   const [deviceNameInput, setDeviceNameInput] = useState<string>(getDefaultDeviceName());
   const [syncCodeInput, setSyncCodeInput] = useState<string>(activeSyncCode || '');
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
-  const [showConfigModal, setShowConfigModal] = useState<boolean>(!isConfigured);
-  const [rawConfigInput, setRawConfigInput] = useState<string>('');
-  const [configError, setConfigError] = useState<string | null>(null);
 
   // Email/Password Auth State
   const [authTab, setAuthTab] = useState<'code' | 'account'>('code');
@@ -90,21 +80,6 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
     onConnectSyncCode(newCode);
   };
 
-  const handleApplyConfig = () => {
-    const parsed = parseFirebaseConfigInput(rawConfigInput);
-    if (!parsed) {
-      setConfigError(
-        isEn
-          ? 'Invalid Firebase config. Please paste the firebaseConfig object or JSON from Firebase Console.'
-          : 'Cấu hình chưa đúng định dạng. Sếp hãy dán đoạn mã firebaseConfig hoặc JSON từ Firebase Console nhé.'
-      );
-      return;
-    }
-    setConfigError(null);
-    onSaveFirebaseConfig(parsed);
-    setShowConfigModal(false);
-  };
-
   const formatTime = (ts: number | null) => {
     if (!ts) return isEn ? 'Not synced yet' : 'Chưa đồng bộ';
     const d = new Date(ts);
@@ -113,6 +88,8 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
       '0'
     )}:${String(d.getSeconds()).padStart(2, '0')}`;
   };
+
+  const deviceCount = Math.max(1, connectedDevices.length);
 
   return (
     <div className="bg-white rounded-3xl p-6 border border-emerald-200/80 shadow-sm space-y-5">
@@ -124,11 +101,11 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
               <Cloud className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-slate-800">
                   {isEn
-                    ? 'Multi-Device Cloud Sync (Firebase Realtime)'
-                    : 'Đồng Bộ Đa Thiết Bị (Firebase Cloud Sync)'}
+                    ? 'Multi-Device Cloud Sync (DeskAura Cloud)'
+                    : 'Đồng Bộ Đa Thiết Bị (DeskAura Cloud)'}
                 </h2>
                 <span
                   className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
@@ -186,8 +163,8 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {isConfigured && (activeSyncCode || userEmail) && (
+        {(activeSyncCode || userEmail) && (
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onForceSyncNow}
@@ -196,68 +173,9 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
               <RefreshCw className="w-3.5 h-3.5" />
               {isEn ? 'Sync Now' : 'Đồng bộ ngay'}
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setShowConfigModal((prev) => !prev)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-          >
-            <KeyRound className="w-3.5 h-3.5" />
-            {currentProjectId
-              ? `Firebase: ${currentProjectId}`
-              : isEn
-              ? 'Setup Firebase Key'
-              : 'Cấu hình Firebase Project'}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
-
-      {/* Firebase Config Setup Drawer */}
-      {showConfigModal && (
-        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-emerald-600" />
-              {isEn
-                ? 'Connect Your Firebase Cloud Project (Free Spark Plan)'
-                : 'Kết Nối Dự Án Firebase Cloud Của Sếp (Gói Miễn Phí Trọn Đời)'}
-            </p>
-            {isConfigured && (
-              <button
-                type="button"
-                onClick={() => setShowConfigModal(false)}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-800"
-              >
-                {isEn ? 'Close' : 'Thu gọn ✕'}
-              </button>
-            )}
-          </div>
-          <p className="text-xs text-slate-600 leading-relaxed">
-            {isEn
-              ? 'Paste the firebaseConfig snippet from Firebase Console -> Project Settings -> Your apps (Web App). DeskAura will automatically initialize Offline-First Firestore & Auth.'
-              : 'Dán đoạn mã firebaseConfig từ trang Firebase Console (Project Settings -> Web App `</>`). DeskAura sẽ tự động kích hoạt cơ sở dữ liệu Firestore Offline-First và bảo mật.'}
-          </p>
-          <textarea
-            rows={4}
-            value={rawConfigInput}
-            onChange={(e) => setRawConfigInput(e.target.value)}
-            placeholder={`const firebaseConfig = {\n  apiKey: "AIzaSy...",\n  authDomain: "deskaura-sync.firebaseapp.com",\n  projectId: "deskaura-sync",\n  appId: "1:123456:web:abcdef"\n};`}
-            className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono bg-white border border-slate-200 focus:outline-none focus:border-emerald-400"
-          />
-          {configError && (
-            <p className="text-xs font-semibold text-rose-600">{configError}</p>
-          )}
-          <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={handleApplyConfig}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition"
-            >
-              {isEn ? 'Save & Connect Firebase' : 'Lưu Cấu Hình & Kích Hoạt Cloud'}
-            </button>
-          </div>
-        </div>
-      )}
 
       {syncError && (
         <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center justify-between gap-3">
@@ -282,7 +200,7 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
               }`}
             >
               <Link2 className="w-3.5 h-3.5" />
-              {isEn ? '1. Quick Sync Code (6-Digit)' : '1. Mã Đồng Bộ Nhanh (Aura Code)'}
+              {isEn ? '1. Quick Sync Code (Aura Code)' : '1. Mã Đồng Bộ Nhanh (Aura Code)'}
             </button>
             <button
               type="button"
@@ -466,7 +384,7 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
           )}
         </div>
 
-        {/* Right 5 Cols: Device Name & Live Sync Telemetry */}
+        {/* Right 5 Cols: Device Name & Live Connected Devices List */}
         <div className="lg:col-span-5 p-4 rounded-2xl bg-slate-50 border border-slate-200/70 flex flex-col justify-between space-y-3">
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
@@ -474,9 +392,13 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
                 <Laptop className="w-4 h-4 text-emerald-600" />
                 {isEn ? 'This Device Name:' : 'Tên thiết bị hiện tại:'}
               </span>
-              <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
-                <Smartphone className="w-3.5 h-3.5" />
-                Windows • macOS • iOS
+              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Smartphone className="w-3 h-3" />
+                {activeSyncCode || userEmail
+                  ? isEn
+                    ? `${deviceCount} device(s) linked`
+                    : `${deviceCount} thiết bị đang kết nối`
+                  : 'Windows • macOS • iOS'}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -511,6 +433,20 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
                 {formatTime(lastSyncedAt)}
               </span>
             </div>
+
+            {connectedDevices.length > 0 && (
+              <div className="pt-1.5 flex flex-wrap gap-1.5">
+                {connectedDevices.map((dev) => (
+                  <span
+                    key={dev.uid}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-slate-700"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    {dev.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 bg-emerald-50/90 px-3 py-1.5 rounded-xl border border-emerald-200/60">
@@ -526,4 +462,3 @@ export const CloudSyncCard: React.FC<CloudSyncCardProps> = ({
     </div>
   );
 };
-
