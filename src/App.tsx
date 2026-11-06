@@ -9,6 +9,7 @@ import {
   Droplets,
   Eye,
   Headphones,
+  HelpCircle,
   LayoutDashboard,
   Minimize2,
   Pause,
@@ -46,6 +47,9 @@ const SettingsPanel = React.lazy(() =>
 );
 const SoundMixerPanel = React.lazy(() =>
   import('./components/SoundMixerPanel').then((m) => ({ default: m.SoundMixerPanel }))
+);
+const UserGuideModal = React.lazy(() =>
+  import('./components/UserGuideModal').then((m) => ({ default: m.UserGuideModal }))
 );
 import {
   AMBIENT_SOUNDS,
@@ -112,6 +116,7 @@ const getTodayString = (): string => {
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'analytics' | 'sounds' | 'settings'>('dashboard');
+  const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
   const [lang, setLang] = useState<AppLanguage>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
     return saved === 'en' ? 'en' : 'vi';
@@ -1995,6 +2000,19 @@ export const App: React.FC = () => {
             </button>
 
             <button
+              onClick={() => setIsGuideOpen(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200/80 transition cursor-pointer"
+              title={
+                lang === 'en'
+                  ? 'Open User Guide & Smart Rules'
+                  : 'Mở Cẩm Nang Hướng Dẫn Sử Dụng'
+              }
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              {lang === 'en' ? 'Guide' : 'Hướng dẫn'}
+            </button>
+
+            <button
               onClick={() => hideWindowToTray()}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition"
             >
@@ -2606,6 +2624,17 @@ export const App: React.FC = () => {
             onSkipBreak={skipBreakSession}
             onQuickDrinkWater={handleAddWater}
             onReplayVoice={() => triggerVoiceReminder(currentBreakType)}
+          />
+        </React.Suspense>
+      )}
+
+      {/* Interactive In-App User Guide Modal */}
+      {isGuideOpen && (
+        <React.Suspense fallback={null}>
+          <UserGuideModal
+            isOpen={isGuideOpen}
+            lang={lang}
+            onClose={() => setIsGuideOpen(false)}
           />
         </React.Suspense>
       )}

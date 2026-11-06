@@ -15,7 +15,7 @@
 [![Author Website](https://img.shields.io/badge/Website-duongbirken.deta.vn-0EA5E9?style=for-the-badge&logo=googlechrome&logoColor=white)](https://duongbirken.deta.vn)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge)](./LICENSE)
 
-[**🎬 Video Demo 45s**](#-video-demo-45-giây--45-second-product-showcase) • [**🚀 Có Gì Mới Ở v1.2.4 (VI/EN)**](#-có-gì-mới-trong-phiên-bản-deskaura-v124--whats-new-v120--v124) • [**📸 Giao Diện Tiếng Việt & English**](#-ảnh-chụp-giao-diện-v124-tiếng-việt--english--bilingual-screenshots) • [**📥 Tải Về (Windows / macOS)**](#-hướng-dẫn-tải--cài-đặt-windows--macos--ios) • [**👨‍💻 Tác Giả & Liên Hệ**](#-tác-giả--liên-hệ--author--contact)
+[**📖 Hướng Dẫn Sử Dụng Chi Tiết**](./HUONG_DAN_SU_DUNG.md) • [**🎬 Video Demo 45s**](#-video-demo-45-giây--45-second-product-showcase) • [**🚀 Có Gì Mới Ở v1.2.4 (VI/EN)**](#-có-gì-mới-trong-phiên-bản-deskaura-v124--whats-new-v120--v124) • [**📸 Giao Diện Tiếng Việt & English**](#-ảnh-chụp-giao-diện-v124-tiếng-việt--english--bilingual-screenshots) • [**📥 Tải Về (Windows / macOS)**](#-hướng-dẫn-tải--cài-đặt-windows--macos--ios) • [**👨‍💻 Tác Giả & Liên Hệ**](#-tác-giả--liên-hệ--author--contact)
 
 </div>
 
