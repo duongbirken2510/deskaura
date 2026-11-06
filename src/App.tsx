@@ -243,6 +243,8 @@ export const App: React.FC = () => {
   } | null>(null);
 
   const wasIdleResetRef = useRef<boolean>(false);
+  const systemIdleSecRef = useRef<number>(0);
+  const lastActiveDeviceIdRef = useRef<string>('');
   const lastPeerActiveAtRef = useRef<number>(0);
   const lastLanPulseSeenAtRef = useRef<number>(0);
   const lastCloudHeartbeatSentAtRef = useRef<number>(0);
@@ -354,16 +356,19 @@ export const App: React.FC = () => {
             ? now + nextWaterSec * 1000
             : prev.nextWaterAt;
 
-        const roomKey = (userEmail || activeSyncCode || '').trim().toLowerCase();
-        if (roomKey && myHwId) {
+        const roomKeyHash = hashLanRoomKey(userEmail || activeSyncCode || '');
+        if (roomKeyHash && myHwId) {
           broadcastLanPulse(
-            roomKey,
+            roomKeyHash,
             myHwId,
             getDefaultDeviceName(),
             nextStandupAt,
             nextEyeAt,
             nextWaterAt
           );
+        }
+        if (myHwId) {
+          lastActiveDeviceIdRef.current = myHwId;
         }
 
         return {
@@ -469,27 +474,58 @@ export const App: React.FC = () => {
           lastPeerActiveAtRef.current,
           remoteStandup.lastActiveAt
         );
+        const localLastInputAt = now - systemIdleSecRef.current * 1000;
+        if (
+          remoteStandup.lastActiveAt >= localLastInputAt - 1500 ||
+          systemIdleSecRef.current >= 4
+        ) {
+          lastActiveDeviceIdRef.current = remoteStandup.lastActiveDeviceId;
+        }
+        // If another machine has more recent input, auto-dismiss any open popup/banner on this machine!
+        if (
+          lastActiveDeviceIdRef.current === remoteStandup.lastActiveDeviceId &&
+          systemIdleSecRef.current >= 4
+        ) {
+          setIsBreakModalOpen(false);
+          setGentleBreakBanner(null);
+          setWaterToastVisible(false);
+          void setWindowAlwaysOnTop(false);
+        }
       }
 
       if (remoteStandup.nextStandupAt && remoteStandup.nextStandupAt > now) {
         const remSec = Math.round((remoteStandup.nextStandupAt - now) / 1000);
         const maxSec = (remoteStandup.standupIntervalMinutes || 60) * 60;
-        const clampedSec = Math.min(maxSec, Math.max(5, remSec));
-        setStandupSecondsLeft(clampedSec);
+        const clampedSec = Math.min(maxSec, Math.max(1, remSec));
+        setStandupSecondsLeft((prev) =>
+          Math.abs(clampedSec - prev) > 4 ? clampedSec : prev
+        );
         // If another machine just completed/reset the break, auto-dismiss open popup on this machine!
-        if (clampedSec > 90) {
+        if (
+          clampedSec > 90 &&
+          (!remoteStandup.lastActiveDeviceId ||
+            remoteStandup.lastActiveDeviceId !== myHwId ||
+            systemIdleSecRef.current >= 15)
+        ) {
           setIsBreakModalOpen(false);
           setGentleBreakBanner(null);
+          void setWindowAlwaysOnTop(false);
         }
       }
       if (remoteStandup.nextEyeAt && remoteStandup.nextEyeAt > now) {
         const remEye = Math.round((remoteStandup.nextEyeAt - now) / 1000);
         const maxEye = (remoteStandup.eyeBreakIntervalMinutes || 20) * 60;
-        setEyeSecondsLeft(Math.min(maxEye, Math.max(5, remEye)));
+        const clampedEye = Math.min(maxEye, Math.max(1, remEye));
+        setEyeSecondsLeft((prev) =>
+          Math.abs(clampedEye - prev) > 4 ? clampedEye : prev
+        );
       }
       if (remoteStandup.nextWaterAt && remoteStandup.nextWaterAt > now) {
         const remWater = Math.round((remoteStandup.nextWaterAt - now) / 1000);
-        setWaterSecondsLeft(Math.max(5, remWater));
+        const clampedWater = Math.max(1, remWater);
+        setWaterSecondsLeft((prev) =>
+          Math.abs(clampedWater - prev) > 4 ? clampedWater : prev
+        );
         if (remWater > 90) {
           setWaterToastVisible(false);
         }
@@ -502,6 +538,9 @@ export const App: React.FC = () => {
           nextWaterAt: remoteStandup.nextWaterAt ?? prev.nextWaterAt,
           timerSyncUpdatedAt:
             remoteStandup.timerSyncUpdatedAt ?? prev.timerSyncUpdatedAt,
+          lastActiveAt: remoteStandup.lastActiveAt ?? prev.lastActiveAt,
+          lastActiveDeviceId:
+            remoteStandup.lastActiveDeviceId ?? prev.lastActiveDeviceId,
         }));
       } else {
         // First machine on v1.2 seeds the shared countdown target in the cloud
@@ -747,6 +786,10 @@ export const App: React.FC = () => {
       setBreakTotalSec(duration);
       setBreakRemainingSec(duration);
 
+      if (type === 'eye') {
+        setPassiveEyeCueSec(duration || 20);
+      }
+
       if (!forceOverlay && standupSettings.reminderMode === 'gentle') {
         setGentleBreakBanner(type);
         const notifTitle =
@@ -789,6 +832,7 @@ export const App: React.FC = () => {
   const completeBreakSession = useCallback(async () => {
     setIsBreakModalOpen(false);
     setGentleBreakBanner(null);
+    setPassiveEyeCueSec(0);
     await setWindowAlwaysOnTop(false);
 
     const nextEyeSec = standupSettings.eyeBreakIntervalMinutes * 60;
@@ -829,18 +873,31 @@ export const App: React.FC = () => {
     async (minutes: number) => {
       setIsBreakModalOpen(false);
       setGentleBreakBanner(null);
+      setPassiveEyeCueSec(0);
       await setWindowAlwaysOnTop(false);
       const nextSec = minutes * 60;
-      setStandupSecondsLeft(nextSec);
-      syncTimerTargets(nextSec, eyeSecondsLeft, waterSecondsLeft);
+      if (currentBreakType === 'eye') {
+        setEyeSecondsLeft(nextSec);
+        syncTimerTargets(standupSecondsLeft, nextSec, waterSecondsLeft);
+      } else {
+        setStandupSecondsLeft(nextSec);
+        syncTimerTargets(nextSec, eyeSecondsLeft, waterSecondsLeft);
+      }
     },
-    [eyeSecondsLeft, syncTimerTargets, waterSecondsLeft]
+    [
+      currentBreakType,
+      eyeSecondsLeft,
+      standupSecondsLeft,
+      syncTimerTargets,
+      waterSecondsLeft,
+    ]
   );
 
   // Skip Break Session
   const skipBreakSession = useCallback(async () => {
     setIsBreakModalOpen(false);
     setGentleBreakBanner(null);
+    setPassiveEyeCueSec(0);
     await setWindowAlwaysOnTop(false);
     if (currentBreakType === 'eye') {
       const nextEye = standupSettings.eyeBreakIntervalMinutes * 60;
@@ -950,30 +1007,58 @@ export const App: React.FC = () => {
         return;
       }
       const now = Date.now();
+      const peerActiveAt = packet.active_at || now;
       lastLanPulseSeenAtRef.current = now;
       lastPeerActiveAtRef.current = Math.max(
         lastPeerActiveAtRef.current,
-        packet.active_at || now
+        peerActiveAt
       );
+      const localLastInputAt = now - systemIdleSecRef.current * 1000;
+      if (peerActiveAt >= localLastInputAt - 1500 || systemIdleSecRef.current >= 4) {
+        lastActiveDeviceIdRef.current = packet.device_id;
+      }
+      // If the peer machine has more recent mouse/keyboard activity,
+      // auto-dismiss any open break popup/banner on this secondary machine!
+      if (
+        lastActiveDeviceIdRef.current === packet.device_id &&
+        systemIdleSecRef.current >= 4
+      ) {
+        setIsBreakModalOpen(false);
+        setGentleBreakBanner(null);
+        setWaterToastVisible(false);
+        void setWindowAlwaysOnTop(false);
+      }
 
       if (packet.next_standup_at && packet.next_standup_at > now) {
         const remSec = Math.round((packet.next_standup_at - now) / 1000);
         const maxSec = (standupSettings.standupIntervalMinutes || 60) * 60;
-        const clampedSec = Math.min(maxSec, Math.max(5, remSec));
-        setStandupSecondsLeft(clampedSec);
-        if (clampedSec > 90) {
+        const clampedSec = Math.min(maxSec, Math.max(1, remSec));
+        setStandupSecondsLeft((prev) =>
+          Math.abs(clampedSec - prev) > 4 ? clampedSec : prev
+        );
+        if (
+          clampedSec > 90 &&
+          (lastActiveDeviceIdRef.current !== myHwId || systemIdleSecRef.current >= 4)
+        ) {
           setIsBreakModalOpen(false);
           setGentleBreakBanner(null);
+          void setWindowAlwaysOnTop(false);
         }
       }
       if (packet.next_eye_at && packet.next_eye_at > now) {
         const remEye = Math.round((packet.next_eye_at - now) / 1000);
         const maxEye = (standupSettings.eyeBreakIntervalMinutes || 20) * 60;
-        setEyeSecondsLeft(Math.min(maxEye, Math.max(5, remEye)));
+        const clampedEye = Math.min(maxEye, Math.max(1, remEye));
+        setEyeSecondsLeft((prev) =>
+          Math.abs(clampedEye - prev) > 4 ? clampedEye : prev
+        );
       }
       if (packet.next_water_at && packet.next_water_at > now) {
         const remWater = Math.round((packet.next_water_at - now) / 1000);
-        setWaterSecondsLeft(Math.max(5, remWater));
+        const clampedWater = Math.max(1, remWater);
+        setWaterSecondsLeft((prev) =>
+          Math.abs(clampedWater - prev) > 4 ? clampedWater : prev
+        );
         if (remWater > 90) {
           setWaterToastVisible(false);
         }
@@ -1216,14 +1301,17 @@ export const App: React.FC = () => {
         return { ...prev, secondsLeft: prev.secondsLeft - 1 };
       });
 
-      // Count down Passive 20-20-20 Eye Cue (20s golden tray indicator, zero interruption)
+      // Count down 20-20-20 Eye Break Cue (20s breathing screen dimmer + golden tray indicator)
       setPassiveEyeCueSec((prev) => {
         if (prev > 1) return prev - 1;
         if (prev === 1) {
-          setDailyStats((d) => ({
-            ...d,
-            eyeBreakCompletedCount: d.eyeBreakCompletedCount + 1,
-          }));
+          setGentleBreakBanner((b) => (b === 'eye' ? null : b));
+          if (!isBreakModalOpen) {
+            setDailyStats((d) => ({
+              ...d,
+              eyeBreakCompletedCount: d.eyeBreakCompletedCount + 1,
+            }));
+          }
           return 0;
         }
         return 0;
@@ -1274,8 +1362,34 @@ export const App: React.FC = () => {
       // Pillar 1: Poll OS Mouse/Keyboard Idle & Fullscreen every 3 seconds
       if (tickCounterRef.current % 3 === 0) {
         const ctx = await getSystemContext();
+        systemIdleSecRef.current = ctx.idle_seconds;
         setSystemIdleSec(ctx.idle_seconds);
         setIsFullscreenApp(ctx.is_fullscreen);
+
+        const myHwId = getCachedHardwareId();
+        const isMultiDevice =
+          connectedDevices.length >= 2 ||
+          lastPeerActiveAtRef.current > 0 ||
+          Boolean(userEmail || activeSyncCode);
+
+        if (ctx.idle_seconds <= 4 && myHwId) {
+          const localLastInputAt = now - ctx.idle_seconds * 1000;
+          if (localLastInputAt >= lastPeerActiveAtRef.current - 1500) {
+            lastActiveDeviceIdRef.current = myHwId;
+          }
+        }
+
+        const activeDevId =
+          lastActiveDeviceIdRef.current || standupSettings.lastActiveDeviceId;
+        const isAnotherDeviceActive =
+          peerIdleSec + 2 < ctx.idle_seconds ||
+          (Math.abs(peerIdleSec - ctx.idle_seconds) <= 2 &&
+            Boolean(myHwId && activeDevId && activeDevId !== myHwId)) ||
+          (ctx.idle_seconds >= 4 &&
+            Boolean(myHwId && activeDevId && activeDevId !== myHwId));
+        const isIdleSecondaryDevice =
+          ctx.idle_seconds >= standupSettings.autoResetIdleSeconds ||
+          (isMultiDevice && isAnotherDeviceActive);
 
         // If a break was deferred by Fullscreen/Presentation and the user just exited Fullscreen, trigger it now!
         if (!ctx.is_fullscreen && isDeferredByFullscreen) {
@@ -1286,18 +1400,27 @@ export const App: React.FC = () => {
           setStandupSecondsLeft(fullStand);
           setEyeSecondsLeft(fullEye);
           setWaterSecondsLeft(fullWater);
-          syncTimerTargets(fullStand, fullEye, fullWater);
-          startBreakSession('combo');
+          if (!isIdleSecondaryDevice) {
+            syncTimerTargets(fullStand, fullEye, fullWater);
+            startBreakSession('combo');
+          }
           return;
         }
 
-        // The Kill Switch: Only emit cross-device heartbeats when >= 2 devices are registered
-        const myHwId = getCachedHardwareId();
-        const isMultiDevice = connectedDevices.length >= 2;
-        if (isMultiDevice && ctx.idle_seconds < 15) {
+        // Emit cross-device heartbeats ONLY when user actively touches mouse/keyboard on this machine (<= 4s idle)
+        if (isMultiDevice && ctx.idle_seconds <= 4) {
           const roomKeyHash = hashLanRoomKey(userEmail || activeSyncCode || '');
-          // 1. Local LAN UDP Broadcast (0 Cloud cost, <1ms latency) every 6 seconds while active
-          if (roomKeyHash && myHwId && tickCounterRef.current % 6 === 0) {
+          const justSwitchedToThisDevice =
+            Boolean(myHwId) &&
+            (standupSettings.lastActiveDeviceId !== myHwId ||
+              lastActiveDeviceIdRef.current !== myHwId);
+
+          // 1. Local LAN UDP Broadcast (0 Cloud cost, <1ms latency) immediately on device switch or every 6s while active
+          if (
+            roomKeyHash &&
+            myHwId &&
+            (justSwitchedToThisDevice || tickCounterRef.current % 6 === 0)
+          ) {
             broadcastLanPulse(
               roomKeyHash,
               myHwId,
@@ -1308,15 +1431,17 @@ export const App: React.FC = () => {
             );
           }
 
-          // 2. Cloud Fallback Heartbeat (Throttled to 120s ONLY when no LAN peer seen & peer was active within 2 hours)
+          // 2. Cloud Fallback Heartbeat: immediate when switching active device, or throttled to 120s
           const hasRecentLanPeer = now - lastLanPulseSeenAtRef.current < 90_000;
           const hasPeerOnlineWithin2h = connectedDevices.some(
             (d) => d.uid !== myHwId && now - (d.lastSeenAt || 0) < 2 * 3600 * 1000
           );
+
           if (
-            !hasRecentLanPeer &&
-            hasPeerOnlineWithin2h &&
-            now - lastCloudHeartbeatSentAtRef.current >= 120_000
+            justSwitchedToThisDevice ||
+            (!hasRecentLanPeer &&
+              hasPeerOnlineWithin2h &&
+              now - lastCloudHeartbeatSentAtRef.current >= 120_000)
           ) {
             lastCloudHeartbeatSentAtRef.current = now;
             setStandupSettings((prev) => ({
@@ -1346,19 +1471,22 @@ export const App: React.FC = () => {
           setIsDeferredByFullscreen(false);
           if (!wasIdleResetRef.current) {
             wasIdleResetRef.current = true;
-            // In Gentle Mode (or when a gentle break notification was active), >180s of no mouse/keyboard input
-            // automatically credits +1 completed stand-up break and dismisses the break notification!
-            if (
-              gentleBreakBanner !== null ||
-              standupSettings.reminderMode === 'gentle'
-            ) {
+            // Only the machine that was actually in use credits +1 and broadcasts the reset target
+            if (!isAnotherDeviceActive) {
+              if (
+                gentleBreakBanner !== null ||
+                standupSettings.reminderMode === 'gentle'
+              ) {
+                setGentleBreakBanner(null);
+                setDailyStats((prev) => ({
+                  ...prev,
+                  standupCompletedCount: prev.standupCompletedCount + 1,
+                }));
+              }
+              syncTimerTargets(fullStand, fullEye, fullWater);
+            } else {
               setGentleBreakBanner(null);
-              setDailyStats((prev) => ({
-                ...prev,
-                standupCompletedCount: prev.standupCompletedCount + 1,
-              }));
             }
-            syncTimerTargets(fullStand, fullEye, fullWater);
           }
           return;
         } else if (ctx.idle_seconds < 10 && wasIdleResetRef.current) {
@@ -1371,8 +1499,33 @@ export const App: React.FC = () => {
         }
       }
 
-      // Increment focus minutes every 60 seconds
-      if (tickCounterRef.current % 60 === 0 && !isPaused && !isBreakModalOpen) {
+      const localIdleNow = systemIdleSecRef.current;
+      const myHwIdNow = getCachedHardwareId();
+      const activeDevIdNow =
+        lastActiveDeviceIdRef.current || standupSettings.lastActiveDeviceId;
+      const hasSyncedPeersNow =
+        connectedDevices.length >= 2 ||
+        lastPeerActiveAtRef.current > 0 ||
+        Boolean(userEmail || activeSyncCode);
+      const isPeerMoreRecentNow =
+        peerIdleSec + 2 < localIdleNow ||
+        (Math.abs(peerIdleSec - localIdleNow) <= 2 &&
+          Boolean(myHwIdNow && activeDevIdNow && activeDevIdNow !== myHwIdNow)) ||
+        (localIdleNow >= 4 &&
+          Boolean(myHwIdNow && activeDevIdNow && activeDevIdNow !== myHwIdNow));
+      // True when another synced computer has more recent mouse/keyboard input than this machine (Single-Leader Active Routing)
+      const suppressNotificationOnIdleDevice =
+        localIdleNow >= standupSettings.autoResetIdleSeconds ||
+        (hasSyncedPeersNow && isPeerMoreRecentNow);
+
+      // Increment focus minutes every 60 seconds ONLY on the machine actually being used
+      if (
+        tickCounterRef.current % 60 === 0 &&
+        !isPaused &&
+        !isBreakModalOpen &&
+        !suppressNotificationOnIdleDevice &&
+        localIdleNow < 60
+      ) {
         setDailyStats((prev) => ({
           ...prev,
           focusMinutes: prev.focusMinutes + 1,
@@ -1396,6 +1549,15 @@ export const App: React.FC = () => {
       // Pillar 2 (Part A): 60-Minute Unified Combo Ritual (Stand up + Drink Water + Stretch)
       setStandupSecondsLeft((prev) => {
         if (prev <= 1) {
+          // If this machine is idle/unused while the user works on another machine, wrap timer silently without notifying!
+          if (suppressNotificationOnIdleDevice) {
+            const fullStand = standupSettings.standupIntervalMinutes * 60;
+            const fullEye = standupSettings.eyeBreakIntervalMinutes * 60;
+            const fullWater = hydrationSettings.intervalMinutes * 60;
+            setWaterSecondsLeft(fullWater);
+            setEyeSecondsLeft(fullEye);
+            return fullStand;
+          }
           if (standupSettings.pauseOnFullscreen && isFullscreenApp) {
             // Defer popup & turn System Tray icon Ruby Red until user exits Fullscreen/Presentation
             setIsDeferredByFullscreen(true);
@@ -1414,17 +1576,23 @@ export const App: React.FC = () => {
         return prev - 1;
       });
 
-      // Pillar 2 (Part B): Every 20 Minutes -> Passive Eye Cue ONLY (Golden Tray Icon, NO Popup/Voice interruption!)
+      // Pillar 2 (Part B): Every 20 Minutes -> 20-20-20 Eye Break Notification + 20s Breathing Screen Dimmer + Golden Tray Icon
       if (standupSettings.eyeBreakEnabled) {
         setEyeSecondsLeft((prev) => {
           if (prev <= 1) {
+            const nextEyeSec = standupSettings.eyeBreakIntervalMinutes * 60;
+            if (suppressNotificationOnIdleDevice) {
+              return nextEyeSec;
+            }
             if (standupSettings.pauseOnFullscreen && isFullscreenApp) {
               return 60;
             }
+            syncTimerTargets(undefined, nextEyeSec, undefined);
             if (standupSecondsLeft > 90) {
               setPassiveEyeCueSec(standupSettings.eyeBreakDurationSeconds || 20);
+              startBreakSession('eye');
             }
-            return standupSettings.eyeBreakIntervalMinutes * 60;
+            return nextEyeSec;
           }
           return prev - 1;
         });
@@ -1433,6 +1601,9 @@ export const App: React.FC = () => {
       // 3. Hydration Reminder Countdown (Unified into Combo when intervals match)
       setWaterSecondsLeft((prev) => {
         if (prev <= 1) {
+          if (suppressNotificationOnIdleDevice) {
+            return hydrationSettings.intervalMinutes * 60;
+          }
           // Only show separate water toast if user configured a shorter custom water interval far from the Combo break
           if (standupSecondsLeft > 300) {
             setWaterToastVisible(true);
@@ -1447,10 +1618,13 @@ export const App: React.FC = () => {
 
     return () => window.clearInterval(timer);
   }, [
+    activeSyncCode,
     completeBreakSession,
+    connectedDevices,
     gentleBreakBanner,
     hydrationSettings.intervalMinutes,
     isBreakModalOpen,
+    isDeferredByFullscreen,
     isFullscreenApp,
     isPaused,
     standupSecondsLeft,
@@ -1458,6 +1632,10 @@ export const App: React.FC = () => {
     standupSettings.eyeBreakDurationSeconds,
     standupSettings.eyeBreakEnabled,
     standupSettings.eyeBreakIntervalMinutes,
+    standupSettings.lastActiveDeviceId,
+    standupSettings.nextEyeAt,
+    standupSettings.nextStandupAt,
+    standupSettings.nextWaterAt,
     standupSettings.pauseOnFullscreen,
     standupSettings.reminderMode,
     standupSettings.standupIntervalMinutes,
@@ -1466,6 +1644,7 @@ export const App: React.FC = () => {
     t.waterToastDesc,
     t.waterToastTitle,
     triggerVoiceReminder,
+    userEmail,
   ]);
 
   // Sound Mixer Handlers

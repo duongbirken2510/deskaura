@@ -568,7 +568,7 @@ dependencies = [
 
 [[package]]
 name = "deskaura"
-version = "1.2.5"
+version = "1.2.6"
 dependencies = [
  "serde",
  "serde_json",

@@ -194,7 +194,13 @@ export const BreakOverlayModal: React.FC<BreakOverlayModalProps> = ({
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-800">
-                    {isEn ? 'Hydrate while standing up' : 'Kết hợp uống nước khi đứng dậy'}
+                    {breakType === 'eye'
+                      ? isEn
+                        ? 'Sip water while resting your eyes'
+                        : 'Kết hợp nhấp ngụm nước khi nghỉ mắt'
+                      : isEn
+                      ? 'Hydrate while standing up'
+                      : 'Kết hợp uống nước khi đứng dậy'}
                   </p>
                   <p className="text-xs text-slate-500">
                     {drankDuringBreak
