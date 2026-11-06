@@ -26,6 +26,8 @@ class SoundEngine {
   private voiceAudio: HTMLAudioElement | null = null;
   private radioFadeTimer: number | null = null;
   private voiceFadeTimer: number | null = null;
+  private voiceResolve: (() => void) | null = null;
+  private voiceCancelled: boolean = false;
 
   /**
    * Time-Based Volume Matrix (Ma trận Âm lượng Ngày/Đêm):
@@ -561,12 +563,44 @@ class SoundEngine {
     });
   }
 
+  public stopVoiceReminder() {
+    this.voiceCancelled = true;
+    if (this.voiceFadeTimer) {
+      window.clearInterval(this.voiceFadeTimer);
+      this.voiceFadeTimer = null;
+    }
+    if (this.voiceAudio) {
+      try {
+        this.voiceAudio.onended = null;
+        this.voiceAudio.onerror = null;
+        this.voiceAudio.pause();
+        this.voiceAudio.currentTime = 0;
+      } catch {
+        // ignore
+      }
+      this.voiceAudio = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        // ignore
+      }
+    }
+    if (this.voiceResolve) {
+      const resolve = this.voiceResolve;
+      this.voiceResolve = null;
+      resolve();
+    }
+  }
+
   // Duck internal ambient mixer & external Windows apps, speak Vietnamese prompt, then restore
   public async playVietnameseVoiceReminder(
     kind: BreakType | 'water' | 'break_done' | 'test',
     settings: VoiceReminderSettings,
     onDuckStatus?: (duckedAppsCount: number, active: boolean) => void
   ): Promise<void> {
+    this.voiceCancelled = false;
     if (!settings.enabled && kind !== 'test') {
       if (settings.playChimeBeforeVoice) {
         await this.playHealingChime(settings.volume);
@@ -594,6 +628,9 @@ class SoundEngine {
       // 3. Play soft healing chime before voice
       if (settings.playChimeBeforeVoice) {
         await this.playHealingChime(settings.volume);
+      }
+      if (this.voiceCancelled) {
+        return;
       }
 
       // 4. Play Vietnamese or English neural voice file or custom TTS
@@ -653,6 +690,7 @@ class SoundEngine {
           this.voiceAudio.pause();
           this.voiceAudio = null;
         }
+        this.voiceResolve = resolve;
         const env = this.getTimeBasedVolumeEnvelope(volume);
         const audio = new Audio(path);
         audio.volume = env.targetVolume * 0.15;
@@ -668,12 +706,16 @@ class SoundEngine {
             window.clearInterval(this.voiceFadeTimer);
             this.voiceFadeTimer = null;
           }
+          if (this.voiceResolve === resolve) {
+            this.voiceResolve = null;
+          }
           resolve();
         };
         audio.onended = cleanupAndResolve;
         audio.onerror = cleanupAndResolve;
         audio.play().catch(cleanupAndResolve);
       } catch {
+        this.voiceResolve = null;
         resolve();
       }
     });
@@ -687,6 +729,7 @@ class SoundEngine {
       }
       try {
         window.speechSynthesis.cancel();
+        this.voiceResolve = resolve;
         const env = this.getTimeBasedVolumeEnvelope(volume);
         const utter = new SpeechSynthesisUtterance(text);
         utter.lang = 'vi-VN';
@@ -697,10 +740,17 @@ class SoundEngine {
         if (viVoice) {
           utter.voice = viVoice;
         }
-        utter.onend = () => resolve();
-        utter.onerror = () => resolve();
+        const done = () => {
+          if (this.voiceResolve === resolve) {
+            this.voiceResolve = null;
+          }
+          resolve();
+        };
+        utter.onend = done;
+        utter.onerror = done;
         window.speechSynthesis.speak(utter);
       } catch {
+        this.voiceResolve = null;
         resolve();
       }
     });

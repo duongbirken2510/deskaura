@@ -1,6 +1,6 @@
 [package]
 name = "deskaura"
-version = "1.2.6"
+version = "1.2.7"
 description = "DeskAura - Ứng dụng chăm sóc sức khỏe dân văn phòng trên Windows"
 authors = ["duongbirken2510"]
 edition = "2021"
