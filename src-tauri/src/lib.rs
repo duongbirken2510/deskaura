@@ -1030,15 +1030,15 @@ async fn download_and_install_update(app: AppHandle, version: String) -> Result<
         if let Ok(current_exe) = std::env::current_exe() {
             let old_exe = current_exe.with_extension("old.exe");
             if old_exe.exists() {
-                let exe_str = current_exe.to_string_lossy().to_string();
-                let _ = std::process::Command::new("cmd")
-                    .args(["/C", "timeout /t 1 /nobreak > NUL && start \"\" \"", &exe_str, "\""])
-                    .creation_flags(CREATE_NO_WINDOW)
+                if let Some(win) = app.get_webview_window("main") {
+                    let _ = win.destroy();
+                }
+                let _ = std::process::Command::new(&current_exe)
+                    .arg("--relaunch-after-update")
                     .spawn();
-                let _ = std::process::Command::new(&current_exe).spawn();
                 let app_clone = app.clone();
                 std::thread::spawn(move || {
-                    std::thread::sleep(std::time::Duration::from_millis(300));
+                    std::thread::sleep(std::time::Duration::from_millis(150));
                     app_clone.exit(0);
                 });
                 return Ok("restarting_swapped_exe".to_string());
@@ -1052,10 +1052,15 @@ async fn download_and_install_update(app: AppHandle, version: String) -> Result<
             let _ = stage_silent_update(clean_ver.clone()).await;
             if let Ok(current_exe) = std::env::current_exe() {
                 if current_exe.with_extension("old.exe").exists() {
-                    let _ = std::process::Command::new(&current_exe).spawn();
+                    if let Some(win) = app.get_webview_window("main") {
+                        let _ = win.destroy();
+                    }
+                    let _ = std::process::Command::new(&current_exe)
+                        .arg("--relaunch-after-update")
+                        .spawn();
                     let app_clone = app.clone();
                     std::thread::spawn(move || {
-                        std::thread::sleep(std::time::Duration::from_millis(300));
+                        std::thread::sleep(std::time::Duration::from_millis(150));
                         app_clone.exit(0);
                     });
                     return Ok("restarting_swapped_exe".to_string());
@@ -1547,6 +1552,10 @@ fn set_tray_language(app: AppHandle, lang: String) -> Result<(), String> {
 
 #[cfg(target_os = "windows")]
 fn ensure_single_instance_or_focus_existing() -> bool {
+    if std::env::args().any(|a| a == "--relaunch-after-update") {
+        std::thread::sleep(std::time::Duration::from_millis(600));
+        return true;
+    }
     use windows::core::w;
     use windows::Win32::UI::WindowsAndMessaging::{
         FindWindowW, SetForegroundWindow, ShowWindow, SW_RESTORE, SW_SHOW,
