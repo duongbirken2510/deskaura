@@ -19,7 +19,6 @@
 
   <style>
     :root {
-      interpolate-size: allow-keywords;
       --bg-void: #070b12;
       --bg-surface: #0f172a;
       --bg-elevated: #131f38;
@@ -57,16 +56,10 @@
         radial-gradient(circle at 50% 75%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
     }
 
-    /* Targeted typography wrapping rules (modern-web-guidance: improve-text-layout-and-legibility) */
     h1, h2, h3, h4 {
-      text-wrap: balance;
       line-height: 1.2;
       letter-spacing: -0.025em;
       color: var(--text-bright);
-    }
-
-    p, li, blockquote {
-      text-wrap: pretty;
     }
 
     a { color: inherit; text-decoration: none; }
@@ -226,6 +219,7 @@
     .neon-gradient {
       background: linear-gradient(135deg, #34d399 0%, #38bdf8 60%, #c084fc 100%);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
@@ -462,7 +456,7 @@
       <span style="display:inline-flex; align-items:center; background:rgba(255,255,255,0.92); padding:4px 12px 4px 6px; border-radius:999px;">
         <img src="../media/deskaura_logo_wordmark.svg" alt="DeskAura" style="height:28px; display:block;" />
       </span>
-      <span class="dev-badge">FOR_DEVS // v1.2.4</span>
+      <span class="dev-badge">FOR_DEVS // v1.2.5</span>
     </a>
 
     <nav class="nav-links">
@@ -495,24 +489,24 @@
         </p>
 
         <div style="display:flex; flex-wrap:wrap; gap:14px;">
-          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_aarch64.dmg" class="btn btn-neon" id="dev-primary-cta">
+          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_aarch64.dmg" class="btn btn-neon" id="dev-primary-cta">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.33c.64-.78 1.08-1.86.96-2.94-.93.04-2.06.62-2.72 1.4-.58.68-1.1 1.79-.96 2.84 1.04.08 2.08-.52 2.72-1.3z"/></svg>
             <span>Tải Bản Native Cho Dev (macOS .dmg)</span>
           </a>
-          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_x64-setup.exe" class="btn btn-dark" id="dev-secondary-cta">
+          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_x64-setup.exe" class="btn btn-dark" id="dev-secondary-cta">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.557L10.35 4.5v7.09H3V5.557zm0 12.886L10.35 19.5v-7.09H3v6.033zm8.165 1.182L21 21v-8.59h-9.835v7.215zm0-15.25V11.59H21V3l-9.835 1.375z"/></svg>
             <span>Windows x64 (.exe)</span>
           </a>
-          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.AppImage" class="btn btn-dark" id="dev-linux-cta">
+          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_amd64.AppImage" class="btn btn-dark" id="dev-linux-cta">
             <span>🐧 Linux (.AppImage)</span>
           </a>
-          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.deb" class="btn btn-dark">
+          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_amd64.deb" class="btn btn-dark">
             <span>📦 Ubuntu/Debian (.deb)</span>
           </a>
         </div>
 
         <div class="terminal-snippet">
-          $ sudo dpkg -i DeskAura_1.2.4_amd64.deb # macOS (.dmg) • Windows (.exe) • Linux (.deb / .AppImage)
+          $ sudo dpkg -i DeskAura_1.2.5_amd64.deb # macOS (.dmg) • Windows (.exe) • Linux (.deb / .AppImage)
         </div>
       </div>
 
@@ -678,16 +672,16 @@
         Không đăng ký tài khoản bắt buộc. Không telemetry theo dõi. Cài đặt trong 3 giây và trải nghiệm ngay.
       </p>
       <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:14px;">
-        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_aarch64.dmg" class="btn btn-neon">
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_aarch64.dmg" class="btn btn-neon">
           🍎 Tải Bản Native Cho macOS (.dmg)
         </a>
-        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_x64-setup.exe" class="btn btn-dark">
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_x64-setup.exe" class="btn btn-dark">
           🪟 Tải Bản Native Cho Windows (.exe)
         </a>
-        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.AppImage" class="btn btn-dark">
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_amd64.AppImage" class="btn btn-dark">
           🐧 Linux (.AppImage)
         </a>
-        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.deb" class="btn btn-dark">
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_amd64.deb" class="btn btn-dark">
           📦 Ubuntu/Debian (.deb)
         </a>
       </div>
@@ -697,7 +691,7 @@
   <footer>
     <div class="container" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px;">
       <div>
-        <span style="font-family:var(--font-mono); color:var(--neon-emerald);">DeskAura v1.2.4</span> — Engineered by <strong>Duong Birken</strong> (<a href="https://duongbirken.deta.vn" target="_blank" rel="noopener" style="color:var(--neon-cyan);">duongbirken.deta.vn</a>)
+        <span style="font-family:var(--font-mono); color:var(--neon-emerald);">DeskAura v1.2.5</span> — Engineered by <strong>Duong Birken</strong> (<a href="https://duongbirken.deta.vn" target="_blank" rel="noopener" style="color:var(--neon-cyan);">duongbirken.deta.vn</a>)
       </div>
       <div style="display:flex; gap:18px; font-weight:600;">
         <a href="../index.html">Trang Chủ</a>
@@ -726,6 +720,11 @@
       } else if (ua.includes('linux')) {
         linuxBtn.classList.replace('btn-dark', 'btn-neon');
         macBtn.classList.replace('btn-neon', 'btn-dark');
+      }
+      if (typeof CSS !== 'undefined' && CSS.supports) {
+        const s = document.createElement('style');
+        s.textContent = ':root{interpolate-size:allow-keywords}h1,h2,h3,h4{text-wrap:balance}p,li,blockquote{text-wrap:pretty}';
+        document.head.appendChild(s);
       }
     })();
   </script>

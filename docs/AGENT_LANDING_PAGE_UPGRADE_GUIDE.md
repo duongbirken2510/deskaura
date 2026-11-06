@@ -89,8 +89,8 @@ Hiện tại nút Windows đang cố định nằm trên nút Mac. Thêm đoạn
 - Nếu người dùng vào bằng **macOS**: Đưa nút `a[data-dl-os="mac"]` lên vị trí đầu tiên (hoặc áp style nút chính nổi bật nhất) để người dùng Mac bấm tải `.dmg` ngay lập tức.
 - Nếu người dùng vào bằng **Windows**: Giữ nút `a[data-dl-os="win"]` ở vị trí đầu tiên.
 - Nếu người dùng vào bằng **Linux**: Nổi bật nút tải **Linux (`.AppImage` / `.deb`)** trỏ tới:
-  - `https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.AppImage`
-  - `https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_amd64.deb`
+  - `https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_amd64.AppImage`
+  - `https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_amd64.deb`
 - **Lưu ý**: Giữ nguyên thuộc tính `data-dl-os` để sự kiện mở `#post-download-modal` hoạt động bình thường.
 
 ### 2.4. Nhúng Khu Vực "Rạp Chiếu Đôi TVC Điện Ảnh & Trải Nghiệm Thực Tế" (Ngay ở cột trái Hero hoặc ngay dưới Hero)

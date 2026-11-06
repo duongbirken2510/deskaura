@@ -245,6 +245,23 @@ export async function setTrayLanguage(lang: 'vi' | 'en'): Promise<void> {
   }
 }
 
+export async function setScreenEyeFilter(
+  brightness: number,
+  warmth: number,
+  fadeMs: number = 1500
+): Promise<void> {
+  if (!isTauriEnv()) return;
+  try {
+    await invoke('set_screen_eye_filter', {
+      brightness,
+      warmth,
+      fadeMs,
+    });
+  } catch {
+    // ignore
+  }
+}
+
 export async function updateTrayProgressIcon(
   progressRatio: number,
   isEyeCue: boolean,

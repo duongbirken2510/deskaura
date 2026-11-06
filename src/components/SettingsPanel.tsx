@@ -660,18 +660,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           </div>
 
-          {/* Smart Windows Context */}
+          {/* Smart Context & Eye-Shield Protection */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-3">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              {isEn ? 'Smart Context Detection' : 'Nhận Diện Ngữ Cảnh Thông Minh'}
+              {isEn ? 'Smart Context & Eye Protection' : 'Nhận Diện Ngữ Cảnh & Bảo Vệ Mắt'}
             </p>
 
             <label className="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
               <span>
                 {isEn
                   ? 'Postpone breaks during fullscreen meetings/presentations'
-                  : 'Tạm hoãn màn hình khóa khi đang họp / Fullscreen'}
+                  : 'Tạm hoãn màn hình nhắc khi đang họp / Fullscreen'}
               </span>
               <input
                 type="checkbox"
@@ -698,6 +698,82 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 className="w-4 h-4 accent-emerald-500 rounded"
               />
             </label>
+
+            <label className="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
+              <span>
+                {isEn
+                  ? 'Auto-dim screen (Fade in-out) during 20s eye break'
+                  : 'Tự dịu sáng màn hình (Fade in-out) trong 20s nghỉ mắt'}
+              </span>
+              <input
+                type="checkbox"
+                checked={standupSettings.eyeBreakDimScreen ?? true}
+                onChange={(e) =>
+                  onUpdateStandup({ eyeBreakDimScreen: e.target.checked })
+                }
+                className="w-4 h-4 accent-emerald-500 rounded"
+              />
+            </label>
+
+            <div className="space-y-2">
+              <label className="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
+                <span>
+                  {isEn
+                    ? 'Eye-Shield & Blue-Light Screen Filter'
+                    : 'Bảo vệ mắt & Lọc ánh sáng xanh màn hình (Eye-Shield)'}
+                </span>
+                <input
+                  type="checkbox"
+                  checked={standupSettings.eyeShieldEnabled ?? false}
+                  onChange={(e) =>
+                    onUpdateStandup({
+                      eyeShieldEnabled: e.target.checked,
+                      eyeShieldMode: standupSettings.eyeShieldMode || 'auto',
+                    })
+                  }
+                  className="w-4 h-4 accent-emerald-500 rounded"
+                />
+              </label>
+
+              {standupSettings.eyeShieldEnabled && (
+                <div className="grid grid-cols-3 gap-1.5 bg-white p-1 rounded-xl border border-slate-200/80">
+                  {[
+                    {
+                      id: 'auto',
+                      label: isEn ? '☀️ Auto' : '☀️ Tự động',
+                    },
+                    {
+                      id: 'office',
+                      label: isEn ? '🌿 Office' : '🌿 Văn phòng',
+                    },
+                    {
+                      id: 'night',
+                      label: isEn ? '🌙 Night OT' : '🌙 Đêm OT',
+                    },
+                  ].map((m) => {
+                    const active = (standupSettings.eyeShieldMode || 'auto') === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() =>
+                          onUpdateStandup({
+                            eyeShieldMode: m.id as 'auto' | 'office' | 'night',
+                          })
+                        }
+                        className={`py-1 px-2 rounded-lg text-[11px] font-bold transition ${
+                          active
+                            ? 'bg-emerald-500 text-white shadow-xs'
+                            : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             <label className="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
               <span>

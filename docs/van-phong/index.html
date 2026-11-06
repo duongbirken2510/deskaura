@@ -1,25 +1,28 @@
 <!DOCTYPE html>
 <html lang="vi" data-theme="clinical-light">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DeskAura Văn Phòng — Cứu Lấy Cột Sống Và Đôi Mắt Của Bạn Trước Khi Quá Muộn</title>
-  <meta name="description" content="Phòng khám sức khỏe tĩnh lặng ngay trên màn hình máy tính: Chống khô rát mắt 20-20-20, nhắc đổi tư thế chống thoái hóa đốt sống cổ và nuôi cây cấp nước cho dân văn phòng." />
+  <meta name="description"
+    content="Phòng khám sức khỏe tĩnh lặng ngay trên màn hình máy tính: Chống khô rát mắt 20-20-20, nhắc đổi tư thế chống thoái hóa đốt sống cổ và nuôi cây cấp nước cho dân văn phòng." />
   <meta name="author" content="Duong Birken" />
 
   <meta property="og:type" content="website" />
   <meta property="og:title" content="DeskAura Văn Phòng — Cứu Lấy Cột Sống Và Đôi Mắt Của Bạn Trước Khi Quá Muộn" />
-  <meta property="og:description" content="Đơn kê 3 liệu pháp tĩnh lặng cho dân văn phòng ngồi máy tính 8 tiếng: Nghỉ mắt 20s, Giãn cơ tại ghế & Nuôi cây cấp nước." />
+  <meta property="og:description"
+    content="Đơn kê 3 liệu pháp tĩnh lặng cho dân văn phòng ngồi máy tính 8 tiếng: Nghỉ mắt 20s, Giãn cơ tại ghế & Nuôi cây cấp nước." />
   <meta property="og:image" content="../media/deskaura_brand_banner.png" />
 
   <link rel="icon" type="image/svg+xml" href="../media/deskaura_logo_wordmark.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet" />
 
   <style>
     :root {
-      interpolate-size: allow-keywords;
       --bg-clinic: #f4f9f9;
       --bg-white: #ffffff;
       --bg-teal-soft: #e6f4f1;
@@ -40,7 +43,11 @@
       --radius-pill: 999px;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     html {
       scroll-behavior: smooth;
@@ -50,19 +57,19 @@
       line-height: 1.65;
     }
 
-    /* Targeted typography wrapping rules (modern-web-guidance: improve-text-layout-and-legibility) */
-    h1, h2, h3, h4 {
-      text-wrap: balance;
+    h1,
+    h2,
+    h3,
+    h4 {
       line-height: 1.2;
       letter-spacing: -0.025em;
       color: var(--text-main);
     }
 
-    p, li, blockquote {
-      text-wrap: pretty;
+    a {
+      color: inherit;
+      text-decoration: none;
     }
-
-    a { color: inherit; text-decoration: none; }
 
     .container {
       width: min(1180px, 92vw);
@@ -98,7 +105,8 @@
       transition: background 0.2s ease;
     }
 
-    .funnel-pill:hover, .funnel-pill.active {
+    .funnel-pill:hover,
+    .funnel-pill.active {
       background: var(--clinic-emerald);
       color: #ffffff;
     }
@@ -123,7 +131,10 @@
       gap: 16px;
     }
 
-    .brand-logo img { height: 36px; display: block; }
+    .brand-logo img {
+      height: 36px;
+      display: block;
+    }
 
     .nav-links {
       display: flex;
@@ -134,7 +145,9 @@
       color: var(--text-sub);
     }
 
-    .nav-links a:hover { color: var(--clinic-teal-dark); }
+    .nav-links a:hover {
+      color: var(--clinic-teal-dark);
+    }
 
     .btn {
       display: inline-flex;
@@ -150,7 +163,9 @@
       border: none;
     }
 
-    .btn:hover { transform: translateY(-2px); }
+    .btn:hover {
+      transform: translateY(-2px);
+    }
 
     .btn-clinic {
       background: linear-gradient(135deg, #0d9488 0%, #059669 100%);
@@ -164,7 +179,10 @@
       border: 1px solid var(--border-clinic);
     }
 
-    .btn-sm { padding: 9px 18px; font-size: 0.86rem; }
+    .btn-sm {
+      padding: 9px 18px;
+      font-size: 0.86rem;
+    }
 
     /* 1. Hero Section (Clinical Calm & Urgent Diagnosis) */
     .hero {
@@ -255,7 +273,9 @@
     }
 
     /* Section Generic */
-    .section { padding: 72px 0; }
+    .section {
+      padding: 72px 0;
+    }
 
     .section-header {
       text-align: center;
@@ -281,63 +301,45 @@
       margin-bottom: 12px;
     }
 
-    /* 2. Pain-Point Agitation (WaterMinder Visual-First Style) */
+    /* 2. Pain-Point Agitation */
     .pain-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
+      gap: 22px;
     }
 
     .pain-card {
       background: var(--bg-white);
-      border: 1px solid rgba(220, 38, 38, 0.14);
+      border: 1px solid rgba(220, 38, 38, 0.16);
       border-top: 4px solid var(--warn-red);
-      border-radius: var(--radius-lg);
-      padding: 36px 28px;
+      border-radius: var(--radius-md);
+      padding: 28px;
       box-shadow: var(--shadow-clinic);
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .visual-icon-lg {
-      width: 92px;
-      height: 92px;
-      border-radius: 26px;
-      display: grid;
-      place-items: center;
-      font-size: 2.9rem;
-      margin-bottom: 18px;
-      background: #fef2f2;
-      border: 1px solid rgba(220, 38, 38, 0.18);
     }
 
     .pain-stat {
-      font-size: 2.5rem;
+      font-size: 2.3rem;
       font-weight: 800;
       color: var(--warn-red);
-      line-height: 1.05;
       margin-bottom: 8px;
     }
 
     .pain-card h3 {
-      font-size: 1.25rem;
-      margin-bottom: 8px;
+      font-size: 1.22rem;
+      margin-bottom: 10px;
     }
 
     .pain-card p {
-      font-size: 0.96rem;
+      font-size: 0.94rem;
       color: var(--text-sub);
-      max-width: 300px;
     }
 
-    /* 3. Core Solutions (Rx Prescription of 3 Remedies - Big Visual Icons) */
+    /* 3. Core Solutions (Rx Prescription of 3 Remedies) */
     .rx-container {
       background: var(--bg-white);
       border: 1px solid var(--border-clinic);
       border-radius: var(--radius-lg);
-      padding: 48px 40px;
+      padding: 44px;
       box-shadow: var(--shadow-clinic);
     }
 
@@ -350,7 +352,7 @@
       background: var(--bg-teal-soft);
       padding: 8px 18px;
       border-radius: var(--radius-pill);
-      margin-bottom: 20px;
+      margin-bottom: 28px;
     }
 
     .rx-grid {
@@ -362,112 +364,40 @@
     .rx-item {
       background: var(--bg-clinic);
       border: 1px solid var(--border-clinic);
-      border-radius: var(--radius-lg);
-      padding: 34px 26px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .rx-icon-giant {
-      width: 96px;
-      height: 96px;
-      border-radius: 28px;
-      background: linear-gradient(135deg, #ccfbf1 0%, #d1fae5 100%);
-      display: grid;
-      place-items: center;
-      font-size: 3rem;
-      margin-bottom: 18px;
-      box-shadow: 0 10px 24px rgba(13, 148, 136, 0.12);
+      border-radius: var(--radius-md);
+      padding: 28px;
     }
 
     .rx-step {
       display: inline-block;
-      font-size: 0.76rem;
+      font-size: 0.78rem;
       font-weight: 800;
       color: #ffffff;
       background: var(--clinic-teal);
       padding: 4px 12px;
       border-radius: var(--radius-pill);
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .rx-item h3 {
-      font-size: 1.28rem;
-      margin-bottom: 8px;
-    }
-
-    .rx-item p {
-      font-size: 0.95rem;
-      color: var(--text-sub);
-      margin-bottom: 16px;
-      max-width: 290px;
-    }
-
-    .rx-dose {
-      font-size: 0.86rem;
-      font-weight: 800;
-      color: var(--clinic-teal-dark);
-      background: var(--bg-white);
-      padding: 8px 16px;
-      border-radius: var(--radius-pill);
-      border: 1px solid var(--border-clinic);
-      margin-top: auto;
-    }
-
-    /* Multi-Device Continuity Strip (WaterMinder Style) */
-    .devices-clinic-banner {
-      background: #061311;
-      color: #ffffff;
-      border-radius: var(--radius-lg);
-      padding: 44px 36px;
-      text-align: center;
-      box-shadow: 0 22px 54px rgba(6, 19, 17, 0.18);
-    }
-
-    .devices-clinic-banner h3 {
-      color: #ffffff;
-      font-size: clamp(1.65rem, 2.8vw, 2.25rem);
+      font-size: 1.25rem;
       margin-bottom: 10px;
     }
 
-    .devices-clinic-banner p {
-      color: #94a3b8;
-      max-width: 600px;
-      margin: 0 auto 28px;
-      font-size: 1rem;
+    .rx-item p {
+      font-size: 0.94rem;
+      color: var(--text-sub);
+      margin-bottom: 16px;
     }
 
-    .devices-pill-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-    }
-
-    .device-mini-card {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      border-radius: var(--radius-md);
-      padding: 22px 16px;
-    }
-
-    .device-mini-icon {
-      font-size: 2.3rem;
-      margin-bottom: 8px;
-    }
-
-    .device-mini-card strong {
-      display: block;
-      font-size: 0.98rem;
-      color: #ffffff;
-      margin-bottom: 4px;
-    }
-
-    .device-mini-card span {
-      font-size: 0.82rem;
-      color: #34d399;
+    .rx-dose {
+      font-size: 0.84rem;
       font-weight: 700;
+      color: var(--clinic-teal-dark);
+      background: var(--bg-white);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--clinic-teal);
     }
 
     /* 4. Before / After Comparison */
@@ -546,8 +476,14 @@
       width: fit-content;
     }
 
-    .ergo-card h4 { font-size: 1.15rem; }
-    .ergo-card p { font-size: 0.9rem; color: var(--text-sub); }
+    .ergo-card h4 {
+      font-size: 1.15rem;
+    }
+
+    .ergo-card p {
+      font-size: 0.9rem;
+      color: var(--text-sub);
+    }
 
     .ergo-link {
       display: inline-flex;
@@ -558,7 +494,9 @@
       color: var(--clinic-teal-dark);
     }
 
-    .ergo-link:hover { text-decoration: underline; }
+    .ergo-link:hover {
+      text-decoration: underline;
+    }
 
     /* Final CTA */
     .cta-clinic {
@@ -570,8 +508,17 @@
       margin-bottom: 64px;
     }
 
-    .cta-clinic h2 { color: #ffffff; font-size: clamp(1.85rem, 3.2vw, 2.5rem); margin-bottom: 12px; }
-    .cta-clinic p { color: rgba(255, 255, 255, 0.85); max-width: 640px; margin: 0 auto 26px; }
+    .cta-clinic h2 {
+      color: #ffffff;
+      font-size: clamp(1.85rem, 3.2vw, 2.5rem);
+      margin-bottom: 12px;
+    }
+
+    .cta-clinic p {
+      color: rgba(255, 255, 255, 0.85);
+      max-width: 640px;
+      margin: 0 auto 26px;
+    }
 
     footer {
       border-top: 1px solid var(--border-clinic);
@@ -581,14 +528,27 @@
     }
 
     @media (max-width: 920px) {
-      .hero, .pain-grid, .rx-grid, .compare-grid, .ergo-grid {
+
+      .hero,
+      .pain-grid,
+      .rx-grid,
+      .compare-grid,
+      .ergo-grid {
         grid-template-columns: 1fr;
       }
-      .nav-links { display: none; }
-      .rx-container, .ergo-section { padding: 26px; }
+
+      .nav-links {
+        display: none;
+      }
+
+      .rx-container,
+      .ergo-section {
+        padding: 26px;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <!-- Top Niche Switcher -->
@@ -631,17 +591,18 @@
         </h1>
 
         <p>
-          Chăm sóc thị lực 20-20-20, giãn cơ cổ vai gáy và nhắc uống nước tĩnh lặng suốt 8 tiếng nơi công sở.
+          8 tiếng nhìn bảng tính Excel dưới phòng máy lạnh đang âm thầm bào mòn màng ẩm giác mạc và chèn ép đốt sống cổ
+          của bạn mỗi ngày. Hãy để DeskAura chăm sóc bạn bằng những lời nhắc tĩnh lặng, êm ái ngay tại bàn làm việc.
         </p>
 
         <div class="hero-cta-box">
-          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_aarch64.dmg" class="btn btn-clinic" id="clinic-primary-cta">
+          <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_aarch64.dmg" class="btn btn-clinic" id="clinic-primary-cta">
             <span>✨ Trải Nghiệm Trợ Lý Sức Khỏe Miễn Phí (macOS .dmg)</span>
           </a>
           <div class="os-sub-links">
             Hoặc tải trực tiếp cho:
-            <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_x64-setup.exe">Windows (.exe)</a> •
-            <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_aarch64.dmg">macOS (.dmg)</a>
+            <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_x64-setup.exe">Windows (.exe)</a> •
+            <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_aarch64.dmg">macOS (.dmg)</a>
             (Miễn phí 100% • Không quảng cáo)
           </div>
         </div>
@@ -653,135 +614,106 @@
         </video>
         <div class="video-caption">
           <span>👁️ TVC: Hội chứng thị giác màn hình &amp; Giải pháp 20 giây từ DeskAura</span>
-          <button type="button" class="btn btn-outline btn-sm" style="padding:5px 12px; font-size:0.78rem;" onclick="toggleClinicSound()" id="clinic-sound-btn">
+          <button type="button" class="btn btn-outline btn-sm" style="padding:5px 12px; font-size:0.78rem;"
+            onclick="toggleClinicSound()" id="clinic-sound-btn">
             🔊 Bật tiếng
           </button>
         </div>
       </div>
     </section>
 
-    <!-- 2. Pain-Point Agitation (Kích thích nỗi đau - WaterMinder Visual-First) -->
+    <!-- 2. Pain-Point Agitation (Kích thích nỗi đau) -->
     <section class="section" id="trieu-chung">
       <div class="section-header">
         <span class="eyebrow" style="background:#fef2f2; color:#dc2626;">Sự Thật Lâm Sàng Nơi Công Sở</span>
-        <h2>8 Tiếng Ngồi Bàn Giấy Đang Lấy Đi Gì Của Bạn?</h2>
+        <h2>Điều Gì Đang Xảy Ra Với Cơ Thể Bạn Sau 8 Tiếng Ngồi Bàn Giấy?</h2>
         <p style="color:var(--text-sub);">
-          Ba con số báo động trên cơ thể dân văn phòng mỗi chiều tan ca.
+          Những cơn mỏi mắt lúc 3 giờ chiều hay cảm giác cứng gáy khi tan làm không phải chuyện nhỏ — đó là tín hiệu cầu
+          cứu của cơ thể trước khi chuyển thành bệnh mãn tính.
         </p>
       </div>
 
       <div class="pain-grid">
         <article class="pain-card">
-          <div class="visual-icon-lg">👁️</div>
           <div class="pain-stat">-66%</div>
-          <h3>Khô Rát Nhãn Cầu</h3>
+          <h3>Khô Nhãn Cầu &amp; Suy Giảm Thị Lực</h3>
           <p>
-            Nhìn bảng tính làm nhịp chớp mắt tụt xuống chỉ còn <strong>5 lần/phút</strong> gây khô mỏi mắt.
+            Khi tập trung nhìn màn hình bảng tính, tần suất chớp mắt tự nhiên giảm từ <strong>15 lần/phút xuống chỉ còn
+              5 lần/phút</strong>. Màng nước mắt bốc hơi nhanh dưới gió điều hòa gây khô rát, nhức hốc mắt và nhìn mờ.
           </p>
         </article>
 
         <article class="pain-card">
-          <div class="visual-icon-lg">🦴</div>
           <div class="pain-stat">27 kg</div>
-          <h3>Chèn Ép Đốt Sống Cổ</h3>
+          <h3>Thoái Hóa Đốt Sống Cổ C4–C7</h3>
           <p>
-            Cúi nhìn màn hình góc 45° đè lực tương đương <strong>27 kg</strong> lên đĩa đệm cổ C4–C7.
+            Chỉ cần đầu hơi rướn về phía màn hình một góc 45°, cột sống cổ của bạn phải gánh một lực tương đương
+            <strong>27 kg suốt nhiều giờ liền</strong>, gây chèn ép đĩa đệm, đau lan xuống bả vai và tê bì cánh tay.
           </p>
         </article>
 
         <article class="pain-card">
-          <div class="visual-icon-lg">💧</div>
           <div class="pain-stat">1,200 ml</div>
-          <h3>Thiếu Nước Giờ Hành Chính</h3>
+          <h3>Thiếu Nước Thầm Lặng Giờ Hành Chính</h3>
           <p>
-            Quên uống nước dưới phòng máy lạnh gây đau đầu uể oải lúc 3 giờ chiều.
+            Quá cuốn vào công việc khiến 80% dân văn phòng thiếu hụt hơn 1 lít nước mỗi ngày. Hậu quả là máu lưu thông
+            lên não kém, đau đầu uể oải buổi chiều, sỏi thận và làn da xỉn màu.
           </p>
         </article>
       </div>
     </section>
 
-    <!-- 3. Core Solutions (Đơn Kê 3 Liệu Pháp Đặc Trị - Giant Icons + 1 Sentence) -->
+    <!-- 3. Core Solutions (Đơn Kê 3 Liệu Pháp Đặc Trị) -->
     <section class="section" id="don-ke">
       <div class="rx-container">
         <div style="text-align:center;">
-          <span class="rx-header-badge">📋 ĐƠN KÊ CHĂM SÓC TĨNH LẶNG</span>
-          <h2 style="font-size:clamp(1.75rem, 3vw, 2.4rem); margin-bottom:10px;">
-            3 Liệu Pháp Đặc Trị Ngay Tại Ghế
+          <span class="rx-header-badge">📋 ĐƠN KÊ CHĂM SÓC TĨNH LẶNG TỪ DESKAURA</span>
+          <h2 style="font-size:clamp(1.75rem, 3vw, 2.4rem); margin-bottom:12px;">
+            3 Liệu Pháp Đặc Trị Ngay Tại Ghế Văn Phòng
           </h2>
-          <p style="color:var(--text-sub); max-width:560px; margin:0 auto 36px;">
-            Chỉ vài chục giây đúng lúc để phục hồi mà không làm phiền đồng nghiệp xung quanh.
+          <p style="color:var(--text-sub); max-width:680px; margin:0 auto 36px;">
+            Không cần rời khỏi bàn làm việc lâu, không gây chú ý với đồng nghiệp xung quanh. Chỉ vài chục giây đúng lúc
+            để cơ thể được phục hồi.
           </p>
         </div>
 
         <div class="rx-grid">
           <article class="rx-item">
-            <div class="rx-icon-giant">😌</div>
-            <span class="rx-step">LIỆU PHÁP 01</span>
-            <h3>Nghỉ Mắt 20 Giây</h3>
+            <span class="rx-step">LIỆU PHÁP 01 • CHO ĐÔI MẮT</span>
+            <h3>Đếm Ngược Nghỉ Mắt 20 Giây (Quy Tắc 20-20-20)</h3>
             <p>
-              Nhắm mắt hoặc nhìn xa 6 mét sau mỗi 20 phút để phủ lại màng ẩm giác mạc.
+              Sau mỗi 20 phút làm việc, DeskAura nhẹ nhàng nhắc bạn nhắm mắt hoặc nhìn xa 6 mét trong đúng <strong>20
+                giây</strong>. Khoảng nghỉ ngắn ngủi này giúp cơ thể mi nhả co thắt và phủ lại lớp ẩm tự nhiên lên giác
+              mạc.
             </p>
             <div class="rx-dose">
-              💧 20 giây / mỗi 20 phút
+              💧 Liều lượng: 20 giây / mỗi 20 phút làm việc
             </div>
           </article>
 
           <article class="rx-item">
-            <div class="rx-icon-giant">🧘</div>
-            <span class="rx-step">LIỆU PHÁP 02</span>
-            <h3>Giãn Cơ Tại Ghế</h3>
+            <span class="rx-step">LIỆU PHÁP 02 • CHO CỘT SỐNG</span>
+            <h3>Nhắc Đổi Tư Thế Êm Ái &amp; Giãn Cơ Tại Chỗ</h3>
             <p>
-              Xoay cổ, mở vai và duỗi cổ tay nhẹ nhàng ngay trên ghế xoay văn phòng.
+              Mỗi 60 phút, ứng dụng hướng dẫn bạn các động tác xoay cổ, mở lồng ngực, giãn cơ thang và duỗi cổ tay bằng
+              hình vẽ trực quan. Động tác nhẹ nhàng, lịch sự, tập ngay trên ghế xoay văn phòng.
             </p>
             <div class="rx-dose">
-              🌿 3 phút / mỗi 60 phút
+              🧘 Liều lượng: 3 phút giãn cơ / mỗi 60 phút ngồi
             </div>
           </article>
 
           <article class="rx-item">
-            <div class="rx-icon-giant">🌱</div>
-            <span class="rx-step">LIỆU PHÁP 03</span>
-            <h3>Nuôi Cây Cấp Nước</h3>
+            <span class="rx-step">LIỆU PHÁP 03 • CHO CƠ THỂ &amp; LÀN DA</span>
+            <h3>Nuôi Cây Cấp Nước Đều Đặn Theo Giờ</h3>
             <p>
-              Mỗi ngụm nước bạn uống giúp mầm cây xanh trên màn hình lớn lên rực rỡ.
+              Thay vì đợi đến khi khát khô cổ mới uống, DeskAura chia nhỏ mục tiêu 2,000 ml nước theo từng giờ. Mỗi lần
+              bạn uống một ngụm nước, chậu cây xanh ảo trên màn hình sẽ lớn lên đầy sức sống.
             </p>
             <div class="rx-dose">
-              🥤 200 ml / mỗi 45 phút
+              🌱 Liều lượng: 250 ml nước / mỗi 45–60 phút
             </div>
           </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- Multi-Device Continuity Strip (WaterMinder Style) -->
-    <section class="section" style="padding-top:12px;">
-      <div class="devices-clinic-banner">
-        <span class="eyebrow" style="background:rgba(16,185,129,0.16); color:#34d399; border:1px solid rgba(52,211,153,0.3);">Mọi Thiết Bị Của Bạn</span>
-        <h3>Ở Văn Phòng Hay Về Nhà, Sức Khỏe Luôn Liền Mạch</h3>
-        <p>
-          Đồng bộ tự động số cốc nước và vườn cây giữa PC công ty, MacBook cá nhân và điện thoại.
-        </p>
-        <div class="devices-pill-row">
-          <div class="device-mini-card">
-            <div class="device-mini-icon">🖥️</div>
-            <strong>PC Văn Phòng</strong>
-            <span>1,600 ml • Đã đồng bộ</span>
-          </div>
-          <div class="device-mini-card">
-            <div class="device-mini-icon">💻</div>
-            <strong>MacBook Ở Nhà</strong>
-            <span>1,600 ml • Đã đồng bộ</span>
-          </div>
-          <div class="device-mini-card">
-            <div class="device-mini-icon">📱</div>
-            <strong>iPhone &amp; iPad</strong>
-            <span>PWA • Không cần cài đặt</span>
-          </div>
-          <div class="device-mini-card">
-            <div class="device-mini-icon">⌚</div>
-            <strong>Menu Bar / Tray</strong>
-            <span>Đếm ngược tĩnh lặng</span>
-          </div>
         </div>
       </div>
     </section>
@@ -798,21 +730,30 @@
           <h3 style="color:#dc2626; margin-bottom:8px;">❌ Báo Thức Điện Thoại / App Kiểu Cũ</h3>
           <p style="font-size:0.9rem; color:var(--text-sub);">Gây áp lực tâm lý và làm phiền không gian chung</p>
           <ul class="compare-list">
-            <li><span>🔔</span> <span><strong>Réo chuông inh ỏi:</strong> Làm giật mình cả phòng làm việc yên tĩnh hoặc kêu đúng lúc sếp đang đứng cạnh.</span></li>
-            <li><span>💥</span> <span><strong>Nhảy đè màn hình lúc đang họp:</strong> Đang chia sẻ màn hình báo cáo thì popup nhảy lên che mất bảng số liệu.</span></li>
-            <li><span>📱</span> <span><strong>Xao nhãng vì cầm điện thoại:</strong> Cầm điện thoại lên tắt báo thức rồi vô tình lướt mạng xã hội mất 20 phút.</span></li>
-            <li><span>🥱</span> <span><strong>Nhàm chán dễ bỏ cuộc:</strong> Chỉ là dòng chữ khô khan, sau 2 ngày là tắt luôn không dùng nữa.</span></li>
+            <li><span>🔔</span> <span><strong>Réo chuông inh ỏi:</strong> Làm giật mình cả phòng làm việc yên tĩnh hoặc
+                kêu đúng lúc sếp đang đứng cạnh.</span></li>
+            <li><span>💥</span> <span><strong>Nhảy đè màn hình lúc đang họp:</strong> Đang chia sẻ màn hình báo cáo thì
+                popup nhảy lên che mất bảng số liệu.</span></li>
+            <li><span>📱</span> <span><strong>Xao nhãng vì cầm điện thoại:</strong> Cầm điện thoại lên tắt báo thức rồi
+                vô tình lướt mạng xã hội mất 20 phút.</span></li>
+            <li><span>🥱</span> <span><strong>Nhàm chán dễ bỏ cuộc:</strong> Chỉ là dòng chữ khô khan, sau 2 ngày là tắt
+                luôn không dùng nữa.</span></li>
           </ul>
         </div>
 
         <div class="compare-box compare-after">
           <h3 style="color:var(--clinic-teal-dark); margin-bottom:8px;">✅ Sự Tĩnh Lặng Của DeskAura</h3>
-          <p style="font-size:0.9rem; color:var(--text-sub);">Tinh tế như một phòng khám sức khỏe riêng tư trên bàn làm việc</p>
+          <p style="font-size:0.9rem; color:var(--text-sub);">Tinh tế như một phòng khám sức khỏe riêng tư trên bàn làm
+            việc</p>
           <ul class="compare-list">
-            <li><span>🌿</span> <span><strong>Tĩnh lặng tuyệt đối:</strong> Nhắc nhở dịu dàng ở góc màn hình với tông màu xanh bạc hà thư giãn thị giác.</span></li>
-            <li><span>🛡️</span> <span><strong>Biết "đọc tình huống":</strong> Tự động hoãn nhắc khi thấy bạn đang thuyết trình toàn màn hình hoặc đang họp trực tuyến.</span></li>
-            <li><span>🌱</span> <span><strong>Cảm hứng nuôi cây xanh:</strong> Nhìn mầm cây lớn lên và đơm hoa sau mỗi cốc nước tạo niềm vui nhẹ nhàng suốt ngày dài.</span></li>
-            <li><span>🪶</span> <span><strong>Siêu nhẹ không cần quyền Admin:</strong> Cài đặt mượt mà trên mọi laptop văn phòng mà không làm chậm máy.</span></li>
+            <li><span>🌿</span> <span><strong>Tĩnh lặng tuyệt đối:</strong> Nhắc nhở dịu dàng ở góc màn hình với tông
+                màu xanh bạc hà thư giãn thị giác.</span></li>
+            <li><span>🛡️</span> <span><strong>Biết "đọc tình huống":</strong> Tự động hoãn nhắc khi thấy bạn đang
+                thuyết trình toàn màn hình hoặc đang họp trực tuyến.</span></li>
+            <li><span>🌱</span> <span><strong>Cảm hứng nuôi cây xanh:</strong> Nhìn mầm cây lớn lên và đơm hoa sau mỗi
+                cốc nước tạo niềm vui nhẹ nhàng suốt ngày dài.</span></li>
+            <li><span>🪶</span> <span><strong>Siêu nhẹ không cần quyền Admin:</strong> Cài đặt mượt mà trên mọi laptop
+                văn phòng mà không làm chậm máy.</span></li>
           </ul>
         </div>
       </div>
@@ -827,7 +768,8 @@
             Bộ Đôi Hoàn Hảo Cùng DeskAura Cho 8 Tiếng Văn Phòng Êm Ái
           </h2>
           <p style="color:var(--text-sub);">
-            Bên cạnh việc bảo vệ đôi mắt và cột sống trên màn hình cùng DeskAura, hãy nâng niu đôi bàn chân và tư thế ngồi của bạn bằng những phụ kiện công thái học được khuyên dùng:
+            Bên cạnh việc bảo vệ đôi mắt và cột sống trên màn hình cùng DeskAura, hãy nâng niu đôi bàn chân và tư thế
+            ngồi của bạn bằng những phụ kiện công thái học được khuyên dùng:
           </p>
         </div>
 
@@ -838,7 +780,9 @@
               <span class="ergo-tag">⭐ Đề Xuất Hàng Đầu Nơi Công Sở</span>
               <h4 style="margin-top:10px; margin-bottom:8px;">Dép Văn Phòng Đế Trấu Công Thái Học Thoáng Khí</h4>
               <p>
-                Đừng giam đôi chân trong giày bít mũi suốt 8 tiếng! Một đôi dép đế trấu tự nhiên <strong>DetaUnisex</strong> chuẩn công thái học đặt dưới gầm bàn giúp nâng đỡ vòm bàn chân, thoáng khí chống hầm bí và kích thích lưu thông máu chân cực kỳ êm ái khi đứng dậy lấy nước.
+                Đừng giam đôi chân trong giày bít mũi suốt 8 tiếng! Một đôi dép đế trấu tự nhiên
+                <strong>DetaUnisex</strong> chuẩn công thái học đặt dưới gầm bàn giúp nâng đỡ vòm bàn chân, thoáng khí
+                chống hầm bí và kích thích lưu thông máu chân cực kỳ êm ái khi đứng dậy lấy nước.
               </p>
             </div>
             <a href="https://deta.vn" target="_blank" rel="noopener" class="ergo-link">
@@ -852,7 +796,8 @@
               <span class="ergo-tag">Bảo Vệ Đốt Sống Cổ</span>
               <h4 style="margin-top:10px; margin-bottom:8px;">Giá Đỡ Nâng Màn Hình &amp; Laptop Ngang Tầm Mắt</h4>
               <p>
-                Nâng mép trên màn hình ngang đúng tầm mắt giúp đầu bạn giữ thẳng trục tự nhiên với cột sống, giảm ngay 60% áp lực đè lên đĩa đệm cổ C4–C7.
+                Nâng mép trên màn hình ngang đúng tầm mắt giúp đầu bạn giữ thẳng trục tự nhiên với cột sống, giảm ngay
+                60% áp lực đè lên đĩa đệm cổ C4–C7.
               </p>
             </div>
             <a href="https://duongbirken.deta.vn" target="_blank" rel="noopener" class="ergo-link">
@@ -866,7 +811,8 @@
               <span class="ergo-tag">Chống Tê Bì Cổ Tay</span>
               <h4 style="margin-top:10px; margin-bottom:8px;">Đệm Kê Cổ Tay Memory Foam &amp; Gối Tựa Thắt Lưng</h4>
               <p>
-                Giữ cổ tay luôn thẳng hàng khi nhập liệu bảng tính Excel hàng giờ, ngăn ngừa hội chứng ống cổ tay và giữ đường cong sinh lý cột sống thắt lưng.
+                Giữ cổ tay luôn thẳng hàng khi nhập liệu bảng tính Excel hàng giờ, ngăn ngừa hội chứng ống cổ tay và giữ
+                đường cong sinh lý cột sống thắt lưng.
               </p>
             </div>
             <a href="https://deta.vn" target="_blank" rel="noopener" class="ergo-link">
@@ -881,14 +827,15 @@
     <section class="cta-clinic">
       <h2>Đừng Đợi Đến Khi Đôi Mắt Nhòe Đi Mới Bắt Đầu Chăm Sóc</h2>
       <p>
-        Tải ngay DeskAura hoàn toàn miễn phí — Chỉ mất 10 giây cài đặt để có một chuyên gia chăm sóc mắt và cột sống đồng hành cùng bạn mỗi ngày.
+        Tải ngay DeskAura hoàn toàn miễn phí — Chỉ mất 10 giây cài đặt để có một chuyên gia chăm sóc mắt và cột sống
+        đồng hành cùng bạn mỗi ngày.
       </p>
       <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:14px;">
-        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_aarch64.dmg" class="btn btn-clinic" style="background:#10b981;">
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_aarch64.dmg" class="btn btn-clinic" style="background:#10b981;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.33c.64-.78 1.08-1.86.96-2.94-.93.04-2.06.62-2.72 1.4-.58.68-1.1 1.79-.96 2.84 1.04.08 2.08-.52 2.72-1.3z"/></svg>
           <span>Tải Miễn Phí Cho macOS (.dmg)</span>
         </a>
-        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_x64-setup.exe" class="btn btn-outline">
+        <a href="https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_x64-setup.exe" class="btn btn-outline">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.557L10.35 4.5v7.09H3V5.557zm0 12.886L10.35 19.5v-7.09H3v6.033zm8.165 1.182L21 21v-8.59h-9.835v7.215zm0-15.25V11.59H21V3l-9.835 1.375z"/></svg>
           <span>Tải Miễn Phí Cho Windows (.exe)</span>
         </a>
@@ -897,10 +844,12 @@
   </main>
 
   <footer>
-    <div class="container" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px;">
+    <div class="container"
+      style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px;">
       <div style="display:flex; align-items:center; gap:10px;">
         <img src="../media/deskaura_logo_wordmark.svg" alt="DeskAura" style="height:28px;" />
-        <span>© 2026 <strong>Duong Birken</strong> • Hệ sinh thái <a href="https://deta.vn" target="_blank" rel="noopener" style="color:var(--clinic-teal-dark); font-weight:700;">Deta.vn</a></span>
+        <span>© 2026 <strong>Duong Birken</strong> • Hệ sinh thái <a href="https://deta.vn" target="_blank"
+            rel="noopener" style="color:var(--clinic-teal-dark); font-weight:700;">Deta.vn</a></span>
       </div>
       <div style="display:flex; gap:18px; font-weight:600;">
         <a href="../index.html">Trang Chủ</a>
@@ -921,10 +870,16 @@
       const ua = navigator.userAgent.toLowerCase();
       const cta = document.getElementById('clinic-primary-cta');
       if (ua.includes('win')) {
-        cta.href = 'https://github.com/duongbirken2510/deskaura/releases/download/v1.2.4/DeskAura_1.2.4_x64-setup.exe';
+        cta.href = 'https://github.com/duongbirken2510/deskaura/releases/download/v1.2.5/DeskAura_1.2.5_x64-setup.exe';
         cta.innerHTML = '<span>✨ Trải Nghiệm Trợ Lý Sức Khỏe Miễn Phí (Windows .exe)</span>';
+      }
+      if (typeof CSS !== 'undefined' && CSS.supports) {
+        const s = document.createElement('style');
+        s.textContent = ':root{interpolate-size:allow-keywords}h1,h2,h3,h4{text-wrap:balance}p,li,blockquote{text-wrap:pretty}';
+        document.head.appendChild(s);
       }
     })();
   </script>
 </body>
+
 </html>

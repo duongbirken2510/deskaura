@@ -30,40 +30,40 @@ export const ExerciseIllustration: React.FC<ExerciseSvgProps> = ({
             ? '◀ Tilt Left & Breathe'
             : '◀ Nghiêng trái & Hít sâu'
           : isEn
-          ? 'Tilt Right & Hold ▶'
-          : 'Nghiêng phải & Thả lỏng ▶';
+            ? 'Tilt Right & Hold ▶'
+            : 'Nghiêng phải & Thả lỏng ▶';
       case 'shoulder':
         return phase === 0
           ? isEn
             ? '🫁 Inhale • Open Chest'
             : '🫁 Hít sâu • Mở rộng lồng ngực'
           : isEn
-          ? '🔄 Exhale • Roll Shoulders Back'
-          : '🔄 Thở ra • Xoay tròn bả vai';
+            ? '🔄 Exhale • Roll Shoulders Back'
+            : '🔄 Thở ra • Xoay tròn bả vai';
       case 'wrist':
         return phase === 0
           ? isEn
             ? '✋ Pull Fingers Up (+35°)'
             : '✋ Kéo nhẹ ngón tay lên (+35°)'
           : isEn
-          ? '👇 Flex Wrist Down (-35°)'
-          : '👇 Gập nhẹ cổ tay xuống (-35°)';
+            ? '👇 Flex Wrist Down (-35°)'
+            : '👇 Gập nhẹ cổ tay xuống (-35°)';
       case 'back':
         return phase === 0
           ? isEn
             ? '↖ Reach Up & Bend Left'
             : '↖ Vươn cao & Nghiêng lườn trái'
           : isEn
-          ? 'Reach Up & Bend Right ↗'
-          : 'Vươn cao & Nghiêng lườn phải ↗';
+            ? 'Reach Up & Bend Right ↗'
+            : 'Vươn cao & Nghiêng lườn phải ↗';
       case 'eyes':
         return phase === 0
           ? isEn
             ? '🏔️ Look 20ft (6m) Away'
             : '🏔️ Phóng tầm mắt xa 6 mét'
           : isEn
-          ? '😌 Blink Slowly 10 Times'
-          : '😌 Chớp mắt chậm làm ẩm giác mạc';
+            ? '😌 Blink Slowly 10 Times'
+            : '😌 Chớp mắt chậm làm ẩm giác mạc';
     }
   };
 
@@ -771,8 +771,8 @@ export const VirtualDeskPlant: React.FC<DeskPlantProps> = React.memo(({
                 ? 'M70 92 Q75 64 74 42'
                 : 'M70 92 Q74 75 73 60'
               : stage >= 3
-              ? 'M70 92 Q68 62 70 38'
-              : 'M70 92 Q69 74 70 58'
+                ? 'M70 92 Q68 62 70 38'
+                : 'M70 92 Q69 74 70 58'
           }
           stroke={isThirsty ? '#65A30D' : '#059669'}
           strokeWidth="5"
@@ -782,15 +782,14 @@ export const VirtualDeskPlant: React.FC<DeskPlantProps> = React.memo(({
 
         {/* Stage 1+: Base pair of leaves */}
         <g
-          className={`origin-center ${
-            isSleepy ? 'opacity-90' : 'animate-float'
-          }`}
+          className={`origin-center ${isSleepy ? 'opacity-90' : 'animate-float'
+            }`}
           transform={
             isSleepy
               ? 'rotate(6 70 76)'
               : isThirsty
-              ? 'rotate(8 70 76) translate(0, 3)'
-              : undefined
+                ? 'rotate(8 70 76) translate(0, 3)'
+                : undefined
           }
         >
           <path

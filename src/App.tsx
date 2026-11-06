@@ -67,6 +67,7 @@ import {
   openWebMusicPlayer,
   sendTrayNotification,
   setAutostartStatus,
+  setScreenEyeFilter,
   setTrayLanguage,
   setWindowAlwaysOnTop,
   showAndFocusWindow,
@@ -128,6 +129,9 @@ export const App: React.FC = () => {
       eyeBreakEnabled: true,
       eyeBreakIntervalMinutes: 20,
       eyeBreakDurationSeconds: 20,
+      eyeBreakDimScreen: true,
+      eyeShieldEnabled: false,
+      eyeShieldMode: 'auto',
       autoResetIdleSeconds: 180,
       pauseOnFullscreen: true,
       reminderMode: 'overlay',
@@ -1018,6 +1022,33 @@ export const App: React.FC = () => {
       );
     }).then((unlisten) => unlisteners.push(unlisten));
 
+    onTauriEvent<void>('tray-toggle-eye-shield', () => {
+      setStandupSettings((prev) => {
+        const nextEnabled = !prev.eyeShieldEnabled;
+        void sendTrayNotification(
+          nextEnabled
+            ? lang === 'en'
+              ? '🛡️ Eye-Shield Enabled'
+              : '🛡️ Đã bật Bảo vệ mắt (Eye-Shield)'
+            : lang === 'en'
+            ? '🎨 Color-Accurate Mode (100%)'
+            : '🎨 Đã tắt lọc sáng (Chuẩn màu 100%)',
+          nextEnabled
+            ? lang === 'en'
+              ? 'Screen brightness and blue-light filter adjusted for eye comfort.'
+              : 'Màn hình đã được dịu sáng và lọc ánh sáng xanh bảo vệ mắt.'
+            : lang === 'en'
+            ? 'Restored original 100% display color accuracy.'
+            : 'Đã trả màn hình về độ sáng và màu sắc chuẩn 100%.'
+        );
+        return {
+          ...prev,
+          eyeShieldEnabled: nextEnabled,
+          eyeShieldMode: prev.eyeShieldMode || 'auto',
+        };
+      });
+    }).then((unlisten) => unlisteners.push(unlisten));
+
     return () => {
       unlisteners.forEach((fn) => fn());
     };
@@ -1103,6 +1134,64 @@ export const App: React.FC = () => {
     quoteSeed,
     standupSecondsLeft,
     standupSettings.standupIntervalMinutes,
+  ]);
+
+  // Pillar 4: Hardware Eye-Shield & 20-Second Breathing Dimmer (1.5s Smooth Fade In-Out)
+  const isEyeBreakDimmingActive =
+    (standupSettings.eyeBreakDimScreen ?? true) &&
+    (passiveEyeCueSec > 0 || (isBreakModalOpen && currentBreakType === 'eye'));
+  const currentHourBucket = new Date().getHours();
+
+  useEffect(() => {
+    // 1. Color-Accurate Bypass when Fullscreen Guard is active
+    if (standupSettings.pauseOnFullscreen && isFullscreenApp) {
+      void setScreenEyeFilter(1.0, 0.0, 1200);
+      return;
+    }
+
+    // 2. Base Eye-Shield profile (Off / Auto by Hour / Office / Night OT)
+    let baseBrightness = 1.0;
+    let baseWarmth = 0.0;
+
+    if (standupSettings.eyeShieldEnabled) {
+      const mode = standupSettings.eyeShieldMode || 'auto';
+      if (mode === 'office') {
+        baseBrightness = 0.92;
+        baseWarmth = 0.16;
+      } else if (mode === 'night') {
+        baseBrightness = 0.68;
+        baseWarmth = 0.45;
+      } else {
+        // Circadian Auto Mode
+        if (currentHourBucket >= 21 || currentHourBucket < 6) {
+          baseBrightness = 0.68;
+          baseWarmth = 0.45;
+        } else if (currentHourBucket >= 17) {
+          baseBrightness = 0.84;
+          baseWarmth = 0.28;
+        } else {
+          baseBrightness = 0.93;
+          baseWarmth = 0.12;
+        }
+      }
+    }
+
+    // 3. Apply 20-20-20 Breathing Dimmer (Fade-out 1.5s on start, Fade-in 1.5s on end)
+    const targetBrightness = isEyeBreakDimmingActive
+      ? Math.max(0.45, baseBrightness * 0.65)
+      : baseBrightness;
+    const targetWarmth = isEyeBreakDimmingActive
+      ? Math.min(0.60, baseWarmth + 0.18)
+      : baseWarmth;
+
+    void setScreenEyeFilter(targetBrightness, targetWarmth, 1500);
+  }, [
+    currentHourBucket,
+    isEyeBreakDimmingActive,
+    isFullscreenApp,
+    standupSettings.eyeShieldEnabled,
+    standupSettings.eyeShieldMode,
+    standupSettings.pauseOnFullscreen,
   ]);
 
   // Main 1-Second Heartbeat Tick
@@ -1252,6 +1341,18 @@ export const App: React.FC = () => {
           setIsDeferredByFullscreen(false);
           if (!wasIdleResetRef.current) {
             wasIdleResetRef.current = true;
+            // In Gentle Mode (or when a gentle break notification was active), >180s of no mouse/keyboard input
+            // automatically credits +1 completed stand-up break and dismisses the break notification!
+            if (
+              gentleBreakBanner !== null ||
+              standupSettings.reminderMode === 'gentle'
+            ) {
+              setGentleBreakBanner(null);
+              setDailyStats((prev) => ({
+                ...prev,
+                standupCompletedCount: prev.standupCompletedCount + 1,
+              }));
+            }
             syncTimerTargets(fullStand, fullEye, fullWater);
           }
           return;
@@ -1342,6 +1443,7 @@ export const App: React.FC = () => {
     return () => window.clearInterval(timer);
   }, [
     completeBreakSession,
+    gentleBreakBanner,
     hydrationSettings.intervalMinutes,
     isBreakModalOpen,
     isFullscreenApp,
@@ -1352,6 +1454,7 @@ export const App: React.FC = () => {
     standupSettings.eyeBreakEnabled,
     standupSettings.eyeBreakIntervalMinutes,
     standupSettings.pauseOnFullscreen,
+    standupSettings.reminderMode,
     standupSettings.standupIntervalMinutes,
     startBreakSession,
     syncTimerTargets,

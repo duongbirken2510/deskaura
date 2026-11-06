@@ -1,11 +1,16 @@
 export type BreakType = 'standup' | 'eye' | 'combo';
 
+export type EyeShieldMode = 'auto' | 'office' | 'night';
+
 export interface StandupSettings {
   standupIntervalMinutes: number;     // Mặc định v1.2: 60 phút (Chu kỳ Combo Đứng dậy + Uống nước)
   standupDurationSeconds: number;     // Mặc định: 180 giây (3 phút)
   eyeBreakEnabled: boolean;           // Quy tắc 20-20-20 (Nhắc thụ động qua Icon Tray)
   eyeBreakIntervalMinutes: number;    // Mặc định: 20 phút
   eyeBreakDurationSeconds: number;    // Mặc định: 20 giây
+  eyeBreakDimScreen?: boolean;        // Mặc định: true (Tự dịu sáng màn hình Fade in-out 1.5s trong 20s nghỉ mắt)
+  eyeShieldEnabled?: boolean;         // Mặc định: false (Bảo vệ mắt & Lọc ánh sáng xanh màn hình)
+  eyeShieldMode?: EyeShieldMode;      // Mặc định: 'auto' (Tự động theo giờ | Văn phòng | Đêm OT)
   autoResetIdleSeconds: number;       // Mặc định v1.2: 180 giây (3 phút rời máy tự reset chu kỳ)
   pauseOnFullscreen: boolean;         // Không làm phiền khi đang họp/Fullscreen
   reminderMode: 'overlay' | 'gentle'; // Toàn màn hình hoặc Thẻ nhắc nhẹ nhàng

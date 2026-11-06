@@ -1,7 +1,7 @@
 {
   "name": "deskaura",
   "private": true,
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "DeskAura — Ứng dụng chăm sóc sức khỏe dân văn phòng: Nhắc đứng dậy, Uống nước & Nhạc nền thư giãn",
   "type": "module",
   "scripts": {

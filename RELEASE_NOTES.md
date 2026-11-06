@@ -1,75 +1,71 @@
-# 🌱 DeskAura v1.2.4 — Official Bilingual Release (Tiếng Việt & English)
+# 🌱 DeskAura v1.2.5 — Official Bilingual Release (Tiếng Việt & English)
 
-> **What's New from v1.2.0 $\rightarrow$ v1.2.4** | **Tổng hợp các nâng cấp mới từ bản v1.2.0 $\rightarrow$ v1.2.4**
+> **What's New in v1.2.5** | **Tổng hợp các nâng cấp mới trong phiên bản v1.2.5**
 
 [![Watch Official Cinematic TVC](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/media/deskaura_tvc_preview.gif)](https://github.com/duongbirken2510/deskaura/raw/main/docs/media/deskaura_tvc_intro.mp4)
 
-🌟 **[▶️ Xem Video TVC Điện Ảnh Có Thuyết Minh (`deskaura_tvc_intro.mp4`)](https://github.com/duongbirken2510/deskaura/raw/main/docs/media/deskaura_tvc_intro.mp4)** • **[🎬 Xem Video Demo Giao Diện 45s (`deskaura_demo_45s.mp4`)](https://github.com/duongbirken2510/deskaura/raw/main/docs/media/deskaura_demo_45s.mp4)**
+🌟 **[▶️ Xem Video TVC Văn Phòng Mỏi Mắt (`deskaura_tvc_eyecare.mp4`)](https://github.com/duongbirken2510/deskaura/raw/main/docs/media/deskaura_tvc_eyecare.mp4)** • **[🎬 Xem Video TVC Cú Đêm IT (`deskaura_tvc_intro.mp4`)](https://github.com/duongbirken2510/deskaura/raw/main/docs/media/deskaura_tvc_intro.mp4)** • **[💻 Xem Video Demo Giao Diện 45s (`deskaura_demo_45s.mp4`)](https://github.com/duongbirken2510/deskaura/raw/main/docs/media/deskaura_demo_45s.mp4)**
 
 ---
 
-## 🇻🇳 PHẦN 1: CÁC TÍNH NĂNG MỚI NỔI BẬT (SO VỚI BẢN v1.2.0)
+## 🇻🇳 PHẦN 1: CÁC TÍNH NĂNG MỚI NỔI BẬT TRÊN BẢN v1.2.5
 
-### 1. 🤫 Cơ Chế Cập Nhật Ngầm Không Làm Phiền (`Silent Background OTA Update` & `Two-Phase Garbage Collection`)
-- **Tải ngầm trong bóng tối (`stage_silent_update`):** Khi khởi động hoặc định kỳ 30 phút, DeskAura tự động kiểm tra và tải trước gói cập nhật mới về thư mục tạm (`%TEMP%\DeskAura_Updates` trên Windows / `/tmp/DeskAura_Updates` trên macOS) mà **tuyệt đối không bật hộp thoại popup chặn màn hình**.
-- **Điểm neo thị giác tinh tế (`Subtle Visual Nudge`):** Khi bản cập nhật đã tải xong, chỉ xuất hiện một chấm tròn xanh ngọc nhỏ trên biểu tượng `⚙️ Cài Đặt` kèm nút thu gọn `Khởi động lại (v1.2.4)` trên thanh tiêu đề để người dùng chủ động áp dụng bất cứ lúc nào.
-- **Tự động dọn rác 2 pha (`cleanup_old_update_files`):** Tự động xóa sạch các gói cài đặt `.exe` / `.dmg` cũ trong thư mục tạm ngay khi khởi chạy phiên bản mới, tiết kiệm 100% dung lượng ổ cứng.
+### 1. 🛡️ Bảo Vệ Mắt & Lọc Ánh Sáng Xanh Phần Cứng (`Aura Eye-Shield` — macOS / Windows / Linux)
+- **Can thiệp trực tiếp bảng màu phần cứng (`Hardware Display Gamma LUT`):** Điều chỉnh độ dịu sáng và lọc tia sáng xanh trực tiếp ở tầng card đồ họa (`CoreGraphics CGSetDisplayTransferByFormula` trên mọi màn hình macOS kể cả màn hình rời HDMI/Type-C, `SetDeviceGammaRamp` trên Windows và `xrandr` trên Linux) — **tiêu thụ `0% GPU/RAM`**, không tạo lớp phủ cửa sổ ảo gây lag chuột.
+- **3 Chế độ thông minh tích hợp gọn trong `⚙️ Cài Đặt` (0 làm rối Trang Tổng Quan):**
+  1. **☀️ Tự động theo giờ mặt trời:** Ban ngày chuẩn màu `100%` $\rightarrow$ Sau `18h00` tự chuyển sang *Dịu nhẹ văn phòng* $\rightarrow$ Sau `22h00` tự chuyển sang *Đêm khuya OT*.
+  2. **🌿 Dịu nhẹ văn phòng (`5000K`):** Lọc nhẹ `15%` ánh sáng xanh gắt khi nhìn bảng tính Excel/Word dưới đèn huỳnh quang.
+  3. **🌙 Đêm khuya OT (`3800K`):** Lọc `35%` ánh sáng xanh và hạ dịu độ chói màn hình để bảo vệ võng mạc và hormone giấc ngủ Melatonin.
+- **Tự động trả chuẩn màu `100%` khi họp / xem phim Fullscreen & Bật/Tắt 1 chạm ở Khay Hệ Thống (`System Tray`):** Dân thiết kế/chỉnh ảnh có thể bật/tắt nhanh chế độ Chuẩn màu ngay từ icon giọt nước ở Taskbar / Menu Bar.
 
-### 2. 🔐 Mã Hóa Lịch Sử Sức Khỏe Gắn Phần Cứng (`Hardware-Bound Local Storage Encryption enc:v1:`)
-- Toàn bộ dữ liệu nhạy cảm lưu trên máy tính (`mamxanh_daily_stats_v1`, `deskaura_weekly_history_v1`, `mamxanh_standup_v1`, `mamxanh_hydration_v1`, `mamxanh_voice_v1`) được mã hóa tự động theo chuẩn **`enc:v1:<base64>`** dẫn xuất từ khóa định danh phần cứng (`Hardware ID`).
-- Hỗ trợ **di trú tự động không mất dữ liệu (`Zero-Data-Loss Migration`)** từ định dạng JSON cũ sang định dạng mã hóa mới.
+### 2. 😌 Màn Hình "Thở" Dịu Sáng 20 Giây Nghỉ Mắt (`20-20-20 Breathing Dimmer` — Fade In-Out `1.5s`)
+- Khi đến chu kỳ nghỉ mắt 20-20-20, màn hình tự động **dịu độ sáng xuống từ từ trong `1.5 giây` (`Fade-in Cosine Curve`)** để dẫn nhịp cho mắt bạn tự nhiên rời khỏi màn hình và nhìn ra xa 6 mét mà không gây giật mình.
+- Ngay khi hết 20 giây (hoặc khi bấm `Bỏ qua`), độ sáng màn hình **tự động nâng mượt mà trở lại `100%` trong `1.5 giây` (`Fade-out`)**.
 
-### 3. ⚡ Đồng Bộ Đa Thiết Bị Lai 4 Tầng (`4-Tier Hybrid Sync` & `Zero-Config LAN UDP <5ms`)
-- **Tầng 1 (LAN UDP Broadcast `<5ms`):** Các máy Windows và MacBook cùng mạng Wi-Fi/LAN tự động đồng bộ tức thì lượng nước vừa uống và bộ đếm đứng dậy qua cổng UDP `45888` mà không cần cấu hình IP.
-- **Tầng 2 & 3 (Firebase Firestore Cloud Sync & 6-Digit Aura Code):** Đồng bộ xuyên mạng Internet giữa PC, Mac và iPhone/iPad với thuật toán hợp nhất chống trùng lặp (`Deduplicated Log Union`).
-- **Tầng 4 (Encrypted Offline Queue):** Lưu trữ an toàn khi mất mạng và tự động đồng bộ bù khi có kết nối trở lại.
+### 3. 🧘 Tự Động Ghi Nhận `+1 Lần Đứng Dậy` Bằng Cảm Biến Rời Máy Ở Chế Độ Nhắc Nhẹ (`Smart 180s Idle Break Credit`)
+- Khi đang ở **Chế độ Nhắc nhẹ dưới Taskbar (`Gentle Mode`)** hoặc khi hiện thông báo nhắc nghỉ mà người dùng đứng dậy đi lấy nước / vận động luôn không bấm nút xác nhận:
+- Nếu cảm biến phần cứng (`Native C FFI`) phát hiện không có thao tác chuột và bàn phím đủ **3 phút (`180 giây`)**, DeskAura **tự động cộng `+1 lần đứng dậy`** vào thống kê trong ngày, tự động ẩn thanh nhắc nghỉ và đặt lại đồng hồ chu kỳ 60 phút mới.
 
-### 4. 💧 Biểu Tượng Khay Hệ Thống Hình Giọt Nước Dâng Theo % (`Liquid-Fill Water Droplet Tray Icon`)
-- Thay thế chấm tròn đơn điệu trên System Tray / Menu Bar bằng **biểu tượng Giọt Nước nghệ thuật** có mực nước bên trong tự động dâng cao (`0% -> 100%`) và đổi màu thông minh theo trạng thái cơ thể (*Xanh lam mát mẻ* khi đang nạp nước, *Xanh ngọc lục bảo* khi đạt 100%, *Vàng hổ phách* khi ngồi lâu quá 45 phút).
+### 4. 🐧 Hỗ Trợ Chính Thức Phiên Bản Linux (`.deb` & `.AppImage`)
+- Bên cạnh **Windows (`.exe`)** và **macOS Apple Silicon (`.dmg`)**, DeskAura v1.2.5 chính thức phát hành gói cài đặt tự động cho **Linux Ubuntu/Debian (`.deb`)** và **Linux Portable (`.AppImage`)** tích hợp đầy đủ cảm biến X11 (`libXss`), bộ lọc màn hình `xrandr` và tự khởi động chuẩn XDG (`~/.config/autostart/deskaura.desktop`).
 
-### 5. 🧠 Nhận Biết Ngữ Cảnh Thông Minh & Ma Trận Âm Lượng Theo Giờ (`Smart Context & Volume Matrix`)
-- **Tự động đặt lại sau 3 phút rời máy (`3-Minute Natural Idle Reset`):** Rời bàn làm việc $\ge 3$ phút tự động tính là 1 lần đứng dậy và đặt lại bộ đếm 60 phút.
-- **Bảo vệ giấc ngủ máy & Họp toàn màn hình (`OS Sleep/Hibernate & Fullscreen Guard`):** Tự động nhận biết khi gập màn hình laptop (`Sleep`) hoặc khi đang thuyết trình / họp toàn màn hình để hoãn lời nhắc lịch sự.
-- **Ma trận âm lượng theo khung giờ & Giảm chấn âm thanh:** Tự động điều chỉnh âm lượng lời nhắc dịu nhẹ vào sáng sớm / đêm khuya (`22h – 06h`) và tích hợp chế độ cây ngủ **Night-Owl (`💤 23h – 04h`)**.
-- **Tự động ẩn nút Hoàn tác nước sau 5 giây (`Auto-Hiding 5s Undo`):** Giao diện sạch sẽ tuyệt đối, nút `Hoàn tác +XXml (5s)` chỉ xuất hiện trong 5 giây sau khi bấm cộng nước rồi tự ẩn hoàn toàn.
-
-### 6. 🌐 Song Ngữ Toàn Diện (Tiếng Việt & English) — Tự Động Chuyển Đổi Nền Tảng Nhạc
-- **Giao diện Tiếng Việt (`🇻🇳`):** Tích hợp **Trung Tâm Điều Khiển Zing MP3 Nâng Cao** (chạy ngầm + lọc quảng cáo 3 lớp `Smart Audio Ad-Guard`) + Bộ trộn 10 lớp âm thanh thiên nhiên & sóng não Offline.
-- **Giao diện Tiếng Anh (`🇬🇧`):** Tự động chuyển đổi sang **Global Lofi & SoundCloud Chill Hub** (*Lofi Girl, Chillhop Music, SoundCloud Ambient, Poolsuite FM, SomaFM Groove Salad*) cùng thanh điều hướng tối ưu chống tràn chữ.
+### 5. ⚡ Nền Tảng Cốt Lõi Từ Các Bản v1.2.x
+- **Cập nhật ngầm không popup (`Silent Background OTA` & `Two-Phase GC`):** Tự tải bản mới trong nền và tự dọn rác gói cài đặt cũ.
+- **Đồng bộ đa thiết bị lai 4 tầng (`4-Tier Hybrid Sync`):** Đồng bộ tức thì `<5ms` qua mạng nội bộ Wi-Fi/LAN UDP `45888` kết hợp Google Cloud Firestore & mã 6 ký tự `Aura Code`.
+- **Biểu tượng Giọt Nước dâng theo % trên System Tray / Menu Bar** & **Mã hóa lịch sử sức khỏe gắn phần cứng (`enc:v2:`)**.
 
 ---
 
-## 🇬🇧 PART 2: WHAT'S NEW IN DESKAURA v1.2.4 (ENGLISH RELEASE NOTES)
+## 🇬🇧 PART 2: WHAT'S NEW IN DESKAURA v1.2.5 (ENGLISH RELEASE NOTES)
 
-### 1. 🤫 Silent Background OTA Updates & Two-Phase Garbage Collection
-- **Zero-Popup Background Staging (`stage_silent_update`):** Automatically checks and pre-downloads updates in the background without interrupting your deep work flow with modal popups.
-- **Subtle Visual Nudge:** Displays a gentle emerald indicator dot on the Settings icon and a compact `Restart to update` pill in the top header when ready.
-- **Automatic Cleanup (`cleanup_old_update_files`):** Automatically removes outdated installer binaries from the OS temporary folder after upgrading.
+### 1. 🛡️ Hardware-Level Eye Protection & Blue-Light Filter (`Aura Eye-Shield`)
+- **Zero-Overhead Native Gamma LUT Control:** Adjusts screen warmth and brightness directly via OS display hardware APIs (`CGSetDisplayTransferByFormula` across all connected displays on macOS, `SetDeviceGammaRamp` on Windows, and `xrandr` on Linux) with **0% GPU/RAM overhead** and no click-blocking overlay windows.
+- **Minimalist Settings Integration & 3 Smart Presets:**
+  - **☀️ Auto Sunset Schedule:** `100%` color accuracy during daylight $\rightarrow$ *Office Comfort* after `18:00` $\rightarrow$ *Night-Owl OT* after `22:00`.
+  - **🌿 Office Comfort (`5000K`):** Softens harsh glare for long spreadsheet and coding sessions.
+  - **🌙 Night-Owl OT (`3800K`):** Cuts `35%` blue light and dims luminance for late-night deep work.
+- **Fullscreen True-Color Bypass & 1-Click System Tray Toggle:** Automatically restores `100%` original color calibration during fullscreen meetings/videos, or toggle anytime from the System Tray / Menu Bar.
 
-### 2. 🔐 Hardware-Bound Local Storage Encryption (`enc:v1:`)
-- Encrypts local wellness history and settings on disk using a key derived from your machine's unique Hardware ID, with seamless zero-data-loss migration.
+### 2. 😌 20-Second Breathing Screen Dimmer (`Fade In-Out 1.5s`)
+- During each 20-20-20 eye break, your display gently dims over **`1.5 seconds` (`Cosine Ease-In-Out`)**, naturally guiding your eyes to look away and relax, then smoothly restores full brightness over **`1.5 seconds`** when the break finishes or is skipped.
 
-### 3. ⚡ 4-Tier Hybrid Multi-Device Sync (Zero-Config LAN UDP `<5ms` + Cloud Firestore)
-- Instant `<5ms` peer-to-peer hydration and timer synchronization across Windows & macOS devices on the same Wi-Fi/LAN via UDP port `45888`, paired with Firebase Cloud Sync and 6-character Aura Codes.
+### 3. 🧘 Smart 180-Second Idle Break Credit in Gentle Mode
+- When using **Gentle Taskbar Mode** (or when stepping away right after a break prompt without clicking confirm), if the native OS input sensor detects **$\ge 180$ seconds (3 minutes)** of zero mouse/keyboard activity, DeskAura automatically credits **`+1 Standup Break`**, dismisses the break banner, and resets your 60-minute cycle.
 
-### 4. 💧 Dynamic Liquid-Fill Water Droplet System Tray Icon
-- Renders a live anti-aliased water droplet in the macOS Menu Bar / Windows System Tray whose internal liquid level rises from `0%` to `100%` and shifts colors based on your hydration and posture status.
-
-### 5. 🌐 100% Bilingual Experience (Vietnamese & English) with Smart Music Hub Switching
-- Switching to **English (`🇬🇧`)** transforms the music studio into the **Global Lofi & SoundCloud Chill Hub** alongside the 10-layer offline nature & binaural soundscape mixer.
-- Smart Virtual Desk Plant with **100% Hydrated Guard** (never shows thirsty quotes once your daily water goal reaches 100%) and **Night-Owl Sleeping Mode (`💤 23:00 – 04:00`)**.
+### 4. 🐧 Official Linux Support (`.deb` & `.AppImage`)
+- Full native support for Linux desktops alongside Windows and macOS, including `.deb` and `.AppImage` bundles, X11 Screen Saver idle detection, `xrandr` gamma dimmer, and XDG autostart integration.
 
 ---
 
-## 📸 Giao Diện Thực Tế v1.2.4 (Tiếng Việt & English) / v1.2.4 Screenshots
+## 📸 Giao Diện Thực Tế v1.2.5 (Tiếng Việt & English) / v1.2.5 Screenshots
 
 ### 🇻🇳 Tổng Quan Sức Khỏe & Phòng Thu Zing MP3 (Vietnamese Edition)
-![DeskAura v1.2.4 Dashboard VI](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/01-dashboard-vi.png)
-![DeskAura v1.2.4 Sound Studio VI](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/02-sound-studio.png)
+![DeskAura v1.2.5 Dashboard VI](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/01-dashboard-vi.png)
+![DeskAura v1.2.5 Sound Studio VI](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/02-sound-studio.png)
 
 ### 🇬🇧 Wellness Dashboard & Global Lofi / SoundCloud Hub (English Edition)
-![DeskAura v1.2.4 Dashboard EN](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/01-dashboard-en.png)
-![DeskAura v1.2.4 Sound Studio EN](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/02-sound-studio-en.png)
+![DeskAura v1.2.5 Dashboard EN](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/01-dashboard-en.png)
+![DeskAura v1.2.5 Sound Studio EN](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/02-sound-studio-en.png)
 
 ---
 
@@ -85,4 +81,3 @@
 **🐞 Báo lỗi & Góp ý / Issues & Feedback:** [**GitHub Issues**](https://github.com/duongbirken2510/deskaura/issues)
 
 </div>
-

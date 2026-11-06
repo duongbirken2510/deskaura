@@ -2,6 +2,7 @@ mod audio_ducker;
 mod autostart;
 mod idle_monitor;
 mod lan_sync;
+mod screen_filter;
 
 use serde::Serialize;
 use tauri::{
@@ -1352,6 +1353,11 @@ fn update_tray_progress_icon(
 }
 
 #[tauri::command]
+fn set_screen_eye_filter(brightness: f32, warmth: f32, fade_ms: u64) {
+    screen_filter::transition_screen_filter(brightness, warmth, fade_ms);
+}
+
+#[tauri::command]
 fn broadcast_lan_pulse(
     room_key: String,
     device_id: String,
@@ -1435,6 +1441,17 @@ fn build_tray_menu(app: &AppHandle, lang: &str) -> tauri::Result<Menu<tauri::Wry
         true,
         None::<&str>,
     )?;
+    let item_eye_shield = MenuItem::with_id(
+        app,
+        "toggle_eye_shield",
+        if is_en {
+            "🛡️ Toggle Eye-Shield (Screen Filter / Color-Safe)"
+        } else {
+            "🛡️ Bật / Tắt Bảo vệ mắt (Lọc sáng / Chuẩn màu)"
+        },
+        true,
+        None::<&str>,
+    )?;
     let sep2 = PredefinedMenuItem::separator(app)?;
     let item_music = MenuItem::with_id(
         app,
@@ -1500,6 +1517,7 @@ fn build_tray_menu(app: &AppHandle, lang: &str) -> tauri::Result<Menu<tauri::Wry
             &sep1,
             &item_water,
             &item_break,
+            &item_eye_shield,
             &sep2,
             &item_music,
             &item_zing_next,
@@ -1597,6 +1615,9 @@ pub fn run() {
                         }
                         let _ = app.emit("tray-trigger-break", "standup");
                     }
+                    "toggle_eye_shield" => {
+                        let _ = app.emit("tray-toggle-eye-shield", ());
+                    }
                     "toggle_music" => {
                         // 1. If Zing MP3 window exists, toggle its Play/Pause directly!
                         let has_zing = execute_zing_action(app, "play_pause", None);
@@ -1631,6 +1652,7 @@ pub fn run() {
                     }
                     "quit" => {
                         let _ = audio_ducker::restore_other_applications();
+                        screen_filter::restore_default_display();
                         app.exit(0);
                     }
                     _ => {}
@@ -1694,6 +1716,7 @@ pub fn run() {
             set_window_always_on_top,
             hide_to_tray,
             update_tray_progress_icon,
+            set_screen_eye_filter,
             broadcast_lan_pulse,
             send_tray_notification,
             set_tray_language
