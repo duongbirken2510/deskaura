@@ -1140,6 +1140,10 @@ export const App: React.FC = () => {
   const isEyeBreakDimmingActive =
     (standupSettings.eyeBreakDimScreen ?? true) &&
     (passiveEyeCueSec > 0 || (isBreakModalOpen && currentBreakType === 'eye'));
+  // currentHourBucket is computed at render time. Because the component re-renders every
+  // second (standupSecondsLeft tick), this value naturally updates at the hour boundary
+  // (e.g. 17:00, 21:00) and triggers the Eye-Shield useEffect correctly via its dep array.
+  const currentHourBucket = new Date().getHours();
 
   useEffect(() => {
     // 1. Color-Accurate Bypass when Fullscreen Guard is active
@@ -1149,11 +1153,6 @@ export const App: React.FC = () => {
     }
 
     // 2. Base Eye-Shield profile (Off / Auto by Hour / Office / Night OT)
-    // NOTE: currentHourBucket is computed INSIDE the effect (not outside) so that the
-    // circadian auto-mode correctly transitions from afternoon→night at 21:00 without
-    // requiring any user interaction. standupSecondsLeft in the dependency array ensures
-    // the effect re-evaluates every second, keeping the hour bucket always fresh.
-    const currentHourBucket = new Date().getHours();
     let baseBrightness = 1.0;
     let baseWarmth = 0.0;
 
@@ -1166,7 +1165,9 @@ export const App: React.FC = () => {
         baseBrightness = 0.68;
         baseWarmth = 0.45;
       } else {
-        // Circadian Auto Mode — applies correct warmth/brightness for morning, afternoon, and night OT
+        // Circadian Auto Mode — applies the correct warmth/brightness for morning, afternoon, and night OT.
+        // currentHourBucket comes from the outer render scope; it is refreshed every second
+        // through component re-renders, so the circadian transition fires precisely at the boundary.
         if (currentHourBucket >= 21 || currentHourBucket < 6) {
           baseBrightness = 0.68;
           baseWarmth = 0.45;
@@ -1190,9 +1191,9 @@ export const App: React.FC = () => {
 
     void setScreenEyeFilter(targetBrightness, targetWarmth, 1500);
   }, [
+    currentHourBucket,
     isEyeBreakDimmingActive,
     isFullscreenApp,
-    standupSecondsLeft,
     standupSettings.eyeShieldEnabled,
     standupSettings.eyeShieldMode,
     standupSettings.pauseOnFullscreen,
