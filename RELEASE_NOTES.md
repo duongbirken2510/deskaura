@@ -1,6 +1,6 @@
-# 🌱 DeskAura v1.2.5 — Official Bilingual Release (Tiếng Việt & English)
+# 🌱 DeskAura v1.2.6 — Hotfix Release (Tiếng Việt & English)
 
-> **What's New in v1.2.5** | **Tổng hợp các nâng cấp mới trong phiên bản v1.2.5**
+> **What's New in v1.2.6** | **Tổng hợp các nâng cấp mới trong phiên bản v1.2.6**
 
 [![Watch Official Cinematic TVC](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/media/deskaura_tvc_preview.gif)](https://github.com/duongbirken2510/deskaura/raw/main/docs/media/deskaura_tvc_intro.mp4)
 
@@ -8,19 +8,25 @@
 
 ---
 
-## 🇻🇳 PHẦN 1: CÁC TÍNH NĂNG MỚI NỔI BẬT TRÊN BẢN v1.2.5
+## 🇻🇳 PHẦN 1: SỬA LỖI TRONG BẢN v1.2.6
 
-### 1. 🛡️ Bảo Vệ Mắt & Lọc Ánh Sáng Xanh Phần Cứng (`Aura Eye-Shield` — macOS / Windows / Linux)
-- **Can thiệp trực tiếp bảng màu phần cứng (`Hardware Display Gamma LUT`):** Điều chỉnh độ dịu sáng và lọc tia sáng xanh trực tiếp ở tầng card đồ họa (`CoreGraphics CGSetDisplayTransferByFormula` trên mọi màn hình macOS kể cả màn hình rời HDMI/Type-C, `SetDeviceGammaRamp` trên Windows và `xrandr` trên Linux) — **tiêu thụ `0% GPU/RAM`**, không tạo lớp phủ cửa sổ ảo gây lag chuột.
-- **3 Chế độ thông minh tích hợp gọn trong `⚙️ Cài Đặt` (0 làm rối Trang Tổng Quan):**
-  1. **☀️ Tự động theo giờ mặt trời:** Ban ngày chuẩn màu `100%` $\rightarrow$ Sau `18h00` tự chuyển sang *Dịu nhẹ văn phòng* $\rightarrow$ Sau `22h00` tự chuyển sang *Đêm khuya OT*.
-  2. **🌿 Dịu nhẹ văn phòng (`5000K`):** Lọc nhẹ `15%` ánh sáng xanh gắt khi nhìn bảng tính Excel/Word dưới đèn huỳnh quang.
-  3. **🌙 Đêm khuya OT (`3800K`):** Lọc `35%` ánh sáng xanh và hạ dịu độ chói màn hình để bảo vệ võng mạc và hormone giấc ngủ Melatonin.
-- **Tự động trả chuẩn màu `100%` khi họp / xem phim Fullscreen & Bật/Tắt 1 chạm ở Khay Hệ Thống (`System Tray`):** Dân thiết kế/chỉnh ảnh có thể bật/tắt nhanh chế độ Chuẩn màu ngay từ icon giọt nước ở Taskbar / Menu Bar.
+### 🐛 Sửa Lỗi Nghỉ Mắt 20-20-20 Breathing Dimmer Không Hoạt Động (Hồi Quy từ v1.2.5)
+- **Mô tả lỗi:** Tính năng **Breathing Dimmer** (màn hình tự dịu sáng 1.5 giây khi đến giờ nghỉ mắt 20-20-20) bị vô hiệu hoàn toàn trong một bản vá trước của v1.2.5. Màn hình không còn fade in-out khi kích hoạt chu kỳ nghỉ mắt.
+- **Nguyên nhân gốc rễ:** Hàm `setScreenEyeFilter(fade_ms=1500)` bị gọi mỗi giây (thay vì chỉ khi trạng thái thay đổi) do `standupSecondsLeft` được thêm nhầm vào dependency array của Eye-Shield `useEffect`. Điều này làm animation 1.5 giây bị reset liên tục mỗi giây và không bao giờ hoàn thành.
+- **Cách sửa:** Khôi phục `currentHourBucket` về scope ngoài `useEffect` (hoạt động đúng vì component re-render mỗi giây, nên `currentHourBucket` luôn tươi mới và chỉ trigger effect khi giá trị thực sự thay đổi theo giờ). Loại bỏ `standupSecondsLeft` khỏi dep array của Eye-Shield effect.
 
-### 2. 😌 Màn Hình "Thở" Dịu Sáng 20 Giây Nghỉ Mắt (`20-20-20 Breathing Dimmer` — Fade In-Out `1.5s`)
-- Khi đến chu kỳ nghỉ mắt 20-20-20, màn hình tự động **dịu độ sáng xuống từ từ trong `1.5 giây` (`Fade-in Cosine Curve`)** để dẫn nhịp cho mắt bạn tự nhiên rời khỏi màn hình và nhìn ra xa 6 mét mà không gây giật mình.
-- Ngay khi hết 20 giây (hoặc khi bấm `Bỏ qua`), độ sáng màn hình **tự động nâng mượt mà trở lại `100%` trong `1.5 giây` (`Fade-out`)**.
+---
+
+## 🇬🇧 PART 1: BUGFIXES IN v1.2.6
+
+### 🐛 Fixed: 20-20-20 Eye Break Breathing Dimmer Not Working (Regression from v1.2.5)
+- **Bug description:** The **Breathing Dimmer** feature (screen auto-dims with a 1.5-second fade when the 20-20-20 eye break countdown reaches zero) was completely broken by a previous patch in v1.2.5. The screen no longer faded in/out during eye break cycles.
+- **Root cause:** `setScreenEyeFilter(fade_ms=1500)` was being called every second (instead of only on state changes) because `standupSecondsLeft` was incorrectly added to the Eye-Shield `useEffect` dependency array. This caused the 1.5-second animation to be reset every second, preventing it from ever completing.
+- **Fix:** Restored `currentHourBucket` to the outer render scope (which is correct because the component re-renders every second, keeping the value fresh, and only triggers the effect when the hour actually changes). Removed `standupSecondsLeft` from the Eye-Shield effect's dependency array.
+
+---
+
+## 📦 Tải Về / Download v1.2.6
 
 ### 3. 🧘 Tự Động Ghi Nhận `+1 Lần Đứng Dậy` Bằng Cảm Biến Rời Máy Ở Chế Độ Nhắc Nhẹ (`Smart 180s Idle Break Credit`)
 - Khi đang ở **Chế độ Nhắc nhẹ dưới Taskbar (`Gentle Mode`)** hoặc khi hiện thông báo nhắc nghỉ mà người dùng đứng dậy đi lấy nước / vận động luôn không bấm nút xác nhận:
@@ -36,36 +42,44 @@
 
 ---
 
-## 🇬🇧 PART 2: WHAT'S NEW IN DESKAURA v1.2.5 (ENGLISH RELEASE NOTES)
+## 🇻🇳 PHẦN 2: CÁC TÍNH NĂNG KẾ THỪA TỪ v1.2.5 (VẪN CÒN NGUYÊN)
 
-### 1. 🛡️ Hardware-Level Eye Protection & Blue-Light Filter (`Aura Eye-Shield`)
-- **Zero-Overhead Native Gamma LUT Control:** Adjusts screen warmth and brightness directly via OS display hardware APIs (`CGSetDisplayTransferByFormula` across all connected displays on macOS, `SetDeviceGammaRamp` on Windows, and `xrandr` on Linux) with **0% GPU/RAM overhead** and no click-blocking overlay windows.
-- **Minimalist Settings Integration & 3 Smart Presets:**
-  - **☀️ Auto Sunset Schedule:** `100%` color accuracy during daylight $\rightarrow$ *Office Comfort* after `18:00` $\rightarrow$ *Night-Owl OT* after `22:00`.
-  - **🌿 Office Comfort (`5000K`):** Softens harsh glare for long spreadsheet and coding sessions.
-  - **🌙 Night-Owl OT (`3800K`):** Cuts `35%` blue light and dims luminance for late-night deep work.
-- **Fullscreen True-Color Bypass & 1-Click System Tray Toggle:** Automatically restores `100%` original color calibration during fullscreen meetings/videos, or toggle anytime from the System Tray / Menu Bar.
+### 1. 🛡️ Bảo Vệ Mắt & Lọc Ánh Sáng Xanh Phần Cứng (`Aura Eye-Shield`)
+3 chế độ: **☀️ Tự động theo giờ / 🌿 Văn phòng / 🌙 Đêm OT** — Can thiệp trực tiếp `Hardware Gamma LUT`, `0% GPU/RAM`.
 
-### 2. 😌 20-Second Breathing Screen Dimmer (`Fade In-Out 1.5s`)
-- During each 20-20-20 eye break, your display gently dims over **`1.5 seconds` (`Cosine Ease-In-Out`)**, naturally guiding your eyes to look away and relax, then smoothly restores full brightness over **`1.5 seconds`** when the break finishes or is skipped.
+### 2. 😌 Màn Hình "Thở" Dịu Sáng 20 Giây (`Breathing Dimmer`)
+Fade in-out 1.5 giây mỗi lần nghỉ mắt 20-20-20. **Đã sửa hoàn toàn trong v1.2.6.**
 
-### 3. 🧘 Smart 180-Second Idle Break Credit in Gentle Mode
-- When using **Gentle Taskbar Mode** (or when stepping away right after a break prompt without clicking confirm), if the native OS input sensor detects **$\ge 180$ seconds (3 minutes)** of zero mouse/keyboard activity, DeskAura automatically credits **`+1 Standup Break`**, dismisses the break banner, and resets your 60-minute cycle.
+### 3. 🧘 Tự Động Ghi Nhận `+1 Lần Đứng Dậy` (`Smart 180s Idle Break Credit`)
+Cảm biến tự cộng thống kê khi không có thao tác chuột/bàn phím đủ 3 phút.
 
-### 4. 🐧 Official Linux Support (`.deb` & `.AppImage`)
-- Full native support for Linux desktops alongside Windows and macOS, including `.deb` and `.AppImage` bundles, X11 Screen Saver idle detection, `xrandr` gamma dimmer, and XDG autostart integration.
+### 4. 🐧 Hỗ Trợ Linux (`.deb` & `.AppImage`)
+Đầy đủ cảm biến X11, `xrandr` gamma, XDG autostart.
 
 ---
 
-## 📸 Giao Diện Thực Tế v1.2.5 (Tiếng Việt & English) / v1.2.5 Screenshots
+## 🇬🇧 PART 2: WHAT'S NEW IN DESKAURA v1.2.6 (ENGLISH RELEASE NOTES)
+
+### 🐛 Fixed: 20-20-20 Eye Break Breathing Dimmer Regression
+The `setScreenEyeFilter(fade_ms=1500)` was being called every second (instead of only on actual state change) due to `standupSecondsLeft` being incorrectly added to the Eye-Shield `useEffect` dependency array in a previous patch. This caused the 1.5s fade animation to restart every second and never complete. **Now fully restored.**
+
+### ✅ All v1.2.5 Features Carry Over
+- 🛡️ **Aura Eye-Shield** — Hardware Gamma LUT, 3 circadian modes, 0% GPU
+- 😌 **20s Breathing Dimmer** — 1.5s smooth fade in/out during eye breaks
+- 🧘 **Smart 180s Idle Break Credit** — Auto-credits standup after 3min idle
+- 🐧 **Linux Support** — `.deb` & `.AppImage` with X11, xrandr, XDG autostart
+
+---
+
+## 📸 Giao Diện Thực Tế / Screenshots
 
 ### 🇻🇳 Tổng Quan Sức Khỏe & Phòng Thu Zing MP3 (Vietnamese Edition)
-![DeskAura v1.2.5 Dashboard VI](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/01-dashboard-vi.png)
-![DeskAura v1.2.5 Sound Studio VI](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/02-sound-studio.png)
+![DeskAura v1.2.6 Dashboard VI](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/01-dashboard-vi.png)
+![DeskAura v1.2.6 Sound Studio VI](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/02-sound-studio.png)
 
 ### 🇬🇧 Wellness Dashboard & Global Lofi / SoundCloud Hub (English Edition)
-![DeskAura v1.2.5 Dashboard EN](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/01-dashboard-en.png)
-![DeskAura v1.2.5 Sound Studio EN](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/02-sound-studio-en.png)
+![DeskAura v1.2.6 Dashboard EN](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/01-dashboard-en.png)
+![DeskAura v1.2.6 Sound Studio EN](https://raw.githubusercontent.com/duongbirken2510/deskaura/main/docs/screenshots/02-sound-studio-en.png)
 
 ---
 
