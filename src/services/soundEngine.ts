@@ -24,6 +24,9 @@ class SoundEngine {
 
   // Voice prompt audio
   private voiceAudio: HTMLAudioElement | null = null;
+  private voiceBufferSource: AudioBufferSourceNode | null = null;
+  private voiceGainNode: GainNode | null = null;
+  private voiceBufferCache: Map<string, AudioBuffer> = new Map();
   private radioFadeTimer: number | null = null;
   private voiceFadeTimer: number | null = null;
   private voiceResolve: (() => void) | null = null;
@@ -569,6 +572,24 @@ class SoundEngine {
       window.clearInterval(this.voiceFadeTimer);
       this.voiceFadeTimer = null;
     }
+    if (this.voiceBufferSource) {
+      try {
+        this.voiceBufferSource.onended = null;
+        this.voiceBufferSource.stop();
+        this.voiceBufferSource.disconnect();
+      } catch {
+        // ignore
+      }
+      this.voiceBufferSource = null;
+    }
+    if (this.voiceGainNode) {
+      try {
+        this.voiceGainNode.disconnect();
+      } catch {
+        // ignore
+      }
+      this.voiceGainNode = null;
+    }
     if (this.voiceAudio) {
       try {
         this.voiceAudio.onended = null;
@@ -679,7 +700,91 @@ class SoundEngine {
     }
   }
 
-  private playMp3VoiceFile(path: string, volume: number): Promise<void> {
+  private async playMp3VoiceFile(path: string, volume: number): Promise<void> {
+    if (this.voiceCancelled) return;
+
+    // Primary playback via Web Audio API (works reliably across Windows, macOS, and Linux WebKitGTK tauri:// protocol)
+    try {
+      const ctx = this.ensureContext();
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+      let audioBuffer = this.voiceBufferCache.get(path);
+      if (!audioBuffer) {
+        const res = await fetch(path);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const arrayBuf = await res.arrayBuffer();
+        audioBuffer = await ctx.decodeAudioData(arrayBuf.slice(0));
+        this.voiceBufferCache.set(path, audioBuffer);
+      }
+      if (this.voiceCancelled) return;
+
+      if (this.voiceBufferSource) {
+        try {
+          this.voiceBufferSource.onended = null;
+          this.voiceBufferSource.stop();
+          this.voiceBufferSource.disconnect();
+        } catch {
+          // ignore
+        }
+        this.voiceBufferSource = null;
+      }
+      if (this.voiceGainNode) {
+        try {
+          this.voiceGainNode.disconnect();
+        } catch {
+          // ignore
+        }
+        this.voiceGainNode = null;
+      }
+
+      await new Promise<void>((resolve) => {
+        this.voiceResolve = resolve;
+        const env = this.getTimeBasedVolumeEnvelope(volume);
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffer!;
+        const gainNode = ctx.createGain();
+        const now = ctx.currentTime;
+        const startVol = Math.max(0.001, env.targetVolume * 0.15);
+        const fadeSec = env.isNightMode ? 1.0 : 0.7;
+        gainNode.gain.setValueAtTime(startVol, now);
+        gainNode.gain.linearRampToValueAtTime(
+          Math.max(0.01, env.targetVolume),
+          now + fadeSec
+        );
+        source.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        this.voiceBufferSource = source;
+        this.voiceGainNode = gainNode;
+
+        const cleanupAndResolve = () => {
+          if (this.voiceBufferSource === source) {
+            this.voiceBufferSource = null;
+          }
+          if (this.voiceGainNode === gainNode) {
+            try {
+              gainNode.disconnect();
+            } catch {
+              // ignore
+            }
+            this.voiceGainNode = null;
+          }
+          if (this.voiceResolve === resolve) {
+            this.voiceResolve = null;
+          }
+          resolve();
+        };
+
+        source.onended = cleanupAndResolve;
+        source.start(0);
+      });
+      return;
+    } catch {
+      // Fallback to HTMLAudioElement if Web Audio decode fails
+    }
+
     return new Promise((resolve) => {
       try {
         if (this.voiceFadeTimer) {
@@ -724,10 +829,15 @@ class SoundEngine {
   private speakViaBrowserTTS(text: string, volume: number): Promise<void> {
     return new Promise((resolve) => {
       if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-        resolve();
+        this.playMp3VoiceFile('/voices/standup_female.mp3', volume).then(resolve);
         return;
       }
       try {
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices || voices.length === 0) {
+          this.playMp3VoiceFile('/voices/standup_female.mp3', volume).then(resolve);
+          return;
+        }
         window.speechSynthesis.cancel();
         this.voiceResolve = resolve;
         const env = this.getTimeBasedVolumeEnvelope(volume);
@@ -735,7 +845,6 @@ class SoundEngine {
         utter.lang = 'vi-VN';
         utter.volume = Math.max(0.08, Math.min(1, env.targetVolume));
         utter.rate = 0.96;
-        const voices = window.speechSynthesis.getVoices();
         const viVoice = voices.find((v) => v.lang.toLowerCase().includes('vi'));
         if (viVoice) {
           utter.voice = viVoice;
@@ -751,7 +860,7 @@ class SoundEngine {
         window.speechSynthesis.speak(utter);
       } catch {
         this.voiceResolve = null;
-        resolve();
+        this.playMp3VoiceFile('/voices/standup_female.mp3', volume).then(resolve);
       }
     });
   }

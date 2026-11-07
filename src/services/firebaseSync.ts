@@ -3,8 +3,12 @@ import {
   Auth,
   GoogleAuthProvider,
   User,
+  browserLocalPersistence,
+  browserPopupRedirectResolver,
   createUserWithEmailAndPassword,
   getAuth,
+  indexedDBLocalPersistence,
+  initializeAuth,
   onAuthStateChanged,
   signInWithCredential,
   signInWithEmailAndPassword,
@@ -385,7 +389,18 @@ class FirebaseSyncService {
         this.db = getFirestore(this.app);
       }
 
-      this.auth = getAuth(this.app);
+      const isTauri =
+        typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+      try {
+        this.auth = initializeAuth(this.app, {
+          persistence: [browserLocalPersistence, indexedDBLocalPersistence],
+          popupRedirectResolver: isTauri
+            ? undefined
+            : browserPopupRedirectResolver,
+        });
+      } catch {
+        this.auth = getAuth(this.app);
+      }
 
       if (config) {
         this.saveConfig(config);
